@@ -1,0 +1,8 @@
+.next
+node_modules
+.vscode
+LICENSE
+AGENT.MD
+.agent
+.claude
+skills

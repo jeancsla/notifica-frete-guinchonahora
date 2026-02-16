@@ -1,0 +1,8 @@
+services:
+  database:
+    container_name: "postgres-dev"
+    image: postgres:latest
+    env_file:
+      - ../.env.development
+    ports:
+      - "5432:5432"
