@@ -34,11 +34,6 @@ export default database;
 function getDatabaseConfig() {
   const ssl = getSSLValues();
 
-  if (process.env.DATABASE_URL) {
-    validateDatabaseUrl(process.env.DATABASE_URL);
-    return { connectionString: process.env.DATABASE_URL, ssl };
-  }
-
   const requiredVars = [
     "POSTGRES_HOST",
     "POSTGRES_PORT",
@@ -63,19 +58,6 @@ function getDatabaseConfig() {
     database: process.env.POSTGRES_DB,
     ssl,
   };
-}
-
-function validateDatabaseUrl(databaseUrl) {
-  try {
-    const parsed = new URL(databaseUrl);
-    if (!["postgres:", "postgresql:"].includes(parsed.protocol)) {
-      throw new Error("Unsupported protocol");
-    }
-  } catch (error) {
-    throw new Error(
-      "Invalid DATABASE_URL. Expected a postgres:// or postgresql:// URL.",
-    );
-  }
 }
 
 function getSSLValues() {
