@@ -63,6 +63,15 @@ async function handleGet(request, response) {
     });
   } catch (error) {
     console.error("[Cargas API] Error fetching cargas:", error);
+
+    if (error?.code === "42P01") {
+      return response.status(503).json({
+        error: "Database not initialized",
+        message:
+          "Required table is missing. Run migrations to initialize the database schema.",
+      });
+    }
+
     return response.status(500).json({
       error: "Internal server error",
       message: error.message,

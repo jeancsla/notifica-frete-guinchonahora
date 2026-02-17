@@ -37,10 +37,14 @@ export default async function migrations(request, response) {
     return;
   }
 
-  if (process.env.NODE_ENV === "production") {
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.ALLOW_PRODUCTION_MIGRATIONS !== "true"
+  ) {
     return response.status(403).json({
       error: "Forbidden",
-      message: "Migrations are disabled in production",
+      message:
+        "Migrations are disabled in production. Set ALLOW_PRODUCTION_MIGRATIONS=true to enable.",
     });
   }
 
