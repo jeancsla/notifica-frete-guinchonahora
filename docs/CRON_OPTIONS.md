@@ -1,32 +1,50 @@
-# Cron Job Options & Fallbacks
+# Cron Job Options
 
-This app supports multiple cron job strategies. Choose based on your infrastructure:
+This app supports multiple cron job strategies. Since Vercel Cron requires a paid plan, here are the free alternatives:
 
-## 1. Vercel Cron (Recommended for Vercel Deployments)
+## 1. n8n Webhook (Recommended - Free)
 
-**File:** `vercel.json`
+**Endpoint:** `POST /api/v1/cargas/webhook`
+
+Use your existing n8n infrastructure to trigger cargo checks. This is the recommended approach since you already have n8n running.
 
 **Pros:**
 
-- Native Vercel integration
-- No external dependencies
-- Automatic logging in Vercel Dashboard
+- Free (uses your existing n8n)
+- Visual workflow management
+- Easy to monitor in n8n
+- No additional servers needed
 
 **Cons:**
 
-- Requires Vercel Pro for cron jobs (free tier has limits)
+- Requires n8n instance running
 
 **Setup:**
 
+1. **Set environment variable in Vercel:**
+
+   ```
+   CRON_WEBHOOK_SECRET=your-random-secret-here
+   ```
+
+2. **In n8n, modify "Notificação Mills" workflow:**
+   - After "Remove Duplicates" node
+   - Add **HTTP Request** node:
+     - Method: POST
+     - URL: `https://your-app.vercel.app/api/v1/cargas/webhook`
+     - Headers:
+       - `x-cron-secret`: `your-random-secret-here`
+       - `x-cron-source`: `n8n`
+
+3. **Keep or disable the existing DataTable insert** as you prefer
+
+**Test command:**
+
 ```bash
-# Already configured in vercel.json
-# Deploy and check Vercel Dashboard → Cron Jobs
+curl -X POST https://your-app.vercel.app/api/v1/cargas/webhook \
+  -H "x-cron-secret: your-webhook-secret" \
+  -H "x-cron-source: n8n"
 ```
-
-**Verification:**
-
-- Dashboard: Project → Settings → Cron Jobs
-- Logs: Project → Deployments → Functions
 
 ---
 
@@ -34,11 +52,14 @@ This app supports multiple cron job strategies. Choose based on your infrastruct
 
 **Command:** `npm run cron`
 
+Run the cron job on your own server or local machine.
+
 **Pros:**
 
 - Full control
 - Works anywhere Node.js runs
 - No platform limitations
+- Free
 
 **Cons:**
 
@@ -71,50 +92,13 @@ services:
 
 ---
 
-## 3. n8n Webhook (Fallback/Alternative)
+## 3. Hybrid Strategy (Recommended for Production)
 
-**Endpoint:** `POST /api/v1/cargas/webhook`
-
-**Pros:**
-
-- Use your existing n8n infrastructure
-- Visual workflow management
-- Easy to monitor in n8n
-
-**Cons:**
-
-- Requires n8n instance running
-- Extra network hop
-
-**Setup:**
-
-1. **Set environment variable in Vercel:**
-
-   ```
-   CRON_WEBHOOK_SECRET=your-random-secret-here
-   ```
-
-2. **In n8n, modify "Notificação Mills" workflow:**
-   - After "Remove Duplicates" node
-   - Add **HTTP Request** node:
-     - Method: POST
-     - URL: `https://your-app.vercel.app/api/v1/cargas/webhook`
-     - Headers:
-       - `x-cron-secret`: `your-random-secret-here`
-       - `x-cron-source`: `n8n`
-
-3. **Disable or keep the existing DataTable insert** as backup
-
----
-
-## 4. Hybrid Strategy (Recommended for Production)
-
-Use **multiple** cron sources for redundancy:
+Use **both** n8n and self-hosted for redundancy:
 
 ```
-Primary:   Vercel Cron (*/15 7-18 * * *)
-Fallback1: n8n Webhook (*/15 7-18 * * *) - 5 min offset
-Fallback2: Self-hosted (optional)
+Primary:   n8n Webhook (*/15 7-18 * * *)
+Fallback:  Self-hosted (*/15 7-18 * * *) - 5 min offset
 ```
 
 **Why this works:**
@@ -151,15 +135,18 @@ curl -X POST https://your-app.vercel.app/api/v1/cargas/check \
 curl -X POST https://your-app.vercel.app/api/v1/cargas/webhook \
   -H "x-cron-secret: your-webhook-secret" \
   -H "x-cron-source: manual-test"
+
+# Health check
+curl https://your-app.vercel.app/api/v1/cargas/health
 ```
 
 ---
 
 ## Troubleshooting
 
-| Issue                   | Solution                                               |
-| ----------------------- | ------------------------------------------------------ |
-| Vercel Cron not running | Check Vercel Dashboard → Cron Jobs. May need Pro plan. |
-| n8n webhook 401         | Verify `CRON_WEBHOOK_SECRET` matches                   |
-| Duplicate notifications | Check `id_viagem` UNIQUE constraint in database        |
-| No cargas found         | Check Tegma credentials in environment variables       |
+| Issue                   | Solution                                         |
+| ----------------------- | ------------------------------------------------ |
+| n8n webhook 401         | Verify `CRON_WEBHOOK_SECRET` matches             |
+| Duplicate notifications | Check `id_viagem` UNIQUE constraint in database  |
+| No cargas found         | Check Tegma credentials in environment variables |
+| Cron not running        | Check n8n execution logs or self-hosted server   |
