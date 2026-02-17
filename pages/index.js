@@ -1,5 +1,24 @@
 import Layout from "../components/Layout";
 import Link from "next/link";
+import { getSession } from "lib/session";
+
+export const getServerSideProps = async ({ req, res }) => {
+  const session = await getSession(req, res);
+  const user = session.user || null;
+
+  if (!user) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: { user },
+  };
+};
 
 export default function Overview() {
   return (

@@ -1,6 +1,13 @@
+import { getSession } from "lib/session";
 import cargasRepository from "repositories/cargas-repository.js";
 
 async function cargasHandler(request, response) {
+  const session = await getSession(request, response);
+
+  if (!session.user) {
+    return response.status(401).json({ error: "Unauthorized" });
+  }
+
   if (request.method === "GET") {
     return handleGet(request, response);
   }
@@ -8,15 +15,15 @@ async function cargasHandler(request, response) {
   return response.status(405).json({ error: "Method not allowed" });
 }
 
+export default cargasHandler;
+
 async function handleGet(request, response) {
   try {
-    // Parse query parameters
     const url = new URL(request.url, `http://${request.headers.host}`);
     const limitParam = url.searchParams.get("limit");
     const offsetParam = url.searchParams.get("offset");
     const notified = url.searchParams.get("notified");
 
-    // Validate and parse limit
     const limit = limitParam ? parseInt(limitParam) : 10;
     if (isNaN(limit) || limit < 1 || limit > 100) {
       return response.status(400).json({
@@ -24,7 +31,6 @@ async function handleGet(request, response) {
       });
     }
 
-    // Validate and parse offset
     const offset = offsetParam ? parseInt(offsetParam) : 0;
     if (isNaN(offset) || offset < 0) {
       return response.status(400).json({
@@ -36,15 +42,13 @@ async function handleGet(request, response) {
     let total;
 
     if (notified === "false") {
-      // Get only not notified cargas WITH pagination
-      const notNotifiedLimit = Math.min(limit, 100); // Cap at 100 for this endpoint
+      const notNotifiedLimit = Math.min(limit, 100);
       cargas = await cargasRepository.findNotNotified({
         limit: notNotifiedLimit,
         offset,
       });
       total = await cargasRepository.countNotNotified();
     } else {
-      // Get all cargas with pagination
       cargas = await cargasRepository.findAll({ limit, offset });
       total = await cargasRepository.count();
     }
@@ -65,5 +69,3 @@ async function handleGet(request, response) {
     });
   }
 }
-
-export default cargasHandler;
