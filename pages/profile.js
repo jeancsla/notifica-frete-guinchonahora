@@ -32,7 +32,11 @@ export default function Profile() {
         </>
       }
     >
-      <Toast message={toast.message} type={toast.type} visible={toast.visible} />
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        visible={toast.visible}
+      />
       <section className="grid cols-2">
         <div className="card">
           <h3>Operador principal</h3>

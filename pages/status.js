@@ -7,13 +7,8 @@ import { fetchStatus } from "../lib/api";
 export default function Status() {
   const [status, setStatus] = useState(null);
   const [error, setError] = useState("");
-  const {
-    isRefreshing,
-    lastUpdatedAt,
-    refreshError,
-    toast,
-    wrapRefresh,
-  } = useRefreshFeedback();
+  const { isRefreshing, lastUpdatedAt, refreshError, toast, wrapRefresh } =
+    useRefreshFeedback();
 
   async function load() {
     try {
@@ -57,7 +52,11 @@ export default function Status() {
         </>
       }
     >
-      <Toast message={toast.message} type={toast.type} visible={toast.visible} />
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        visible={toast.visible}
+      />
       {error ? <div className="card">Erro: {error}</div> : null}
       <section className="grid cols-2">
         <div className="card">

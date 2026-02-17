@@ -12,7 +12,9 @@ describe("activity helpers", () => {
 
     expect(events[0].title).toBe("Carga capturada");
     expect(events[0].description).toBe("Viagem 1 importada do portal Mills.");
-    expect(events.find((event) => event.title === "Status checado")).toBeTruthy();
+    expect(
+      events.find((event) => event.title === "Status checado"),
+    ).toBeTruthy();
   });
 
   it("counts alerts for missing fields", () => {

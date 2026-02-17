@@ -8,13 +8,8 @@ import { buildActivityEvents, countActivityAlerts } from "../lib/activity";
 export default function Activity() {
   const [events, setEvents] = useState([]);
   const [alerts, setAlerts] = useState(0);
-  const {
-    isRefreshing,
-    lastUpdatedAt,
-    refreshError,
-    toast,
-    wrapRefresh,
-  } = useRefreshFeedback();
+  const { isRefreshing, lastUpdatedAt, refreshError, toast, wrapRefresh } =
+    useRefreshFeedback();
 
   const load = async () => {
     const [cargasResponse, statusResponse] = await Promise.all([
@@ -58,7 +53,11 @@ export default function Activity() {
         </>
       }
     >
-      <Toast message={toast.message} type={toast.type} visible={toast.visible} />
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        visible={toast.visible}
+      />
       <section className="grid cols-2">
         <div className="card">
           <h3>Timeline</h3>

@@ -6,15 +6,14 @@ import { fetchCargas } from "../lib/api";
 
 export default function TableView() {
   const [data, setData] = useState([]);
-  const [pagination, setPagination] = useState({ limit: 15, offset: 0, total: 0 });
+  const [pagination, setPagination] = useState({
+    limit: 15,
+    offset: 0,
+    total: 0,
+  });
   const [error, setError] = useState("");
-  const {
-    isRefreshing,
-    lastUpdatedAt,
-    refreshError,
-    toast,
-    wrapRefresh,
-  } = useRefreshFeedback();
+  const { isRefreshing, lastUpdatedAt, refreshError, toast, wrapRefresh } =
+    useRefreshFeedback();
 
   async function load() {
     try {
@@ -65,7 +64,11 @@ export default function TableView() {
         </>
       }
     >
-      <Toast message={toast.message} type={toast.type} visible={toast.visible} />
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        visible={toast.visible}
+      />
       {error ? <div className="card">Erro: {error}</div> : null}
       <div className="card">
         <table className="table">

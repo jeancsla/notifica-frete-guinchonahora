@@ -6,16 +6,15 @@ import { fetchCargas } from "../lib/api";
 
 export default function Dashboard() {
   const [data, setData] = useState([]);
-  const [pagination, setPagination] = useState({ limit: 10, offset: 0, total: 0 });
+  const [pagination, setPagination] = useState({
+    limit: 10,
+    offset: 0,
+    total: 0,
+  });
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
-  const {
-    isRefreshing,
-    lastUpdatedAt,
-    refreshError,
-    toast,
-    wrapRefresh,
-  } = useRefreshFeedback();
+  const { isRefreshing, lastUpdatedAt, refreshError, toast, wrapRefresh } =
+    useRefreshFeedback();
 
   async function load() {
     try {
@@ -81,12 +80,18 @@ export default function Dashboard() {
         </>
       }
     >
-      <Toast message={toast.message} type={toast.type} visible={toast.visible} />
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        visible={toast.visible}
+      />
       {error ? <div className="card">Erro: {error}</div> : null}
       <section className="grid cols-3">
         <div className="card">
           <h3>Em fila</h3>
-          <p style={{ fontSize: "32px", fontWeight: 700 }}>{pagination.total}</p>
+          <p style={{ fontSize: "32px", fontWeight: 700 }}>
+            {pagination.total}
+          </p>
           <p className="muted">Cargas pendentes de notificacao.</p>
         </div>
         <div className="card">
@@ -96,9 +101,7 @@ export default function Dashboard() {
         </div>
         <div className="card">
           <h3>Ritmo</h3>
-          <p style={{ fontSize: "32px", fontWeight: 700 }}>
-            {data.length}
-          </p>
+          <p style={{ fontSize: "32px", fontWeight: 700 }}>{data.length}</p>
           <p className="muted">Cargas visiveis no momento.</p>
         </div>
       </section>
@@ -144,7 +147,9 @@ export default function Dashboard() {
             </button>
             <button
               className="button secondary"
-              disabled={pagination.offset + pagination.limit >= pagination.total}
+              disabled={
+                pagination.offset + pagination.limit >= pagination.total
+              }
               onClick={() =>
                 setPagination((prev) => ({
                   ...prev,

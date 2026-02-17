@@ -4,7 +4,11 @@ export default function useRefreshFeedback() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState(null);
   const [refreshError, setRefreshError] = useState("");
-  const [toast, setToast] = useState({ message: "", type: "success", visible: false });
+  const [toast, setToast] = useState({
+    message: "",
+    type: "success",
+    visible: false,
+  });
   const timeoutRef = useRef(null);
 
   useEffect(() => {

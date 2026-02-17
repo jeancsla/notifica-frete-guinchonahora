@@ -10,13 +10,8 @@ export default function Details() {
   const [data, setData] = useState([]);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
-  const {
-    isRefreshing,
-    lastUpdatedAt,
-    refreshError,
-    toast,
-    wrapRefresh,
-  } = useRefreshFeedback();
+  const { isRefreshing, lastUpdatedAt, refreshError, toast, wrapRefresh } =
+    useRefreshFeedback();
 
   async function load() {
     try {
@@ -72,7 +67,11 @@ export default function Details() {
         </>
       }
     >
-      <Toast message={toast.message} type={toast.type} visible={toast.visible} />
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        visible={toast.visible}
+      />
       {error ? <div className="card">Erro: {error}</div> : null}
       <section className="grid cols-2">
         <div className="card">

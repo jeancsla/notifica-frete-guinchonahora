@@ -4,9 +4,11 @@ import userEvent from "@testing-library/user-event";
 import Details from "pages/details";
 import { fetchCargas } from "lib/api";
 
-jest.mock("next/link", () => ({ children, href }) => (
-  <a href={href}>{children}</a>
-));
+jest.mock("next/link", () => {
+  const MockLink = ({ children, href }) => <a href={href}>{children}</a>;
+  MockLink.displayName = "MockLink";
+  return MockLink;
+});
 
 jest.mock("next/router", () => ({
   useRouter: () => ({ pathname: "/details", isReady: true, query: {} }),
