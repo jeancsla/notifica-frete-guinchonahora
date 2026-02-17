@@ -34,8 +34,15 @@ function checkAuth(request, response) {
   return true;
 }
 
+function isVercelCron(request) {
+  // Vercel Cron Jobs set a specific user-agent
+  const userAgent = request.headers["user-agent"] || "";
+  return userAgent.includes("vercel-cron");
+}
+
 async function checkHandler(request, response) {
-  if (!checkAuth(request, response)) {
+  // Allow Vercel Cron Jobs without API key
+  if (!isVercelCron(request) && !checkAuth(request, response)) {
     return;
   }
 
