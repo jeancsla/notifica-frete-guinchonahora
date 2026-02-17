@@ -17,12 +17,21 @@ async function query(queryObject) {
 }
 
 async function getNewClient() {
+  const poolMode = getPoolMode();
+  const isTransactionPool = poolMode === "transaction";
+  const defaultPort =
+    isTransactionPool && !process.env.POSTGRES_PORT ? "6543" : undefined;
+  const connectionString = process.env.DATABASE_URL;
+
   const client = new Client({
-    host: process.env.POSTGRES_HOST,
-    port: process.env.POSTGRES_PORT,
-    user: process.env.POSTGRES_USER,
-    password: process.env.POSTGRES_PASSWORD,
-    database: process.env.POSTGRES_DB,
+    connectionString: connectionString || undefined,
+    host: connectionString ? undefined : process.env.POSTGRES_HOST,
+    port: connectionString
+      ? undefined
+      : process.env.POSTGRES_PORT || defaultPort,
+    user: connectionString ? undefined : process.env.POSTGRES_USER,
+    password: connectionString ? undefined : process.env.POSTGRES_PASSWORD,
+    database: connectionString ? undefined : process.env.POSTGRES_DB,
     ssl: getSSLValues(),
   });
 
@@ -45,4 +54,9 @@ function getSSLValues() {
     };
   }
   return process.env.NODE_ENV === "production" ? true : false;
+}
+
+function getPoolMode() {
+  const value = process.env.POOL_MODE || process.env.POSTGRES_POOL_MODE || "";
+  return value.toLowerCase();
 }
