@@ -51,5 +51,6 @@ export default function useRefreshFeedback() {
     refreshError,
     toast,
     wrapRefresh,
+    showToast,
   };
 }

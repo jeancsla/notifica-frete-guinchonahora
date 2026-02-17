@@ -2,8 +2,13 @@ import crypto from "crypto";
 import migrationRunner from "node-pg-migrate";
 import { join } from "node:path";
 import database from "infra/database.js";
+import { getSession } from "lib/session";
 
-function checkAuth(request, response) {
+function checkAuth(request, response, session) {
+  if (session?.user) {
+    return true;
+  }
+
   const apiKey = request.headers["x-admin-key"];
   const expectedKey = process.env.ADMIN_API_KEY;
   if (!apiKey || !expectedKey) {
@@ -33,9 +38,7 @@ function checkAuth(request, response) {
 }
 
 export default async function migrations(request, response) {
-  if (!checkAuth(request, response)) {
-    return;
-  }
+  const session = await getSession(request, response);
 
   if (
     process.env.NODE_ENV === "production" &&

@@ -68,3 +68,8 @@ function getSSLValues() {
   }
   return process.env.NODE_ENV === "production" ? true : false;
 }
+
+function getPoolMode() {
+  const value = process.env.POOL_MODE || process.env.POSTGRES_POOL_MODE || "";
+  return value.toLowerCase();
+}
