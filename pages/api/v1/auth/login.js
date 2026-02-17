@@ -9,7 +9,9 @@ function getAdminCredentials() {
 
   if (!username || !password) {
     if (isProd) {
-      throw new Error("ADMIN_USERNAME/ADMIN_PASSWORD must be set in production.");
+      throw new Error(
+        "ADMIN_USERNAME/ADMIN_PASSWORD must be set in production.",
+      );
     }
     console.warn(
       "[Auth] ADMIN_USERNAME/ADMIN_PASSWORD not set. Using insecure dev defaults.",
