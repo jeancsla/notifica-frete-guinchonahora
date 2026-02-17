@@ -40,6 +40,10 @@ function checkAuth(request, response, session) {
 export default async function migrations(request, response) {
   const session = await getSession(request, response);
 
+  if (!checkAuth(request, response, session)) {
+    return;
+  }
+
   if (
     process.env.NODE_ENV === "production" &&
     process.env.ALLOW_PRODUCTION_MIGRATIONS !== "true"
