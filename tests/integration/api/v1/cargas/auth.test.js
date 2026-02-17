@@ -7,9 +7,12 @@ beforeAll(async () => {
 describe("POST /api/v1/cargas/check", () => {
   describe("Authentication", () => {
     test("should return 401 when API key is missing", async () => {
-      const response = await fetch("http://localhost:3000/api/v1/cargas/check", {
-        method: "POST",
-      });
+      const response = await fetch(
+        "http://localhost:3000/api/v1/cargas/check",
+        {
+          method: "POST",
+        },
+      );
 
       expect(response.status).toBe(401);
       const data = await response.json();
@@ -17,12 +20,15 @@ describe("POST /api/v1/cargas/check", () => {
     });
 
     test("should return 401 when API key is invalid", async () => {
-      const response = await fetch("http://localhost:3000/api/v1/cargas/check", {
-        method: "POST",
-        headers: {
-          "X-Admin-Key": "invalid-key",
+      const response = await fetch(
+        "http://localhost:3000/api/v1/cargas/check",
+        {
+          method: "POST",
+          headers: {
+            "X-Admin-Key": "invalid-key",
+          },
         },
-      });
+      );
 
       expect(response.status).toBe(401);
       const data = await response.json();

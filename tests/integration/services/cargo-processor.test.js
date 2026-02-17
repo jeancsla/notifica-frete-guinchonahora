@@ -113,7 +113,9 @@ describe("Cargo Processor", () => {
       ];
 
       tegmaScraper.fetchCargas.mockResolvedValue(mockCargas);
-      cargasRepository.existsBatch.mockResolvedValue(new Set(["12345", "67890"]));
+      cargasRepository.existsBatch.mockResolvedValue(
+        new Set(["12345", "67890"]),
+      );
 
       const result = await cargoProcessor.process();
 

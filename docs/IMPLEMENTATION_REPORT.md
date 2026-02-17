@@ -30,6 +30,7 @@ The original n8n workflow (ID: htdvLvUG4y671QJm) performed the following:
 ### 1. Dependencies Added
 
 **package.json additions:**
+
 ```json
 {
   "dependencies": {
@@ -65,6 +66,7 @@ CREATE TABLE cargas (
 ```
 
 **Key Design Decisions:**
+
 - `id_viagem` is UNIQUE to prevent duplicate notifications
 - `notificado_em` tracks when WhatsApp messages were sent
 - All fields use VARCHAR with generous sizes for scraped text
@@ -90,6 +92,7 @@ class Carga {
 **File:** `repositories/cargas-repository.js`
 
 Methods implemented:
+
 - `exists(id_viagem)` - Check if cargo was already processed
 - `save(carga)` - Insert new cargo
 - `markAsNotified(id_viagem)` - Update notification timestamp
@@ -104,12 +107,14 @@ Methods implemented:
 **File:** `services/tegma-scraper.js`
 
 **Flow:**
+
 1. `getCookie()` - GET /Login, extract `ASP.NET_SessionId` from set-cookie header
 2. `login(cookie)` - POST credentials to /Login with session cookie
 3. `fetchCargasPage(cookie)` - GET /Monitoramento/CargasDisponiveis?tpoeqp=0
 4. `parseCargas(html)` - Use Cheerio to extract table data
 
 **Retry Logic:**
+
 - 5 retries with exponential backoff (5s-30s)
 - Disabled in test mode (`NODE_ENV=test`)
 
@@ -123,12 +128,14 @@ See `.env.example` file for required environment variables.
 **Integration:** Evolution API (guincho2 instance)
 
 **Methods:**
+
 - `sendNotification(phone, carga)` - Core API call
 - `notifyJean(carga)` - Send to Jean
 - `notifyJefferson(carga)` - Send to Jefferson
 - `notifySebastiao(carga)` - Send to Sebastiao (disabled by default)
 
 **Message Format:**
+
 ```
 Da uma olhada no site da Mills:
 De: {origem}
@@ -147,6 +154,7 @@ See `.env.example` file for required environment variables.
 **File:** `services/cargo-processor.js`
 
 **Orchestration Flow:**
+
 1. Fetch cargas from Tegma scraper
 2. Filter out existing cargas (check `exists()` in repository)
 3. For each new cargo:
@@ -163,11 +171,13 @@ See `.env.example` file for required environment variables.
 Returns list of cargas with pagination.
 
 **Query Parameters:**
+
 - `limit` - Number of results (default: 10, max: 100)
 - `offset` - Pagination offset (default: 0)
 - `notified` - Filter: `false` for not-yet-notified cargas
 
 **Response:**
+
 ```json
 {
   "cargas": [...],
@@ -184,6 +194,7 @@ Returns list of cargas with pagination.
 Manually triggers cargo check and notification process.
 
 **Response:**
+
 ```json
 {
   "processed": 2,
@@ -205,6 +216,7 @@ cron.schedule("*/15 7-18 * * *", async () => {
 ```
 
 Features:
+
 - Prevents overlapping executions (isRunning flag)
 - Logs to console for monitoring
 
@@ -214,19 +226,20 @@ All tests follow TDD approach - written before implementation.
 
 #### Test Files Created:
 
-| File | Description | Tests |
-|------|-------------|-------|
-| `tests/integration/models/carga.test.js` | Carga model validation and formatting | 10 |
-| `tests/integration/repositories/cargas-repository.test.js` | Database operations | 11 |
-| `tests/integration/services/tegma-scraper.test.js` | Scraping and parsing | 12 |
-| `tests/integration/services/whatsapp-notifier.test.js` | WhatsApp notifications | 11 |
-| `tests/integration/services/cargo-processor.test.js` | Workflow orchestration | 8 |
-| `tests/integration/api/v1/cargas/get.test.js` | API listing endpoint | 6 |
-| `tests/integration/api/v1/cargas/post.test.js` | API trigger endpoint | 4 |
+| File                                                       | Description                           | Tests |
+| ---------------------------------------------------------- | ------------------------------------- | ----- |
+| `tests/integration/models/carga.test.js`                   | Carga model validation and formatting | 10    |
+| `tests/integration/repositories/cargas-repository.test.js` | Database operations                   | 11    |
+| `tests/integration/services/tegma-scraper.test.js`         | Scraping and parsing                  | 12    |
+| `tests/integration/services/whatsapp-notifier.test.js`     | WhatsApp notifications                | 11    |
+| `tests/integration/services/cargo-processor.test.js`       | Workflow orchestration                | 8     |
+| `tests/integration/api/v1/cargas/get.test.js`              | API listing endpoint                  | 6     |
+| `tests/integration/api/v1/cargas/post.test.js`             | API trigger endpoint                  | 4     |
 
 **Total: 62 tests**
 
 #### Test Setup Features:
+
 - Mocked `fetch()` for external HTTP calls
 - Database cleanup before/after tests
 - Environment variable management
@@ -283,16 +296,19 @@ tests/integration/
 ## Usage
 
 ### Run Tests
+
 ```bash
 npm test
 ```
 
 ### Manual Trigger
+
 ```bash
 curl -X POST http://localhost:3000/api/v1/cargas/check
 ```
 
 ### List Cargas
+
 ```bash
 # All cargas
 curl http://localhost:3000/api/v1/cargas
@@ -305,6 +321,7 @@ curl "http://localhost:3000/api/v1/cargas?notified=false"
 ```
 
 ### Database Operations
+
 ```bash
 # Run migrations
 npm run migration:up
@@ -368,6 +385,7 @@ Potential improvements:
 ## Verification
 
 All tests pass:
+
 ```
 PASS tests/integration/services/tegma-scraper.test.js (12 tests)
 PASS tests/integration/services/whatsapp-notifier.test.js (11 tests)

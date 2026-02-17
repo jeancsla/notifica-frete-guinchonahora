@@ -31,7 +31,7 @@ function setupCronJobs() {
     },
     {
       timezone: "America/Sao_Paulo",
-    }
+    },
   );
 
   console.log("[Cron] Jobs scheduled successfully");

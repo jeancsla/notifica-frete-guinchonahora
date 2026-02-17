@@ -14,6 +14,7 @@ A Next.js application that monitors the Tegma/Mills transportation website for a
 ## Common Commands
 
 **Development:**
+
 ```bash
 npm run dev              # Start dev server (starts DB, runs migrations)
 npm run services:up      # Start PostgreSQL Docker container
@@ -21,6 +22,7 @@ npm run services:down    # Stop and remove Docker container
 ```
 
 **Testing:**
+
 ```bash
 npm test                 # Run all integration tests (starts services automatically)
 npm run test:watch       # Run tests in watch mode
@@ -29,6 +31,7 @@ npm run test:watch       # Run tests in watch mode
 Tests are integration-only (62 tests total). External HTTP calls are mocked; database calls are real.
 
 **Linting/Formatting:**
+
 ```bash
 npm run lint             # Run ESLint
 npm run lint:prettier:check   # Check Prettier formatting
@@ -36,6 +39,7 @@ npm run lint:prettier:fix     # Fix Prettier formatting
 ```
 
 **Database:**
+
 ```bash
 npm run migration:create <name>   # Create new migration file
 npm run migration:up              # Run pending migrations
@@ -43,6 +47,7 @@ npm run migration:down            # Rollback last migration
 ```
 
 **Commits:**
+
 ```bash
 npm run commit           # Use Commitizen for conventional commits
 ```
@@ -62,21 +67,25 @@ The codebase follows a layered architecture:
 ### Key Services
 
 **Tegma Scraper (`services/tegma-scraper.js`):**
+
 - Scrapes `gestaotegmatransporte.ventunolog.com.br`
 - Flow: get cookie → login → fetch cargas page → parse HTML with Cheerio
 - All HTTP calls have 5 retries with exponential backoff (disabled in test mode)
 
 **WhatsApp Notifier (`services/whatsapp-notifier.js`):**
+
 - Integrates with Evolution API (instance: `guincho2`)
 - Sends notifications to Jean and Jefferson when new cargas are found
 
 **Cargo Processor (`services/cargo-processor.js`):**
+
 - Orchestrates the workflow: fetch → deduplicate → save → notify
 - Called by cron job and API endpoint
 
 ### Scheduled Jobs
 
 Cron job defined in `infra/cron-jobs.js`:
+
 - Schedule: `*/15 7-18 * * *` (every 15 minutes, 7AM-6PM)
 - Prevents overlapping executions with `isRunning` flag
 

@@ -5,7 +5,9 @@ import database from "infra/database.js";
 function checkAuth(request, response) {
   const apiKey = request.headers["x-admin-key"];
   if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
-    response.status(401).json({ error: "Unauthorized", message: "Invalid or missing API key" });
+    response
+      .status(401)
+      .json({ error: "Unauthorized", message: "Invalid or missing API key" });
     return false;
   }
   return true;

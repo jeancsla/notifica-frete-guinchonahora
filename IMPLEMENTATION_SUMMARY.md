@@ -11,15 +11,18 @@ This document describes all the changes implemented from the `docs/AI_TODO.md` c
 ## 1. Lock Down Sensitive API Endpoints
 
 **Files Modified:**
+
 - `pages/api/v1/migrations/index.js`
 - `pages/api/v1/cargas/check.js`
 
 **Changes:**
+
 - Added `checkAuth()` function that validates `X-Admin-Key` header against `ADMIN_API_KEY` environment variable
 - Returns `401 Unauthorized` with error message `{ error: "Unauthorized", message: "Invalid or missing API key" }` when key is missing or invalid
 - Auth check happens early, before any database operations
 
 **Environment Variable Required:**
+
 ```bash
 ADMIN_API_KEY=your_secure_random_key_here
 ```
@@ -29,9 +32,11 @@ ADMIN_API_KEY=your_secure_random_key_here
 ## 2. Disable Migrations Endpoint in Production
 
 **File Modified:**
+
 - `pages/api/v1/migrations/index.js`
 
 **Changes:**
+
 - Added production guard that checks `process.env.NODE_ENV === "production"`
 - Returns `403 Forbidden` with message "Migrations are disabled in production" when in production
 - Checked right after authentication
@@ -41,9 +46,11 @@ ADMIN_API_KEY=your_secure_random_key_here
 ## 3. Fix Invalid API Route
 
 **File Modified:**
+
 - `pages/api/v1/index.js`
 
 **Changes:**
+
 - Converted from React component export to proper API handler
 - Now returns JSON: `{ status: "ok", version: "v1", message: "..." }`
 - Returns `200 OK` status
@@ -53,15 +60,18 @@ ADMIN_API_KEY=your_secure_random_key_here
 ## 4. Create Cron Runner
 
 **Files Created/Modified:**
+
 - `infra/cron-runner.js` (new)
 - `package.json`
 
 **Changes:**
+
 - Created `infra/cron-runner.js` that imports and calls `setupCronJobs()`
 - Uses heartbeat interval to keep process alive
 - Added `npm run cron` script to `package.json`
 
 **Usage:**
+
 ```bash
 npm run cron
 ```
@@ -71,9 +81,11 @@ npm run cron
 ## 5. Set Explicit Cron Timezone
 
 **File Modified:**
+
 - `infra/cron-jobs.js`
 
 **Changes:**
+
 - Added `timezone: "America/Sao_Paulo"` option to `cron.schedule()`
 - Ensures jobs run at correct local time regardless of host timezone
 
@@ -82,13 +94,16 @@ npm run cron
 ## 6. Sanitize Documentation and Create .env.example
 
 **Files Created:**
+
 - `.env.example` (new)
 
 **Files Modified:**
+
 - `docs/IMPLEMENTATION_REPORT.md`
 - `docs/notificacao-mills-workflow.md`
 
 **Changes:**
+
 - Created `.env.example` with all required environment variables and placeholder values
 - Removed hardcoded credentials from documentation
 - Replaced real phone numbers with `5512XXXXXXXXX` format
@@ -99,9 +114,11 @@ npm run cron
 ## 7. Add Secret Scanning to CI
 
 **File Modified:**
+
 - `.github/workflows/linting.yaml`
 
 **Changes:**
+
 - Added `secretlint` job that runs `npx secretlint "**/*"`
 - Blocks PRs containing potential secrets
 
@@ -110,9 +127,11 @@ npm run cron
 ## 8. Harden Scraper Login Checks
 
 **File Modified:**
+
 - `services/tegma-scraper.js`
 
 **Changes:**
+
 - Login now validates response status (expects 302 redirect)
 - Checks `Location` header for successful login indicators (`Painel` or `Transportadora`)
 - Returns new cookie if server sets one during login
@@ -124,9 +143,11 @@ npm run cron
 ## 9. Make Notifications Fault-Tolerant
 
 **File Modified:**
+
 - `services/cargo-processor.js`
 
 **Changes:**
+
 - Each WhatsApp notification wrapped in individual try/catch
 - Continues processing next carga even if one notification fails
 - Returns `{ processed, failed, new_cargas, failures }` with full error details
@@ -138,10 +159,12 @@ npm run cron
 ## 10. Batch Deduplication Queries
 
 **Files Modified:**
+
 - `repositories/cargas-repository.js`
 - `services/cargo-processor.js`
 
 **Changes:**
+
 - Added `existsBatch(idViagemList)` method using PostgreSQL `ANY($1)` operator
 - Returns `Set` of existing IDs for O(1) lookup
 - Processor now fetches all existing IDs in single query instead of N+1
@@ -154,10 +177,12 @@ npm run cron
 ## 11. Paginate findNotNotified
 
 **Files Modified:**
+
 - `repositories/cargas-repository.js`
 - `pages/api/v1/cargas/index.js`
 
 **Changes:**
+
 - Added `limit` and `offset` parameters to `findNotNotified()` method
 - Added `countNotNotified()` method for accurate pagination metadata
 - API endpoint now supports pagination for `?notified=false` filter
@@ -168,10 +193,12 @@ npm run cron
 ## 12. Guard DB Client Cleanup
 
 **Files Modified:**
+
 - `infra/database.js`
 - `pages/api/v1/migrations/index.js`
 
 **Changes:**
+
 - Added `if (client)` check before calling `client.end()` in finally blocks
 - Prevents errors when client creation fails
 
@@ -180,10 +207,12 @@ npm run cron
 ## 13. Add Postgres Healthcheck
 
 **Files Modified:**
+
 - `infra/compose.yaml`
 - `infra/scripts/wait-for-postgres.js`
 
 **Changes:**
+
 - Added Docker healthcheck to Postgres service
   - Uses `pg_isready` to check if accepting connections
   - Interval: 5s, timeout: 5s, retries: 5
@@ -195,9 +224,11 @@ npm run cron
 ## 14. Pin Node.js Version
 
 **Files Modified:**
+
 - `package.json`
 
 **Changes:**
+
 - Added `engines` field with `"node": ">=24.11.1"`
 - Ensures dev/prod parity with CI (which uses v24.11.1)
 
@@ -206,11 +237,13 @@ npm run cron
 ## 15. Add Integration Tests
 
 **Files Created:**
+
 - `tests/integration/api/v1/migrations/auth.test.js`
 - `tests/integration/api/v1/cargas/auth.test.js`
 - `tests/integration/repositories/cargas-repository-existsBatch.test.js`
 
 **Files Modified:**
+
 - `tests/integration/api/v1/cargas/get.test.js`
 - `tests/integration/api/v1/cargas/post.test.js`
 - `tests/integration/api/v1/migrations/get.test.js`
@@ -219,6 +252,7 @@ npm run cron
 - `tests/integration/services/tegma-scraper.test.js`
 
 **Changes:**
+
 - Added auth tests for protected endpoints (401 scenarios)
 - Added pagination tests for `notified=false` filter
 - Updated existing tests to include `X-Admin-Key` header
@@ -230,12 +264,15 @@ npm run cron
 ## Additional Changes
 
 ### Updated .env.development
+
 - Added `ADMIN_API_KEY=test-admin-key` for test compatibility
 
 ### Fixed Package.json Test Script
+
 - Added migration step to test script: `npm run migration:up`
 
 ### Fixed API Validation Bug
+
 - Fixed `pages/api/v1/cargas/index.js` to properly validate invalid limit/offset parameters
 - Changed from `|| 10` to explicit null check to detect invalid values
 
@@ -244,21 +281,25 @@ npm run cron
 ## Running the Application
 
 ### Development
+
 ```bash
 npm run dev
 ```
 
 ### Run Cron Jobs
+
 ```bash
 npm run cron
 ```
 
 ### Run Tests
+
 ```bash
 npm test
 ```
 
 ### Database Migrations
+
 ```bash
 npm run migration:up
 npm run migration:down
@@ -304,6 +345,7 @@ ADMIN_API_KEY=your_secure_random_key_here
 ## Test Results
 
 After implementation:
+
 - 13 test suites
 - 79+ tests (passing)
 - All new features covered by integration tests

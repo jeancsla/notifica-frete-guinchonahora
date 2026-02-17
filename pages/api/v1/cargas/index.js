@@ -38,7 +38,10 @@ async function handleGet(request, response) {
     if (notified === "false") {
       // Get only not notified cargas WITH pagination
       const notNotifiedLimit = Math.min(limit, 100); // Cap at 100 for this endpoint
-      cargas = await cargasRepository.findNotNotified({ limit: notNotifiedLimit, offset });
+      cargas = await cargasRepository.findNotNotified({
+        limit: notNotifiedLimit,
+        offset,
+      });
       total = await cargasRepository.countNotNotified();
     } else {
       // Get all cargas with pagination

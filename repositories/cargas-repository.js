@@ -87,7 +87,7 @@ const cargasRepository = {
 
   async countNotNotified() {
     const result = await database.query({
-      text: "SELECT COUNT(*) FROM cargas WHERE notificado_em IS NULL;"
+      text: "SELECT COUNT(*) FROM cargas WHERE notificado_em IS NULL;",
     });
     return parseInt(result.rows[0].count);
   },

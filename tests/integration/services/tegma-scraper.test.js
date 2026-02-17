@@ -22,10 +22,7 @@ describe("Tegma Scraper", () => {
     test("should return cookie from set-cookie header", async () => {
       fetch.mockResolvedValueOnce({
         headers: new Map([
-          [
-            "set-cookie",
-            "ASP.NET_SessionId=abc123; path=/; HttpOnly",
-          ],
+          ["set-cookie", "ASP.NET_SessionId=abc123; path=/; HttpOnly"],
         ]),
         status: 200,
       });
@@ -162,9 +159,9 @@ describe("Tegma Scraper", () => {
     test("should throw error when fetch fails", async () => {
       fetch.mockRejectedValueOnce(new Error("Fetch failed"));
 
-      await expect(
-        tegmaScraper.fetchCargasPage("cookie"),
-      ).rejects.toThrow("Fetch failed");
+      await expect(tegmaScraper.fetchCargasPage("cookie")).rejects.toThrow(
+        "Fetch failed",
+      );
     });
   });
 

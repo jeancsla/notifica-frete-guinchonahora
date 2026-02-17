@@ -35,8 +35,13 @@ const cargoProcessor = {
       const carga = Carga.fromScrapedData(scrapedCarga);
 
       if (!carga.isValid()) {
-        console.warn(`[CargoProcessor] Skipping invalid carga: ${scrapedCarga.viagem}`);
-        failedCargas.push({ id_viagem: scrapedCarga.viagem, error: "Invalid carga data" });
+        console.warn(
+          `[CargoProcessor] Skipping invalid carga: ${scrapedCarga.viagem}`,
+        );
+        failedCargas.push({
+          id_viagem: scrapedCarga.viagem,
+          error: "Invalid carga data",
+        });
         continue;
       }
 
@@ -46,21 +51,32 @@ const cargoProcessor = {
         await cargasRepository.save(carga);
 
         // 3.2 Send notifications (with individual error handling)
-        console.log(`[CargoProcessor] Sending notifications for ${carga.id_viagem}...`);
+        console.log(
+          `[CargoProcessor] Sending notifications for ${carga.id_viagem}...`,
+        );
         const notificationErrors = [];
 
         try {
           await whatsappNotifier.notifyJean(carga);
         } catch (error) {
-          console.error(`[CargoProcessor] Failed to notify Jean for ${carga.id_viagem}:`, error.message);
+          console.error(
+            `[CargoProcessor] Failed to notify Jean for ${carga.id_viagem}:`,
+            error.message,
+          );
           notificationErrors.push({ recipient: "jean", error: error.message });
         }
 
         try {
           await whatsappNotifier.notifyJefferson(carga);
         } catch (error) {
-          console.error(`[CargoProcessor] Failed to notify Jefferson for ${carga.id_viagem}:`, error.message);
-          notificationErrors.push({ recipient: "jefferson", error: error.message });
+          console.error(
+            `[CargoProcessor] Failed to notify Jefferson for ${carga.id_viagem}:`,
+            error.message,
+          );
+          notificationErrors.push({
+            recipient: "jefferson",
+            error: error.message,
+          });
         }
 
         // 3.3 Mark as notified (even if some notifications failed)
@@ -68,22 +84,27 @@ const cargoProcessor = {
 
         processedCargas.push({
           ...carga,
-          notificationErrors: notificationErrors.length > 0 ? notificationErrors : undefined
+          notificationErrors:
+            notificationErrors.length > 0 ? notificationErrors : undefined,
         });
 
         console.log(`[CargoProcessor] Processed carga ${carga.id_viagem}`);
-
       } catch (error) {
-        console.error(`[CargoProcessor] Error processing carga ${scrapedCarga.viagem}:`, error);
+        console.error(
+          `[CargoProcessor] Error processing carga ${scrapedCarga.viagem}:`,
+          error,
+        );
         failedCargas.push({
           id_viagem: scrapedCarga.viagem,
-          error: error.message
+          error: error.message,
         });
         // Continue with next carga instead of throwing
       }
     }
 
-    console.log(`[CargoProcessor] Completed. Processed ${processedCargas.length} cargas, ${failedCargas.length} failed`);
+    console.log(
+      `[CargoProcessor] Completed. Processed ${processedCargas.length} cargas, ${failedCargas.length} failed`,
+    );
 
     return {
       processed: processedCargas.length,
@@ -95,9 +116,9 @@ const cargoProcessor = {
         produto: c.produto,
         equipamento: c.equipamento,
         prevColeta: c.prevColeta,
-        notificationErrors: c.notificationErrors
+        notificationErrors: c.notificationErrors,
       })),
-      failures: failedCargas
+      failures: failedCargas,
     };
   },
 };

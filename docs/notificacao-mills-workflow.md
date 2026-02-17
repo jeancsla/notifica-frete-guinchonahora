@@ -25,11 +25,13 @@ O workflow é executado automaticamente a cada **15 minutos**, entre **7h e 18h*
 ## Fluxo de Execução
 
 ### 1. Obter Cookie de Sessão (Get Cookie)
+
 - **Ação:** Requisição HTTP GET para `https://gestaotegmatransporte.ventunolog.com.br/Login`
 - **Objetivo:** Capturar o cookie de sessão inicial necessário para autenticação
 - **Retry:** Até 5 tentativas com intervalo de 5 segundos
 
 ### 2. Login no Sistema (Login)
+
 - **Ação:** Requisição HTTP POST para o endpoint de login
 - **Credenciais:**
   - Usuário: `YOUR_USERNAME`
@@ -37,11 +39,13 @@ O workflow é executado automaticamente a cada **15 minutos**, entre **7h e 18h*
 - **Objetivo:** Autenticar no sistema usando o cookie obtido
 
 ### 3. Acessar Página de Cargas (Página)
+
 - **Ação:** Requisição HTTP GET para `https://gestaotegmatransporte.ventunolog.com.br/Monitoramento/CargasDisponiveis`
 - **Parâmetros:** `tpoeqp=0` (tipo de equipamento)
 - **Objetivo:** Obter o HTML da página com a lista de cargas disponíveis
 
 ### 4. Extrair Dados das Cargas (Extrair cargas)
+
 - **Tipo:** Node de código (JavaScript com Cheerio)
 - **Ação:** Parse do HTML para extrair dados da tabela `#tblGridViagem`
 - **Campos extraídos:**
@@ -59,10 +63,12 @@ O workflow é executado automaticamente a cada **15 minutos**, entre **7h e 18h*
   | `termino` | Término da disponibilidade |
 
 ### 5. Verificar se Há Cargas (Há cargas?)
+
 - **Condição:** Verifica se `cargasExtraidas.length > 0`
 - **Resultado:** Prossegue apenas se existirem cargas disponíveis
 
 ### 6. Remover Duplicatas (Remove Duplicates)
+
 - **Tipo:** Deduplicação baseada em execuções anteriores
 - **Chave:** ID da viagem (`viagem`)
 - **Objetivo:** Garantir que a mesma carga não seja notificada mais de uma vez
@@ -72,11 +78,13 @@ O workflow é executado automaticamente a cada **15 minutos**, entre **7h e 18h*
 Após remover duplicatas, o workflow executa 4 ações em paralelo:
 
 #### 7.1 Inserir no Banco de Dados (Insert row)
+
 - **Destino:** DataTable `notify-mills` (ID: vyUfeaO9ruHECY5e)
 - **Ação:** Persiste os dados da carga em uma tabela para histórico
 - **Campos salvos:** Todos os campos extraídos da carga
 
 #### 7.2 Enviar WhatsApp para Jean (Enviar Jean)
+
 - **Destinatário:** 5512XXXXXXXXX (Jean)
 - **API:** Evolution API (instância: guincho2)
 - **Mensagem:**
@@ -91,10 +99,12 @@ Após remover duplicatas, o workflow executa 4 ações em paralelo:
   ```
 
 #### 7.3 Enviar WhatsApp para Jefferson (Enviar para Jefferson)
+
 - **Destinatário:** 5512XXXXXXXXX (Jefferson)
 - **Mensagem:** Mesmo formato acima
 
 #### 7.4 Enviar WhatsApp para Sebastião (Enviar Sebastião)
+
 - **Destinatário:** 5512XXXXXXXXX (Sebastião)
 - **Status:** Desativado (disabled)
 - **Mensagem:** Mesmo formato acima
@@ -113,9 +123,9 @@ Após remover duplicatas, o workflow executa 4 ações em paralelo:
 
 ## URLs e Endpoints
 
-| Descrição | URL |
-|-----------|-----|
-| Login | `https://gestaotegmatransporte.ventunolog.com.br/Login` |
+| Descrição          | URL                                                                               |
+| ------------------ | --------------------------------------------------------------------------------- |
+| Login              | `https://gestaotegmatransporte.ventunolog.com.br/Login`                           |
 | Cargas Disponíveis | `https://gestaotegmatransporte.ventunolog.com.br/Monitoramento/CargasDisponiveis` |
 
 ---
