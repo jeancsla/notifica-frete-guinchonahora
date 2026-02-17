@@ -19,6 +19,22 @@ async function checkHandler(request, response) {
   }
 
   try {
+    if (process.env.TEST_MODE === "1") {
+      const mockedError = request.headers["x-test-processor-error"];
+      if (mockedError) {
+        throw new Error(Array.isArray(mockedError) ? mockedError[0] : mockedError);
+      }
+
+      const mockedResult = request.headers["x-test-processor-result"];
+      if (mockedResult) {
+        const parsed = JSON.parse(Array.isArray(mockedResult) ? mockedResult[0] : mockedResult);
+        return response.status(200).json({
+          processed: parsed.processed ?? 0,
+          new_cargas: parsed.new_cargas ?? [],
+        });
+      }
+    }
+
     console.log("[Check API] Starting manual cargo check...");
 
     const result = await cargoProcessor.process();

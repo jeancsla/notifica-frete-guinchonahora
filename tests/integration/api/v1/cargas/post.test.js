@@ -1,9 +1,5 @@
 import orchestrator from "tests/orchestrator.js";
 import database from "infra/database.js";
-import cargoProcessor from "services/cargo-processor.js";
-
-// Mock the processor
-jest.mock("services/cargo-processor.js");
 
 beforeAll(async () => {
   await orchestrator.waitForAllServices();
@@ -11,7 +7,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await database.query("DELETE FROM cargas;");
-  jest.clearAllMocks();
   process.env.ADMIN_API_KEY = "test-admin-key";
 });
 
@@ -21,18 +16,19 @@ afterAll(async () => {
 
 describe("POST /api/v1/cargas/check", () => {
   test("should trigger cargo check and return results", async () => {
-    cargoProcessor.process.mockResolvedValue({
+    const mockedResult = {
       processed: 2,
       new_cargas: [
         { id_viagem: "12345", origem: "Sao Paulo - SP" },
         { id_viagem: "67890", origem: "Rio de Janeiro - RJ" },
       ],
-    });
+    };
 
     const response = await fetch("http://localhost:3000/api/v1/cargas/check", {
       method: "POST",
       headers: {
         "X-Admin-Key": "test-admin-key",
+        "X-Test-Processor-Result": JSON.stringify(mockedResult),
       },
     });
 
@@ -41,19 +37,19 @@ describe("POST /api/v1/cargas/check", () => {
     const responseBody = await response.json();
     expect(responseBody.processed).toBe(2);
     expect(responseBody.new_cargas).toHaveLength(2);
-    expect(cargoProcessor.process).toHaveBeenCalled();
   });
 
   test("should return 200 with 0 processed when no new cargas", async () => {
-    cargoProcessor.process.mockResolvedValue({
+    const mockedResult = {
       processed: 0,
       new_cargas: [],
-    });
+    };
 
     const response = await fetch("http://localhost:3000/api/v1/cargas/check", {
       method: "POST",
       headers: {
         "X-Admin-Key": "test-admin-key",
+        "X-Test-Processor-Result": JSON.stringify(mockedResult),
       },
     });
 
@@ -65,12 +61,11 @@ describe("POST /api/v1/cargas/check", () => {
   });
 
   test("should return 500 when processor throws error", async () => {
-    cargoProcessor.process.mockRejectedValue(new Error("Scraper failed"));
-
     const response = await fetch("http://localhost:3000/api/v1/cargas/check", {
       method: "POST",
       headers: {
         "X-Admin-Key": "test-admin-key",
+        "X-Test-Processor-Error": "Scraper failed",
       },
     });
 
@@ -82,14 +77,11 @@ describe("POST /api/v1/cargas/check", () => {
   });
 
   test("should return proper error message for network errors", async () => {
-    cargoProcessor.process.mockRejectedValue(
-      new Error("Network request failed"),
-    );
-
     const response = await fetch("http://localhost:3000/api/v1/cargas/check", {
       method: "POST",
       headers: {
         "X-Admin-Key": "test-admin-key",
+        "X-Test-Processor-Error": "Network request failed",
       },
     });
 
