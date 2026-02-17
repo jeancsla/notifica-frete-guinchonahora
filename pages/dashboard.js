@@ -14,8 +14,15 @@ export default function Dashboard() {
   });
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
-  const { isRefreshing, lastUpdatedAt, refreshError, toast, wrapRefresh } =
-    useRefreshFeedback();
+  const [isMigrating, setIsMigrating] = useState(false);
+  const {
+    isRefreshing,
+    lastUpdatedAt,
+    refreshError,
+    toast,
+    wrapRefresh,
+    showToast,
+  } = useRefreshFeedback();
 
   async function load() {
     try {
@@ -44,6 +51,22 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pagination.offset, pagination.limit]);
 
+  async function handleMigrations() {
+    setIsMigrating(true);
+    try {
+      const response = await fetch("/api/v1/migrations", { method: "POST" });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.message || "Falha ao executar migrations");
+      }
+      showToast("Migrations executadas", "success");
+    } catch (err) {
+      showToast(err.message || "Falha ao executar migrations", "error");
+    } finally {
+      setIsMigrating(false);
+    }
+  }
+
   const selected = useMemo(
     () => data.find((item) => item.id_viagem === selectedId),
     [data, selectedId],
@@ -67,6 +90,14 @@ export default function Dashboard() {
             onClick={() => setPagination((prev) => ({ ...prev, offset: 0 }))}
           >
             Reset fila
+          </button>
+          <button
+            className="button secondary"
+            onClick={handleMigrations}
+            disabled={isMigrating}
+            title="Executa migrations do banco"
+          >
+            {isMigrating ? "Migrando..." : "Rodar migrations"}
           </button>
           <div
             className={`refresh-status${refreshError ? " error" : ""}`}
