@@ -27,7 +27,10 @@ class Carga {
     return !!(
       this.id_viagem &&
       typeof this.id_viagem === "string" &&
-      this.id_viagem.length > 0
+      this.id_viagem.length > 0 &&
+      this.id_viagem.length <= 50 &&
+      (!this.origem || this.origem.length <= 255) &&
+      (!this.destino || this.destino.length <= 255)
     );
   }
 

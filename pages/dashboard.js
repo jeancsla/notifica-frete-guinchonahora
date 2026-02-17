@@ -3,6 +3,7 @@ import Layout from "../components/Layout";
 import Toast from "../components/Toast";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchCargas } from "../lib/api";
+import { getSession } from "lib/session";
 
 export default function Dashboard() {
   const [data, setData] = useState([]);
@@ -202,3 +203,21 @@ export default function Dashboard() {
     </Layout>
   );
 }
+
+export const getServerSideProps = async ({ req, res }) => {
+  const session = await getSession(req, res);
+  const user = session.user || null;
+
+  if (!user) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: { user },
+  };
+};

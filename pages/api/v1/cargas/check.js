@@ -1,13 +1,36 @@
+import crypto from "crypto";
 import cargoProcessor from "services/cargo-processor.js";
+
+const isProd = process.env.NODE_ENV === "production";
 
 function checkAuth(request, response) {
   const apiKey = request.headers["x-admin-key"];
-  if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
+  const expectedKey = process.env.ADMIN_API_KEY;
+
+  if (!apiKey || !expectedKey) {
     response
       .status(401)
       .json({ error: "Unauthorized", message: "Invalid or missing API key" });
     return false;
   }
+
+  try {
+    const bufferA = Buffer.from(apiKey);
+    const bufferB = Buffer.from(expectedKey);
+
+    if (
+      bufferA.length !== bufferB.length ||
+      !crypto.timingSafeEqual(bufferA, bufferB)
+    ) {
+      throw new Error("Invalid key");
+    }
+  } catch (e) {
+    response
+      .status(401)
+      .json({ error: "Unauthorized", message: "Invalid or missing API key" });
+    return false;
+  }
+
   return true;
 }
 
@@ -53,7 +76,7 @@ async function checkHandler(request, response) {
     console.error("[Check API] Error processing cargas:", error);
     return response.status(500).json({
       error: "Internal server error",
-      message: error.message,
+      message: isProd ? "Unexpected error" : error.message,
     });
   }
 }

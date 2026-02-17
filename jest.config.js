@@ -6,12 +6,20 @@ dotenv.config({
 const nextJest = require("next/jest");
 
 const createJestConfig = nextJest({
-  dir: ".",
-});
-const jestConfig = createJestConfig({
-  moduleDirectories: ["node_modules", "<rootDir>"],
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
-  testTimeout: 60000,
+  dir: "./",
 });
 
-module.exports = jestConfig;
+const customJestConfig = {
+  moduleDirectories: ["node_modules", "<rootDir>/"],
+  moduleNameMapper: {
+    "^uncrypto$": "<rootDir>/node_modules/uncrypto/dist/crypto.node.cjs",
+  },
+  testEnvironment: "jest-environment-node",
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
+  transformIgnorePatterns: [
+    "/node_modules/(?!(iron-session|uncrypto|cheerio|parse5|devlop|node-fetch|data-uri-to-buffer|fetch-blob|formdata-polyfill)/)",
+  ],
+  testTimeout: 60000,
+};
+
+module.exports = createJestConfig(customJestConfig);

@@ -16,8 +16,16 @@ afterAll(async () => {
 });
 
 describe("GET /api/v1/cargas", () => {
+  let authCookie;
+
+  beforeAll(async () => {
+    authCookie = await orchestrator.getAuthCookie();
+  });
+
   test("should return empty array when no cargas exist", async () => {
-    const response = await fetch("http://localhost:3000/api/v1/cargas");
+    const response = await fetch("http://localhost:3000/api/v1/cargas", {
+      headers: { cookie: authCookie },
+    });
 
     expect(response.status).toBe(200);
 
@@ -62,7 +70,9 @@ describe("GET /api/v1/cargas", () => {
     await cargasRepository.save(carga1);
     await cargasRepository.save(carga2);
 
-    const response = await fetch("http://localhost:3000/api/v1/cargas");
+    const response = await fetch("http://localhost:3000/api/v1/cargas", {
+      headers: { cookie: authCookie },
+    });
 
     expect(response.status).toBe(200);
 
@@ -84,7 +94,12 @@ describe("GET /api/v1/cargas", () => {
     await cargasRepository.save(carga2);
     await cargasRepository.save(carga3);
 
-    const response = await fetch("http://localhost:3000/api/v1/cargas?limit=2");
+    const response = await fetch(
+      "http://localhost:3000/api/v1/cargas?limit=2",
+      {
+        headers: { cookie: authCookie },
+      },
+    );
 
     expect(response.status).toBe(200);
 
@@ -102,6 +117,7 @@ describe("GET /api/v1/cargas", () => {
 
     const response = await fetch(
       "http://localhost:3000/api/v1/cargas?limit=1&offset=1",
+      { headers: { cookie: authCookie } },
     );
 
     expect(response.status).toBe(200);
@@ -128,6 +144,7 @@ describe("GET /api/v1/cargas", () => {
 
     const response = await fetch(
       "http://localhost:3000/api/v1/cargas?notified=false",
+      { headers: { cookie: authCookie } },
     );
 
     expect(response.status).toBe(200);
@@ -148,6 +165,7 @@ describe("GET /api/v1/cargas", () => {
 
     const response = await fetch(
       "http://localhost:3000/api/v1/cargas?notified=false&limit=2",
+      { headers: { cookie: authCookie } },
     );
 
     expect(response.status).toBe(200);
@@ -167,6 +185,7 @@ describe("GET /api/v1/cargas", () => {
 
     const response = await fetch(
       "http://localhost:3000/api/v1/cargas?notified=false&limit=1&offset=1",
+      { headers: { cookie: authCookie } },
     );
 
     expect(response.status).toBe(200);
@@ -188,6 +207,7 @@ describe("GET /api/v1/cargas", () => {
 
     const response = await fetch(
       "http://localhost:3000/api/v1/cargas?notified=false&limit=5&offset=0",
+      { headers: { cookie: authCookie } },
     );
 
     expect(response.status).toBe(200);
@@ -204,6 +224,7 @@ describe("GET /api/v1/cargas", () => {
   test("should return 400 for invalid limit parameter", async () => {
     const response = await fetch(
       "http://localhost:3000/api/v1/cargas?limit=invalid",
+      { headers: { cookie: authCookie } },
     );
 
     expect(response.status).toBe(400);
@@ -215,6 +236,7 @@ describe("GET /api/v1/cargas", () => {
   test("should return 400 for negative offset", async () => {
     const response = await fetch(
       "http://localhost:3000/api/v1/cargas?offset=-1",
+      { headers: { cookie: authCookie } },
     );
 
     expect(response.status).toBe(400);
