@@ -1,15 +1,34 @@
+import crypto from "crypto";
 import migrationRunner from "node-pg-migrate";
 import { join } from "node:path";
 import database from "infra/database.js";
 
 function checkAuth(request, response) {
   const apiKey = request.headers["x-admin-key"];
-  if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
+  const expectedKey = process.env.ADMIN_API_KEY;
+  if (!apiKey || !expectedKey) {
     response
       .status(401)
       .json({ error: "Unauthorized", message: "Invalid or missing API key" });
     return false;
   }
+
+  try {
+    const bufferA = Buffer.from(apiKey);
+    const bufferB = Buffer.from(expectedKey);
+    if (
+      bufferA.length !== bufferB.length ||
+      !crypto.timingSafeEqual(bufferA, bufferB)
+    ) {
+      throw new Error("Invalid key");
+    }
+  } catch (error) {
+    response
+      .status(401)
+      .json({ error: "Unauthorized", message: "Invalid or missing API key" });
+    return false;
+  }
+
   return true;
 }
 

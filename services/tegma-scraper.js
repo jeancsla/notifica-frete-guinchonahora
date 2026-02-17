@@ -9,6 +9,14 @@ function getEnvVar(name) {
   return process.env[name];
 }
 
+function getRequiredEnvVar(name) {
+  const value = process.env[name];
+  if (!value && !isTest()) {
+    throw new Error(`${name} is required`);
+  }
+  return value;
+}
+
 async function withRetry(fn, operationName) {
   // Skip retry in test mode
   if (isTest()) {
@@ -30,7 +38,7 @@ async function withRetry(fn, operationName) {
 
 const tegmaScraper = {
   async getCookie() {
-    const baseUrl = getEnvVar("TEGMA_BASE_URL");
+    const baseUrl = getRequiredEnvVar("TEGMA_BASE_URL");
 
     return withRetry(async () => {
       const response = await fetch(`${baseUrl}/Login`, {
@@ -50,9 +58,9 @@ const tegmaScraper = {
   },
 
   async login(cookie) {
-    const baseUrl = getEnvVar("TEGMA_BASE_URL");
-    const username = getEnvVar("TEGMA_USERNAME");
-    const password = getEnvVar("TEGMA_PASSWORD");
+    const baseUrl = getRequiredEnvVar("TEGMA_BASE_URL");
+    const username = getRequiredEnvVar("TEGMA_USERNAME");
+    const password = getRequiredEnvVar("TEGMA_PASSWORD");
 
     return withRetry(async () => {
       const formData = new URLSearchParams();
@@ -103,9 +111,9 @@ const tegmaScraper = {
   },
 
   async fetchCargasPage(cookie) {
-    const baseUrl = getEnvVar("TEGMA_BASE_URL");
-    const username = getEnvVar("TEGMA_USERNAME");
-    const password = getEnvVar("TEGMA_PASSWORD");
+    const baseUrl = getRequiredEnvVar("TEGMA_BASE_URL");
+    const username = getRequiredEnvVar("TEGMA_USERNAME");
+    const password = getRequiredEnvVar("TEGMA_PASSWORD");
 
     return withRetry(async () => {
       const response = await fetch(
