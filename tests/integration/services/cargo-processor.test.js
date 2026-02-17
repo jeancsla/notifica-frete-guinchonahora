@@ -4,6 +4,7 @@ import whatsappNotifier from "services/whatsapp-notifier.js";
 import cargasRepository from "repositories/cargas-repository.js";
 import database from "infra/database.js";
 import Carga from "models/carga.js";
+import orchestrator from "tests/orchestrator.js";
 
 // Mock dependencies
 jest.mock("services/tegma-scraper.js");
@@ -12,6 +13,7 @@ jest.mock("repositories/cargas-repository.js");
 
 beforeAll(async () => {
   process.env.NODE_ENV = "test";
+  await orchestrator.waitForAllServices();
   await database.query("DELETE FROM cargas;");
 });
 
