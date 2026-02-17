@@ -7,9 +7,16 @@ beforeAll(async () => {
   await database.query("CREATE SCHEMA public;");
 });
 
+beforeEach(() => {
+  process.env.ADMIN_API_KEY = "test-admin-key";
+});
+
 test("POST /api/v1/migrations deve retornar status 201", async () => {
   const response = await fetch("http://localhost:3000/api/v1/migrations", {
     method: "POST",
+    headers: {
+      "X-Admin-Key": "test-admin-key",
+    },
   });
   expect(response.status).toBe(201);
 
@@ -23,6 +30,9 @@ test("POST /api/v1/migrations deve retornar status 201", async () => {
 test("POST /api/v1/migrations deve retornar status 200", async () => {
   const response2 = await fetch("http://localhost:3000/api/v1/migrations", {
     method: "POST",
+    headers: {
+      "X-Admin-Key": "test-admin-key",
+    },
   });
   expect(response2.status).toBe(200);
 

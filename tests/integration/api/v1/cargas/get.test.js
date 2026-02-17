@@ -137,6 +137,70 @@ describe("GET /api/v1/cargas", () => {
     expect(responseBody.cargas[0].id_viagem).toBe("22222");
   });
 
+  test("should respect limit parameter with notified=false", async () => {
+    const carga1 = new Carga({ id_viagem: "11111", origem: "A" });
+    const carga2 = new Carga({ id_viagem: "22222", origem: "B" });
+    const carga3 = new Carga({ id_viagem: "33333", origem: "C" });
+
+    await cargasRepository.save(carga1);
+    await cargasRepository.save(carga2);
+    await cargasRepository.save(carga3);
+
+    const response = await fetch(
+      "http://localhost:3000/api/v1/cargas?notified=false&limit=2",
+    );
+
+    expect(response.status).toBe(200);
+
+    const responseBody = await response.json();
+    expect(responseBody.cargas).toHaveLength(2);
+    expect(responseBody.pagination.limit).toBe(2);
+    expect(responseBody.pagination.total).toBe(3);
+  });
+
+  test("should respect offset parameter with notified=false", async () => {
+    const carga1 = new Carga({ id_viagem: "11111", origem: "A" });
+    const carga2 = new Carga({ id_viagem: "22222", origem: "B" });
+
+    await cargasRepository.save(carga1);
+    await cargasRepository.save(carga2);
+
+    const response = await fetch(
+      "http://localhost:3000/api/v1/cargas?notified=false&limit=1&offset=1",
+    );
+
+    expect(response.status).toBe(200);
+
+    const responseBody = await response.json();
+    expect(responseBody.cargas).toHaveLength(1);
+    expect(responseBody.cargas[0].id_viagem).toBe("11111");
+    expect(responseBody.pagination.offset).toBe(1);
+    expect(responseBody.pagination.total).toBe(2);
+  });
+
+  test("should return correct pagination metadata with notified=false", async () => {
+    const carga1 = new Carga({ id_viagem: "11111", origem: "A" });
+    const carga2 = new Carga({ id_viagem: "22222", origem: "B" });
+
+    await cargasRepository.save(carga1);
+    await cargasRepository.save(carga2);
+    await cargasRepository.markAsNotified("11111");
+
+    const response = await fetch(
+      "http://localhost:3000/api/v1/cargas?notified=false&limit=5&offset=0",
+    );
+
+    expect(response.status).toBe(200);
+
+    const responseBody = await response.json();
+    expect(responseBody.cargas).toHaveLength(1);
+    expect(responseBody.pagination).toEqual({
+      total: 1,
+      limit: 5,
+      offset: 0,
+    });
+  });
+
   test("should return 400 for invalid limit parameter", async () => {
     const response = await fetch(
       "http://localhost:3000/api/v1/cargas?limit=invalid",

@@ -1,3 +1,7 @@
-export default function Home() {
-  return <h1>Bom dia mozão, tudo bem com você?</h1>;
+export default function handler(request, response) {
+  return response.status(200).json({
+    status: "ok",
+    version: "v1",
+    message: "Bom dia mozão, tudo bem com você?"
+  });
 }

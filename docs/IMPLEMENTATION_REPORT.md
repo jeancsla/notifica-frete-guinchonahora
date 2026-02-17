@@ -16,7 +16,7 @@ The original n8n workflow (ID: htdvLvUG4y671QJm) performed the following:
 
 1. **Schedule:** Runs every 15 minutes between 7:00-18:00 (cron: `*/15 7-18 * * *`)
 2. **Get Cookie:** Fetches initial session cookie from login page
-3. **Login:** Authenticates with fixed credentials (user: 2621, password: 12345)
+3. **Login:** Authenticates with fixed credentials (user: YOUR_USERNAME, password: YOUR_PASSWORD)
 4. **Fetch Cargas:** Retrieves the "Cargas Disponíveis" page
 5. **Parse HTML:** Extracts cargo data from the table using Cheerio
 6. **Deduplication:** Removes cargas already processed
@@ -114,11 +114,7 @@ Methods implemented:
 - Disabled in test mode (`NODE_ENV=test`)
 
 **Environment Variables:**
-```
-TEGMA_BASE_URL=https://gestaotegmatransporte.ventunolog.com.br
-TEGMA_USERNAME=2621
-TEGMA_PASSWORD=12345
-```
+See `.env.example` file for required environment variables.
 
 #### 5.2 WhatsApp Notifier
 
@@ -144,14 +140,7 @@ https://gestaotegmatransporte.ventunolog.com.br/Login
 ```
 
 **Environment Variables:**
-```
-EVOLUTION_API_BASE_URL=
-EVOLUTION_API_INSTANCE=guincho2
-EVOLUTION_API_KEY=
-NOTIFY_JEAN_PHONE=5512982301778
-NOTIFY_JEFFERSON_PHONE=5512996347190
-NOTIFY_SEBASTIAO_PHONE=5512996558925
-```
+See `.env.example` file for required environment variables.
 
 #### 5.3 Cargo Processor
 
@@ -245,31 +234,13 @@ All tests follow TDD approach - written before implementation.
 
 ### 9. Environment Variables Summary
 
-Create `.env.development`:
+Create `.env.development` based on `.env.example`:
 
 ```bash
-# Existing database variables
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5432
-POSTGRES_USER=local_user
-POSTGRES_DB=local_db
-POSTGRES_PASSWORD=localpassword
-
-# Tegma/Mills
-TEGMA_BASE_URL=https://gestaotegmatransporte.ventunolog.com.br
-TEGMA_USERNAME=2621
-TEGMA_PASSWORD=12345
-
-# Evolution API (WhatsApp)
-EVOLUTION_API_BASE_URL=
-EVOLUTION_API_INSTANCE=guincho2
-EVOLUTION_API_KEY=
-
-# Notification recipients
-NOTIFY_JEAN_PHONE=5512982301778
-NOTIFY_JEFFERSON_PHONE=5512996347190
-NOTIFY_SEBASTIAO_PHONE=5512996558925
+cp .env.example .env.development
 ```
+
+Then edit `.env.development` with your actual credentials.
 
 ---
 

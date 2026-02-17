@@ -12,6 +12,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await database.query("DELETE FROM cargas;");
   jest.clearAllMocks();
+  process.env.ADMIN_API_KEY = "test-admin-key";
 });
 
 afterAll(async () => {
@@ -30,6 +31,9 @@ describe("POST /api/v1/cargas/check", () => {
 
     const response = await fetch("http://localhost:3000/api/v1/cargas/check", {
       method: "POST",
+      headers: {
+        "X-Admin-Key": "test-admin-key",
+      },
     });
 
     expect(response.status).toBe(200);
@@ -48,6 +52,9 @@ describe("POST /api/v1/cargas/check", () => {
 
     const response = await fetch("http://localhost:3000/api/v1/cargas/check", {
       method: "POST",
+      headers: {
+        "X-Admin-Key": "test-admin-key",
+      },
     });
 
     expect(response.status).toBe(200);
@@ -62,6 +69,9 @@ describe("POST /api/v1/cargas/check", () => {
 
     const response = await fetch("http://localhost:3000/api/v1/cargas/check", {
       method: "POST",
+      headers: {
+        "X-Admin-Key": "test-admin-key",
+      },
     });
 
     expect(response.status).toBe(500);
@@ -78,6 +88,9 @@ describe("POST /api/v1/cargas/check", () => {
 
     const response = await fetch("http://localhost:3000/api/v1/cargas/check", {
       method: "POST",
+      headers: {
+        "X-Admin-Key": "test-admin-key",
+      },
     });
 
     expect(response.status).toBe(500);

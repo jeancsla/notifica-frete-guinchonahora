@@ -32,8 +32,8 @@ O workflow é executado automaticamente a cada **15 minutos**, entre **7h e 18h*
 ### 2. Login no Sistema (Login)
 - **Ação:** Requisição HTTP POST para o endpoint de login
 - **Credenciais:**
-  - Usuário: `2621`
-  - Senha: `12345`
+  - Usuário: `YOUR_USERNAME`
+  - Senha: `YOUR_PASSWORD`
 - **Objetivo:** Autenticar no sistema usando o cookie obtido
 
 ### 3. Acessar Página de Cargas (Página)
@@ -77,7 +77,7 @@ Após remover duplicatas, o workflow executa 4 ações em paralelo:
 - **Campos salvos:** Todos os campos extraídos da carga
 
 #### 7.2 Enviar WhatsApp para Jean (Enviar Jean)
-- **Destinatário:** 5512982301778 (Jean)
+- **Destinatário:** 5512XXXXXXXXX (Jean)
 - **API:** Evolution API (instância: guincho2)
 - **Mensagem:**
   ```
@@ -91,11 +91,11 @@ Após remover duplicatas, o workflow executa 4 ações em paralelo:
   ```
 
 #### 7.3 Enviar WhatsApp para Jefferson (Enviar para Jefferson)
-- **Destinatário:** 5512996347190 (Jefferson)
+- **Destinatário:** 5512XXXXXXXXX (Jefferson)
 - **Mensagem:** Mesmo formato acima
 
 #### 7.4 Enviar WhatsApp para Sebastião (Enviar Sebastião)
-- **Destinatário:** 5512996558925 (Sebastião)
+- **Destinatário:** 5512XXXXXXXXX (Sebastião)
 - **Status:** Desativado (disabled)
 - **Mensagem:** Mesmo formato acima
 

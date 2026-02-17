@@ -59,16 +59,18 @@ describe("Tegma Scraper", () => {
   });
 
   describe("login", () => {
-    test("should authenticate with credentials and return response", async () => {
+    test("should authenticate with credentials and return updated cookie on redirect", async () => {
       fetch.mockResolvedValueOnce({
-        status: 200,
-        headers: new Map(),
+        status: 302,
+        headers: new Map([
+          ["location", "https://test.example.com/Painel/Transportadora"],
+        ]),
       });
 
       const cookie = "ASP.NET_SessionId=abc123";
       const result = await tegmaScraper.login(cookie);
 
-      expect(result.status).toBe(200);
+      expect(result).toBe(cookie); // Returns original cookie when no new cookie set
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining("/Login"),
         expect.objectContaining({
@@ -85,11 +87,50 @@ describe("Tegma Scraper", () => {
       expect(body.get("Senha")).toBe("testpass");
     });
 
-    test("should throw error when login fails", async () => {
-      fetch.mockRejectedValueOnce(new Error("Login failed"));
+    test("should return new cookie when server sets one during login", async () => {
+      fetch.mockResolvedValueOnce({
+        status: 302,
+        headers: new Map([
+          ["location", "https://test.example.com/Painel/Transportadora"],
+          ["set-cookie", "ASP.NET_SessionId=newcookie456; path=/; HttpOnly"],
+        ]),
+      });
+
+      const cookie = "ASP.NET_SessionId=abc123";
+      const result = await tegmaScraper.login(cookie);
+
+      expect(result).toBe("ASP.NET_SessionId=newcookie456");
+    });
+
+    test("should throw error when login returns non-redirect status", async () => {
+      fetch.mockResolvedValueOnce({
+        status: 200,
+        headers: new Map(),
+      });
 
       await expect(tegmaScraper.login("cookie")).rejects.toThrow(
-        "Login failed",
+        "Login failed: unexpected response status 200",
+      );
+    });
+
+    test("should throw error when login redirect is not to expected location", async () => {
+      fetch.mockResolvedValueOnce({
+        status: 302,
+        headers: new Map([
+          ["location", "https://test.example.com/Login?error=invalid"],
+        ]),
+      });
+
+      await expect(tegmaScraper.login("cookie")).rejects.toThrow(
+        "Login failed: unexpected response status 302",
+      );
+    });
+
+    test("should throw error when fetch fails", async () => {
+      fetch.mockRejectedValueOnce(new Error("Network error"));
+
+      await expect(tegmaScraper.login("cookie")).rejects.toThrow(
+        "Network error",
       );
     });
   });
@@ -275,10 +316,12 @@ describe("Tegma Scraper", () => {
         status: 200,
       });
 
-      // Mock login
+      // Mock login - returns 302 redirect on success
       fetch.mockResolvedValueOnce({
-        status: 200,
-        headers: new Map(),
+        status: 302,
+        headers: new Map([
+          ["location", "https://test.example.com/Painel/Transportadora"],
+        ]),
       });
 
       // Mock fetchCargasPage

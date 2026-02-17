@@ -43,7 +43,7 @@ describe("Cargo Processor", () => {
       ];
 
       tegmaScraper.fetchCargas.mockResolvedValue(mockCargas);
-      cargasRepository.exists.mockResolvedValue(false);
+      cargasRepository.existsBatch.mockResolvedValue(new Set());
       cargasRepository.save.mockResolvedValue({ id: 1 });
       cargasRepository.markAsNotified.mockResolvedValue();
       whatsappNotifier.notifyJean.mockResolvedValue();
@@ -53,7 +53,7 @@ describe("Cargo Processor", () => {
 
       expect(result.processed).toBe(1);
       expect(tegmaScraper.fetchCargas).toHaveBeenCalled();
-      expect(cargasRepository.exists).toHaveBeenCalledWith("12345");
+      expect(cargasRepository.existsBatch).toHaveBeenCalledWith(["12345"]);
       expect(cargasRepository.save).toHaveBeenCalled();
       expect(whatsappNotifier.notifyJean).toHaveBeenCalled();
       expect(whatsappNotifier.notifyJefferson).toHaveBeenCalled();
@@ -75,9 +75,7 @@ describe("Cargo Processor", () => {
       ];
 
       tegmaScraper.fetchCargas.mockResolvedValue(mockCargas);
-      cargasRepository.exists
-        .mockResolvedValueOnce(true) // First one exists
-        .mockResolvedValueOnce(false); // Second one is new
+      cargasRepository.existsBatch.mockResolvedValue(new Set(["12345"]));
       cargasRepository.save.mockResolvedValue({ id: 2 });
       cargasRepository.markAsNotified.mockResolvedValue();
       whatsappNotifier.notifyJean.mockResolvedValue();
@@ -113,7 +111,7 @@ describe("Cargo Processor", () => {
       ];
 
       tegmaScraper.fetchCargas.mockResolvedValue(mockCargas);
-      cargasRepository.exists.mockResolvedValue(true);
+      cargasRepository.existsBatch.mockResolvedValue(new Set(["12345", "67890"]));
 
       const result = await cargoProcessor.process();
 
@@ -137,13 +135,20 @@ describe("Cargo Processor", () => {
       ];
 
       tegmaScraper.fetchCargas.mockResolvedValue(mockCargas);
-      cargasRepository.exists.mockResolvedValue(false);
+      cargasRepository.existsBatch.mockResolvedValue(new Set());
       cargasRepository.save.mockResolvedValue({ id: 1 });
       cargasRepository.markAsNotified.mockResolvedValue();
       whatsappNotifier.notifyJean.mockRejectedValue(new Error("API error"));
       whatsappNotifier.notifyJefferson.mockResolvedValue();
 
-      await expect(cargoProcessor.process()).rejects.toThrow("API error");
+      // With fault-tolerant notifications, this should NOT throw
+      const result = await cargoProcessor.process();
+
+      // Should still process the carga (just with notification errors recorded)
+      expect(result.processed).toBe(1);
+      expect(result.new_cargas[0].notificationErrors).toBeDefined();
+      expect(result.new_cargas[0].notificationErrors).toHaveLength(1);
+      expect(result.new_cargas[0].notificationErrors[0].recipient).toBe("jean");
     });
 
     test("should convert scraped data to Carga model before saving", async () => {
@@ -163,7 +168,7 @@ describe("Cargo Processor", () => {
       ];
 
       tegmaScraper.fetchCargas.mockResolvedValue(mockCargas);
-      cargasRepository.exists.mockResolvedValue(false);
+      cargasRepository.existsBatch.mockResolvedValue(new Set());
       cargasRepository.save.mockResolvedValue({ id: 1 });
       cargasRepository.markAsNotified.mockResolvedValue();
       whatsappNotifier.notifyJean.mockResolvedValue();
@@ -185,7 +190,7 @@ describe("Cargo Processor", () => {
       ];
 
       tegmaScraper.fetchCargas.mockResolvedValue(mockCargas);
-      cargasRepository.exists.mockResolvedValue(false);
+      cargasRepository.existsBatch.mockResolvedValue(new Set());
       cargasRepository.save.mockResolvedValue({ id: 1 });
       cargasRepository.markAsNotified.mockResolvedValue();
       whatsappNotifier.notifyJean.mockResolvedValue();

@@ -17,62 +17,77 @@ const cargoProcessor = {
 
     console.log(`[CargoProcessor] Found ${scrapedCargas.length} total cargas`);
 
-    // 2. Filter new cargas (not in database)
-    const newCargas = [];
-    for (const scrapedCarga of scrapedCargas) {
-      const exists = await cargasRepository.exists(scrapedCarga.viagem);
-      if (!exists) {
-        newCargas.push(scrapedCarga);
-      }
-    }
+    // 2. Filter new cargas (not in database) - using batch check to avoid N+1 queries
+    const idViagemList = scrapedCargas.map((c) => c.viagem);
+    const existingIds = await cargasRepository.existsBatch(idViagemList);
+
+    const newCargas = scrapedCargas.filter((scrapedCarga) => {
+      return !existingIds.has(scrapedCarga.viagem);
+    });
 
     console.log(`[CargoProcessor] ${newCargas.length} new cargas to process`);
 
     // 3. Process each new carga
     const processedCargas = [];
+    const failedCargas = [];
+
     for (const scrapedCarga of newCargas) {
+      const carga = Carga.fromScrapedData(scrapedCarga);
+
+      if (!carga.isValid()) {
+        console.warn(`[CargoProcessor] Skipping invalid carga: ${scrapedCarga.viagem}`);
+        failedCargas.push({ id_viagem: scrapedCarga.viagem, error: "Invalid carga data" });
+        continue;
+      }
+
       try {
-        // Convert to Carga model
-        const carga = Carga.fromScrapedData(scrapedCarga);
-
-        if (!carga.isValid()) {
-          console.warn(
-            `[CargoProcessor] Skipping invalid carga: ${scrapedCarga.viagem}`,
-          );
-          continue;
-        }
-
         // 3.1 Save to database
         console.log(`[CargoProcessor] Saving carga ${carga.id_viagem}...`);
         await cargasRepository.save(carga);
 
-        // 3.2 Send notifications
-        console.log(
-          `[CargoProcessor] Sending notifications for ${carga.id_viagem}...`,
-        );
-        await whatsappNotifier.notifyJean(carga);
-        await whatsappNotifier.notifyJefferson(carga);
+        // 3.2 Send notifications (with individual error handling)
+        console.log(`[CargoProcessor] Sending notifications for ${carga.id_viagem}...`);
+        const notificationErrors = [];
 
-        // 3.3 Mark as notified
+        try {
+          await whatsappNotifier.notifyJean(carga);
+        } catch (error) {
+          console.error(`[CargoProcessor] Failed to notify Jean for ${carga.id_viagem}:`, error.message);
+          notificationErrors.push({ recipient: "jean", error: error.message });
+        }
+
+        try {
+          await whatsappNotifier.notifyJefferson(carga);
+        } catch (error) {
+          console.error(`[CargoProcessor] Failed to notify Jefferson for ${carga.id_viagem}:`, error.message);
+          notificationErrors.push({ recipient: "jefferson", error: error.message });
+        }
+
+        // 3.3 Mark as notified (even if some notifications failed)
         await cargasRepository.markAsNotified(carga.id_viagem);
 
-        processedCargas.push(carga);
+        processedCargas.push({
+          ...carga,
+          notificationErrors: notificationErrors.length > 0 ? notificationErrors : undefined
+        });
+
         console.log(`[CargoProcessor] Processed carga ${carga.id_viagem}`);
+
       } catch (error) {
-        console.error(
-          `[CargoProcessor] Error processing carga ${scrapedCarga.viagem}:`,
-          error,
-        );
-        throw error;
+        console.error(`[CargoProcessor] Error processing carga ${scrapedCarga.viagem}:`, error);
+        failedCargas.push({
+          id_viagem: scrapedCarga.viagem,
+          error: error.message
+        });
+        // Continue with next carga instead of throwing
       }
     }
 
-    console.log(
-      `[CargoProcessor] Completed. Processed ${processedCargas.length} cargas`,
-    );
+    console.log(`[CargoProcessor] Completed. Processed ${processedCargas.length} cargas, ${failedCargas.length} failed`);
 
     return {
       processed: processedCargas.length,
+      failed: failedCargas.length,
       new_cargas: processedCargas.map((c) => ({
         id_viagem: c.id_viagem,
         origem: c.origem,
@@ -80,7 +95,9 @@ const cargoProcessor = {
         produto: c.produto,
         equipamento: c.equipamento,
         prevColeta: c.prevColeta,
+        notificationErrors: c.notificationErrors
       })),
+      failures: failedCargas
     };
   },
 };

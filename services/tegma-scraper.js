@@ -77,7 +77,28 @@ const tegmaScraper = {
         redirect: "manual",
       });
 
-      return response;
+      // Check for successful login (redirect to dashboard or specific cookie)
+      const location = response.headers.get("location");
+      const setCookieHeader = response.headers.get("set-cookie");
+
+      // Login success indicators: redirect to Painel or new session cookie
+      const isSuccess =
+        response.status === 302 &&
+        (location?.includes("Painel") || location?.includes("Transportadora"));
+
+      if (!isSuccess) {
+        throw new Error(
+          `Login failed: unexpected response status ${response.status}, location: ${location}`,
+        );
+      }
+
+      // Return updated cookie if server set new cookies
+      if (setCookieHeader) {
+        const newCookie = setCookieHeader.split(";")[0];
+        return newCookie;
+      }
+
+      return cookie;
     }, "login");
   },
 
@@ -150,13 +171,13 @@ const tegmaScraper = {
 
     // Step 1: Get initial cookie
     console.log("[TegmaScraper] Getting cookie...");
-    const cookie = await this.getCookie();
+    let cookie = await this.getCookie();
 
-    // Step 2: Login
+    // Step 2: Login (may return updated cookie)
     console.log("[TegmaScraper] Logging in...");
-    await this.login(cookie);
+    cookie = await this.login(cookie);
 
-    // Step 3: Fetch cargas page
+    // Step 3: Fetch cargas page (use potentially updated cookie)
     console.log("[TegmaScraper] Fetching cargas page...");
     const html = await this.fetchCargasPage(cookie);
 

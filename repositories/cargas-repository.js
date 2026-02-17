@@ -9,6 +9,19 @@ const cargasRepository = {
     return result.rows[0].exists;
   },
 
+  async existsBatch(idViagemList) {
+    if (!idViagemList || idViagemList.length === 0) {
+      return new Set();
+    }
+
+    const result = await database.query({
+      text: "SELECT id_viagem FROM cargas WHERE id_viagem = ANY($1);",
+      values: [idViagemList],
+    });
+
+    return new Set(result.rows.map((row) => row.id_viagem));
+  },
+
   async save(carga) {
     const dbData = carga.toDatabase ? carga.toDatabase() : carga;
 
@@ -58,16 +71,25 @@ const cargasRepository = {
     return result.rows;
   },
 
-  async findNotNotified() {
+  async findNotNotified({ limit = 100, offset = 0 } = {}) {
     const result = await database.query({
       text: `
         SELECT * FROM cargas
         WHERE notificado_em IS NULL
-        ORDER BY created_at DESC;
+        ORDER BY created_at DESC
+        LIMIT $1 OFFSET $2;
       `,
+      values: [limit, offset],
     });
 
     return result.rows;
+  },
+
+  async countNotNotified() {
+    const result = await database.query({
+      text: "SELECT COUNT(*) FROM cargas WHERE notificado_em IS NULL;"
+    });
+    return parseInt(result.rows[0].count);
   },
 
   async count() {
