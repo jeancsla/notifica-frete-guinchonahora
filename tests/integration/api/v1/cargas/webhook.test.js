@@ -58,6 +58,14 @@ describe("POST /api/v1/cargas/webhook", () => {
 
   describe("Success cases", () => {
     test("should process cargas with valid secret in header", async () => {
+      const mockedResult = {
+        processed: 2,
+        new_cargas: [
+          { id_viagem: "12345", origem: "Sao Paulo - SP" },
+          { id_viagem: "67890", origem: "Rio de Janeiro - RJ" },
+        ],
+      };
+
       const response = await fetch(
         "http://localhost:3000/api/v1/cargas/webhook",
         {
@@ -65,6 +73,7 @@ describe("POST /api/v1/cargas/webhook", () => {
           headers: {
             "x-cron-secret": process.env.CRON_WEBHOOK_SECRET,
             "x-cron-source": "n8n",
+            "x-test-processor-result": JSON.stringify(mockedResult),
           },
         },
       );
@@ -73,17 +82,23 @@ describe("POST /api/v1/cargas/webhook", () => {
       const data = await response.json();
       expect(data.success).toBe(true);
       expect(data.source).toBe("n8n");
-      expect(typeof data.processed).toBe("number");
-      expect(Array.isArray(data.new_cargas)).toBe(true);
+      expect(data.processed).toBe(2);
+      expect(data.new_cargas).toHaveLength(2);
     });
 
     test("should accept secret in query string", async () => {
+      const mockedResult = {
+        processed: 1,
+        new_cargas: [{ id_viagem: "11111", origem: "Belo Horizonte - MG" }],
+      };
+
       const response = await fetch(
         `http://localhost:3000/api/v1/cargas/webhook?secret=${process.env.CRON_WEBHOOK_SECRET}`,
         {
           method: "POST",
           headers: {
             "x-cron-source": "external",
+            "x-test-processor-result": JSON.stringify(mockedResult),
           },
         },
       );
@@ -92,6 +107,27 @@ describe("POST /api/v1/cargas/webhook", () => {
       const data = await response.json();
       expect(data.success).toBe(true);
       expect(data.source).toBe("external");
+      expect(data.processed).toBe(1);
+    });
+  });
+
+  describe("Error handling", () => {
+    test("should return 500 when processor throws error", async () => {
+      const response = await fetch(
+        "http://localhost:3000/api/v1/cargas/webhook",
+        {
+          method: "POST",
+          headers: {
+            "x-cron-secret": process.env.CRON_WEBHOOK_SECRET,
+            "x-test-processor-error": "Scraper connection failed",
+          },
+        },
+      );
+
+      expect(response.status).toBe(500);
+      const data = await response.json();
+      expect(data.error).toBe("Internal server error");
+      expect(data.message).toBe("Scraper connection failed");
     });
   });
 });

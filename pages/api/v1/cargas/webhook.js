@@ -1,5 +1,7 @@
 import cargoProcessor from "services/cargo-processor.js";
 
+const isProd = process.env.NODE_ENV === "production";
+
 /**
  * Webhook endpoint for external cron triggers (n8n, self-hosted, etc.)
  * Protected by CRON_WEBHOOK_SECRET
@@ -24,6 +26,29 @@ async function webhookHandler(request, response) {
   console.log(`[Webhook] Cron triggered from: ${source}`);
 
   try {
+    // Allow test mode mocking to avoid external HTTP calls
+    if (process.env.TEST_MODE === "1") {
+      const mockedError = request.headers["x-test-processor-error"];
+      if (mockedError) {
+        throw new Error(
+          Array.isArray(mockedError) ? mockedError[0] : mockedError,
+        );
+      }
+
+      const mockedResult = request.headers["x-test-processor-result"];
+      if (mockedResult) {
+        const parsed = JSON.parse(
+          Array.isArray(mockedResult) ? mockedResult[0] : mockedResult,
+        );
+        return response.status(200).json({
+          success: true,
+          source,
+          processed: parsed.processed ?? 0,
+          new_cargas: parsed.new_cargas ?? [],
+        });
+      }
+    }
+
     const result = await cargoProcessor.process();
 
     console.log(

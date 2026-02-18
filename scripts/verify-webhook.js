@@ -14,9 +14,8 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:3000";
 async function testWebhook() {
   console.log("🔍 Testing webhook endpoint...\n");
   console.log(`Base URL: ${BASE_URL}`);
-  console.log(
-    `Secret: ${CRON_SECRET.slice(0, 3)}...${CRON_SECRET.slice(-3)}\n`,
-  );
+  // Use fixed-length mask to avoid leaking secret length
+  console.log(`Secret: ***${CRON_SECRET.slice(-4)}\n`);
 
   const tests = [
     {
@@ -49,6 +48,8 @@ async function testWebhook() {
       expectStatus: 200,
     },
     {
+      // WARNING: Query string secrets may appear in server access logs.
+      // Prefer using headers (x-cron-secret) for production.
       name: "Valid secret in query string (should return 200)",
       request: {
         method: "POST",
