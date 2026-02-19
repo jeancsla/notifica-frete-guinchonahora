@@ -211,6 +211,11 @@ main {
   background: rgba(255, 255, 255, 0.02);
 }
 
+.table-empty {
+  text-align: center !important;
+  color: var(--muted);
+}
+
 .status-dot {
   display: inline-flex;
   align-items: center;

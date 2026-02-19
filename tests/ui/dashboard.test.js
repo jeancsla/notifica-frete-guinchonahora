@@ -126,6 +126,39 @@ describe("Dashboard page", () => {
     expect(screen.getAllByText("-").length).toBeGreaterThan(0);
   });
 
+  it("shows recent fretes when there are no pending fretes", async () => {
+    fetchCargas
+      .mockResolvedValueOnce({
+        cargas: [],
+        pagination: { total: 0, limit: 10, offset: 0 },
+      })
+      .mockResolvedValueOnce({
+        cargas: [
+          {
+            id_viagem: "105712",
+            origem: "TAUBATE-SP",
+            destino: "TAUBATE-SP",
+            produto: "PLATAFORMA AEREA",
+            prev_coleta: "02/10/2025",
+            created_at: "2025-10-04T23:35:06.005Z",
+          },
+        ],
+        pagination: { total: 1, limit: 10, offset: 0 },
+      });
+
+    render(<Dashboard allowMigrations={false} />);
+
+    await screen.findAllByText("105712");
+
+    expect(
+      screen.getByText(
+        "Nenhum frete pendente no momento. Exibindo fretes recentes.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("0")).toBeInTheDocument();
+    expect(fetchCargas).toHaveBeenCalledTimes(2);
+  });
+
   it("shows migrations button when allowMigrations is true", async () => {
     fetchCargas.mockResolvedValueOnce({
       cargas: [
