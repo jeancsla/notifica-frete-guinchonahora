@@ -58,11 +58,36 @@ const cargasRepository = {
     });
   },
 
-  async findAll({ limit = 10, offset = 0 } = {}) {
+  async findAll({
+    limit = 10,
+    offset = 0,
+    sortBy = "created_at",
+    sortOrder = "DESC",
+  } = {}) {
+    const allowedColumns = [
+      "created_at",
+      "prev_coleta",
+      "id_viagem",
+      "origem",
+      "destino",
+      "produto",
+    ];
+    const allowedOrders = ["ASC", "DESC"];
+
+    const orderColumn = allowedColumns.includes(sortBy) ? sortBy : "created_at";
+    const orderDirection = allowedOrders.includes(sortOrder.toUpperCase())
+      ? sortOrder.toUpperCase()
+      : "DESC";
+
+    const orderByClause =
+      orderColumn === "prev_coleta"
+        ? `to_date(NULLIF(prev_coleta, ''), 'DD/MM/YY') ${orderDirection} NULLS LAST`
+        : `${orderColumn} ${orderDirection}`;
+
     const result = await database.query({
       text: `
         SELECT * FROM cargas
-        ORDER BY created_at DESC
+        ORDER BY ${orderByClause}
         LIMIT $1 OFFSET $2;
       `,
       values: [limit, offset],
@@ -71,12 +96,37 @@ const cargasRepository = {
     return result.rows;
   },
 
-  async findNotNotified({ limit = 100, offset = 0 } = {}) {
+  async findNotNotified({
+    limit = 100,
+    offset = 0,
+    sortBy = "created_at",
+    sortOrder = "DESC",
+  } = {}) {
+    const allowedColumns = [
+      "created_at",
+      "prev_coleta",
+      "id_viagem",
+      "origem",
+      "destino",
+      "produto",
+    ];
+    const allowedOrders = ["ASC", "DESC"];
+
+    const orderColumn = allowedColumns.includes(sortBy) ? sortBy : "created_at";
+    const orderDirection = allowedOrders.includes(sortOrder.toUpperCase())
+      ? sortOrder.toUpperCase()
+      : "DESC";
+
+    const orderByClause =
+      orderColumn === "prev_coleta"
+        ? `to_date(NULLIF(prev_coleta, ''), 'DD/MM/YY') ${orderDirection} NULLS LAST`
+        : `${orderColumn} ${orderDirection}`;
+
     const result = await database.query({
       text: `
         SELECT * FROM cargas
         WHERE notificado_em IS NULL
-        ORDER BY created_at DESC
+        ORDER BY ${orderByClause}
         LIMIT $1 OFFSET $2;
       `,
       values: [limit, offset],
