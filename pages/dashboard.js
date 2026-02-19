@@ -3,21 +3,13 @@ import Layout from "../components/Layout";
 import Toast from "../components/Toast";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchCargas } from "../lib/api";
+import { formatDateBR } from "../lib/date-format";
 import { getSession } from "lib/session";
-
-function formatDate(dateString) {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  return date.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  });
-}
 
 function formatDateTime(dateString) {
   if (!dateString) return "-";
   const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleDateString("pt-BR", {
     day: "2-digit",
     month: "2-digit",
@@ -172,34 +164,36 @@ export default function Dashboard({ allowMigrations }) {
               Exibindo {showingStart}-{showingEnd} de {pagination.total}
             </span>
           </div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Viagem</th>
-                <th>Origem</th>
-                <th>Destino</th>
-                <th>Produto</th>
-                <th>Previsao</th>
-                <th>Criado em</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((item) => (
-                <tr
-                  key={item.id_viagem}
-                  onClick={() => setSelectedId(item.id_viagem)}
-                  style={{ cursor: "pointer" }}
-                >
-                  <td>{item.id_viagem}</td>
-                  <td>{item.origem || "N/A"}</td>
-                  <td>{item.destino || "N/A"}</td>
-                  <td>{item.produto || "N/A"}</td>
-                  <td>{formatDate(item.prev_coleta)}</td>
-                  <td>{formatDateTime(item.created_at)}</td>
+          <div className="table-wrap">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Viagem</th>
+                  <th>Origem</th>
+                  <th>Destino</th>
+                  <th>Produto</th>
+                  <th>Previsao</th>
+                  <th>Criado em</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {data.map((item) => (
+                  <tr
+                    key={item.id_viagem}
+                    onClick={() => setSelectedId(item.id_viagem)}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <td>{item.id_viagem}</td>
+                    <td>{item.origem || "N/A"}</td>
+                    <td>{item.destino || "N/A"}</td>
+                    <td>{item.produto || "N/A"}</td>
+                    <td>{formatDateBR(item.prev_coleta)}</td>
+                    <td>{formatDateTime(item.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <div style={{ marginTop: "16px", display: "flex", gap: "12px" }}>
             <button
               className="button secondary"
@@ -255,7 +249,7 @@ export default function Dashboard({ allowMigrations }) {
               </div>
               <div className="detail-item">
                 <span>Prev. coleta</span>
-                <strong>{selected.prev_coleta || "N/A"}</strong>
+                <strong>{formatDateBR(selected.prev_coleta)}</strong>
               </div>
               <div className="detail-item">
                 <span>Frete</span>

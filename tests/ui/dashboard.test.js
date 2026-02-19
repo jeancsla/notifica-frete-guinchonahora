@@ -100,6 +100,30 @@ describe("Dashboard page", () => {
     expect(headerTexts).toContain("Previsao");
     expect(headerTexts).toContain("Criado em");
     expect(screen.getByText(/Exibindo/)).toBeInTheDocument();
+    expect(screen.getAllByText("20/02/2026").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("renders fallback for invalid previsao date", async () => {
+    fetchCargas.mockResolvedValueOnce({
+      cargas: [
+        {
+          id_viagem: "999",
+          origem: "SP",
+          destino: "RJ",
+          produto: "Aco",
+          prev_coleta: "abc",
+          created_at: "2026-02-18T08:00:00Z",
+        },
+      ],
+      pagination: { total: 1, limit: 10, offset: 0 },
+    });
+
+    render(<Dashboard allowMigrations={false} />);
+
+    await screen.findAllByText("999");
+
+    expect(screen.queryByText("Invalid Date")).not.toBeInTheDocument();
+    expect(screen.getAllByText("-").length).toBeGreaterThan(0);
   });
 
   it("shows migrations button when allowMigrations is true", async () => {
