@@ -1,4 +1,5 @@
 import Layout from "../components/Layout";
+import { InlineRefreshStatus, LoadingButton } from "../components/LoadingUI";
 import Toast from "../components/Toast";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 
@@ -12,23 +13,27 @@ export default function Settings() {
       subtitle="Configuracoes de operacao, notificacoes e alertas."
       actions={
         <>
-          <button
+          <LoadingButton
             className="button secondary"
-            onClick={() => wrapRefresh(async () => {})}
-            disabled={isRefreshing}
+            onClick={() =>
+              wrapRefresh(
+                () =>
+                  new Promise((resolve) => {
+                    setTimeout(resolve, 320);
+                  }),
+              )
+            }
+            loading={isRefreshing}
+            loadingLabel="Atualizando..."
           >
-            {isRefreshing ? "Atualizando..." : "Atualizar"}
-          </button>
-          <div
-            className={`refresh-status${refreshError ? " error" : ""}`}
-            role="status"
-          >
-            {refreshError
-              ? `Erro: ${refreshError}`
-              : lastUpdatedAt
-                ? "Atualizado agora"
-                : ""}
-          </div>
+            Atualizar
+          </LoadingButton>
+          <InlineRefreshStatus
+            isLoading={false}
+            isValidating={isRefreshing}
+            error={refreshError}
+            lastUpdatedAt={lastUpdatedAt}
+          />
         </>
       }
     >
@@ -37,7 +42,10 @@ export default function Settings() {
         type={toast.type}
         visible={toast.visible}
       />
-      <section className="grid cols-2">
+      <section
+        className={`grid cols-2${isRefreshing ? " soft-loading" : ""}`}
+        aria-busy={isRefreshing ? "true" : "false"}
+      >
         <div className="card">
           <h3>Notificacoes</h3>
           <div className="detail-list">

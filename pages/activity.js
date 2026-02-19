@@ -1,31 +1,64 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
+import useSWR from "swr";
 import Layout from "../components/Layout";
 import Toast from "../components/Toast";
+import {
+  InlineRefreshStatus,
+  LoadingButton,
+  SkeletonBlock,
+} from "../components/LoadingUI";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchCargas, fetchStatus } from "../lib/api";
 import { buildActivityEvents, countActivityAlerts } from "../lib/activity";
 
-export default function Activity() {
-  const [events, setEvents] = useState([]);
-  const [alerts, setAlerts] = useState(0);
-  const { isRefreshing, lastUpdatedAt, refreshError, toast, wrapRefresh } =
-    useRefreshFeedback();
+async function fetchActivityData() {
+  const [cargasResponse, statusResponse] = await Promise.all([
+    fetchCargas({ limit: 10, offset: 0, includeTotal: false }),
+    fetchStatus(),
+  ]);
 
-  const load = async () => {
-    const [cargasResponse, statusResponse] = await Promise.all([
-      fetchCargas({ limit: 10, offset: 0 }),
-      fetchStatus(),
-    ]);
-
-    const cargas = cargasResponse.cargas || [];
-    setEvents(buildActivityEvents(cargas, statusResponse));
-    setAlerts(countActivityAlerts(cargas));
+  return {
+    cargas: cargasResponse.cargas || [],
+    status: statusResponse,
   };
+}
+
+export default function Activity() {
+  const {
+    isRefreshing,
+    lastUpdatedAt,
+    refreshError,
+    toast,
+    wrapRefresh,
+    markUpdated,
+  } = useRefreshFeedback();
+
+  const { data, error, isLoading, isValidating, mutate } = useSWR(
+    "activity-data",
+    fetchActivityData,
+    {
+      dedupingInterval: 0,
+      revalidateOnMount: true,
+    },
+  );
 
   useEffect(() => {
-    wrapRefresh(load);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (data) {
+      markUpdated();
+    }
+  }, [data, markUpdated]);
+
+  const events = useMemo(
+    () => buildActivityEvents(data?.cargas || [], data?.status || null),
+    [data],
+  );
+  const alerts = useMemo(() => countActivityAlerts(data?.cargas || []), [data]);
+
+  async function handleRefresh() {
+    await wrapRefresh(() =>
+      mutate(undefined, { revalidate: true, throwOnError: true }),
+    );
+  }
 
   return (
     <Layout
@@ -33,23 +66,20 @@ export default function Activity() {
       subtitle="Linha do tempo das operacoes e eventos recentes."
       actions={
         <>
-          <button
+          <LoadingButton
             className="button secondary"
-            onClick={() => wrapRefresh(load)}
-            disabled={isRefreshing}
+            onClick={handleRefresh}
+            loading={isRefreshing}
+            loadingLabel="Atualizando..."
           >
-            {isRefreshing ? "Atualizando..." : "Atualizar"}
-          </button>
-          <div
-            className={`refresh-status${refreshError ? " error" : ""}`}
-            role="status"
-          >
-            {refreshError
-              ? `Erro: ${refreshError}`
-              : lastUpdatedAt
-                ? "Atualizado agora"
-                : ""}
-          </div>
+            Atualizar
+          </LoadingButton>
+          <InlineRefreshStatus
+            isLoading={isLoading}
+            isValidating={isValidating || isRefreshing}
+            error={refreshError || error?.message}
+            lastUpdatedAt={lastUpdatedAt}
+          />
         </>
       }
     >
@@ -58,19 +88,33 @@ export default function Activity() {
         type={toast.type}
         visible={toast.visible}
       />
-      <section className="grid cols-2">
+      {error ? <div className="card">Erro: {error.message}</div> : null}
+      <section
+        className={`grid cols-2${isValidating && !isLoading ? " soft-loading" : ""}`}
+      >
         <div className="card">
           <h3>Timeline</h3>
           <div className="detail-list">
-            {events.map((event) => (
-              <div key={event.title} className="detail-item">
-                <div>
-                  <strong>{event.title}</strong>
-                  <div className="muted">{event.description}</div>
-                </div>
-                <span className="badge">{event.time}</span>
-              </div>
-            ))}
+            {isLoading
+              ? Array.from({ length: 6 }).map((_, idx) => (
+                  <SkeletonBlock
+                    key={`activity-skeleton-${idx}`}
+                    height={36}
+                    width="100%"
+                  />
+                ))
+              : events.map((event) => (
+                  <div
+                    key={`${event.title}-${event.time}`}
+                    className="detail-item"
+                  >
+                    <div>
+                      <strong>{event.title}</strong>
+                      <div className="muted">{event.description}</div>
+                    </div>
+                    <span className="badge">{event.time}</span>
+                  </div>
+                ))}
           </div>
         </div>
         <div className="card">
@@ -78,11 +122,11 @@ export default function Activity() {
           <div className="detail-list">
             <div className="detail-item">
               <span>Eventos hoje</span>
-              <strong>{events.length}</strong>
+              <strong>{isLoading ? "-" : events.length}</strong>
             </div>
             <div className="detail-item">
               <span>Alertas ativos</span>
-              <strong>{alerts}</strong>
+              <strong>{isLoading ? "-" : alerts}</strong>
             </div>
             <div className="detail-item">
               <span>Operadores online</span>

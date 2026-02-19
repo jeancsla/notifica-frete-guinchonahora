@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
 import Layout from "../components/Layout";
+import { LoadingButton, Spinner } from "../components/LoadingUI";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -36,48 +37,65 @@ export default function Login() {
 
   return (
     <Layout title="Login" subtitle="Autentique-se para gerenciar cargas.">
-      <div className="card" style={{ maxWidth: "400px", margin: "40px auto" }}>
+      <div
+        className={`card login-card${loading ? " soft-loading" : ""}`}
+        style={{ maxWidth: "400px", margin: "40px auto" }}
+        aria-busy={loading ? "true" : "false"}
+      >
         <form
           onSubmit={handleSubmit}
           className="flex-column"
           style={{ gap: "16px" }}
         >
-          <div className="flex-column" style={{ gap: "8px" }}>
-            <label htmlFor="username">Usuario</label>
-            <input
-              id="username"
-              type="text"
-              className="input"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              autoFocus
-            />
-          </div>
-          <div className="flex-column" style={{ gap: "8px" }}>
-            <label htmlFor="password">Senha</label>
-            <input
-              id="password"
-              type="password"
-              className="input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
+          <fieldset
+            className="login-fields"
+            disabled={loading}
+            aria-disabled={loading ? "true" : "false"}
+          >
+            <div className="flex-column" style={{ gap: "8px" }}>
+              <label htmlFor="username">Usuario</label>
+              <input
+                id="username"
+                type="text"
+                className="input"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+            <div className="flex-column" style={{ gap: "8px" }}>
+              <label htmlFor="password">Senha</label>
+              <input
+                id="password"
+                type="password"
+                className="input"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          </fieldset>
           {error && (
             <div className="error-message" style={{ color: "var(--danger)" }}>
               {error}
             </div>
           )}
-          <button
+          {loading ? (
+            <div className="refresh-status" role="status" aria-live="polite">
+              <Spinner className="refresh-status-spinner" />
+              Verificando credenciais...
+            </div>
+          ) : null}
+          <LoadingButton
             type="submit"
             className="button"
-            disabled={loading}
+            loading={loading}
+            loadingLabel="Entrando..."
             style={{ marginTop: "8px" }}
           >
-            {loading ? "Entrando..." : "Entrar"}
-          </button>
+            Entrar
+          </LoadingButton>
         </form>
       </div>
     </Layout>
