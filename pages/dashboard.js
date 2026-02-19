@@ -52,6 +52,8 @@ export default function Dashboard({ allowMigrations }) {
         limit: pagination.limit,
         offset: pagination.offset,
         notified: false,
+        sortBy: "prev_coleta",
+        sortOrder: "DESC",
       });
       setData(response.cargas || []);
       setPagination((prev) => ({
