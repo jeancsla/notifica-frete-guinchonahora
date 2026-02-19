@@ -5,7 +5,28 @@ import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchCargas } from "../lib/api";
 import { getSession } from "lib/session";
 
-export default function Dashboard() {
+function formatDate(dateString) {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  });
+}
+
+function formatDateTime(dateString) {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export default function Dashboard({ allowMigrations }) {
   const [data, setData] = useState([]);
   const [pagination, setPagination] = useState({
     limit: 10,
@@ -72,10 +93,16 @@ export default function Dashboard() {
     [data, selectedId],
   );
 
+  const showingStart = pagination.total > 0 ? pagination.offset + 1 : 0;
+  const showingEnd = Math.min(
+    pagination.offset + pagination.limit,
+    pagination.total,
+  );
+
   return (
     <Layout
       title="Dashboard"
-      subtitle="Cargas nao notificadas com prioridade maxima."
+      subtitle="Fretes pendentes de notificacao"
       actions={
         <>
           <button
@@ -85,20 +112,16 @@ export default function Dashboard() {
           >
             {isRefreshing ? "Atualizando..." : "Atualizar"}
           </button>
-          <button
-            className="button"
-            onClick={() => setPagination((prev) => ({ ...prev, offset: 0 }))}
-          >
-            Reset fila
-          </button>
-          <button
-            className="button secondary"
-            onClick={handleMigrations}
-            disabled={isMigrating}
-            title="Executa migrations do banco"
-          >
-            {isMigrating ? "Migrando..." : "Rodar migrations"}
-          </button>
+          {allowMigrations && (
+            <button
+              className="button secondary"
+              onClick={handleMigrations}
+              disabled={isMigrating}
+              title="Executa migrations do banco"
+            >
+              {isMigrating ? "Migrando..." : "Rodar migrations"}
+            </button>
+          )}
           <div
             className={`refresh-status${refreshError ? " error" : ""}`}
             role="status"
@@ -118,35 +141,44 @@ export default function Dashboard() {
         visible={toast.visible}
       />
       {error ? <div className="card">Erro: {error}</div> : null}
-      <section className="grid cols-3">
+      <section className="grid cols-2">
         <div className="card">
-          <h3>Em fila</h3>
+          <h3>Total pendentes</h3>
           <p style={{ fontSize: "32px", fontWeight: 700 }}>
             {pagination.total}
           </p>
-          <p className="muted">Cargas pendentes de notificacao.</p>
+          <p className="muted">Fretes aguardando notificacao</p>
         </div>
         <div className="card">
           <h3>Status</h3>
           <div className="status-dot">Canal ativo</div>
-          <p className="muted">Monitorando API em tempo real.</p>
-        </div>
-        <div className="card">
-          <h3>Ritmo</h3>
-          <p style={{ fontSize: "32px", fontWeight: 700 }}>{data.length}</p>
-          <p className="muted">Cargas visiveis no momento.</p>
+          <p className="muted">Monitorando API em tempo real</p>
         </div>
       </section>
       <section style={{ marginTop: "24px" }} className="grid cols-2">
         <div className="card">
-          <h3>Fila principal</h3>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <h3 style={{ margin: 0 }}>Fretes pendentes</h3>
+            <span className="muted">
+              Exibindo {showingStart}-{showingEnd} de {pagination.total}
+            </span>
+          </div>
           <table className="table">
             <thead>
               <tr>
                 <th>Viagem</th>
                 <th>Origem</th>
                 <th>Destino</th>
-                <th>Coleta</th>
+                <th>Produto</th>
+                <th>Previsao</th>
+                <th>Criado em</th>
               </tr>
             </thead>
             <tbody>
@@ -159,7 +191,9 @@ export default function Dashboard() {
                   <td>{item.id_viagem}</td>
                   <td>{item.origem || "N/A"}</td>
                   <td>{item.destino || "N/A"}</td>
-                  <td>{item.prev_coleta || "-"}</td>
+                  <td>{item.produto || "N/A"}</td>
+                  <td>{formatDate(item.prev_coleta)}</td>
+                  <td>{formatDateTime(item.created_at)}</td>
                 </tr>
               ))}
             </tbody>
@@ -227,7 +261,7 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <p className="muted">Selecione uma carga para ver detalhes.</p>
+            <p className="muted">Selecione um frete para ver detalhes.</p>
           )}
         </div>
       </section>
