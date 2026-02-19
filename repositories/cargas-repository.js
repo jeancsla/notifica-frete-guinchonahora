@@ -79,9 +79,17 @@ const cargasRepository = {
       ? sortOrder.toUpperCase()
       : "DESC";
 
+    const prevColetaOrderExpr = `
+      CASE
+        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{4}$' THEN to_date(prev_coleta, 'DD/MM/YYYY')
+        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{2}$' THEN to_date(prev_coleta, 'DD/MM/YY')
+        ELSE NULL
+      END
+    `;
+
     const orderByClause =
       orderColumn === "prev_coleta"
-        ? `to_date(NULLIF(prev_coleta, ''), 'DD/MM/YY') ${orderDirection} NULLS LAST`
+        ? `${prevColetaOrderExpr} ${orderDirection} NULLS LAST`
         : `${orderColumn} ${orderDirection}`;
 
     const result = await database.query({
@@ -117,9 +125,17 @@ const cargasRepository = {
       ? sortOrder.toUpperCase()
       : "DESC";
 
+    const prevColetaOrderExpr = `
+      CASE
+        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{4}$' THEN to_date(prev_coleta, 'DD/MM/YYYY')
+        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{2}$' THEN to_date(prev_coleta, 'DD/MM/YY')
+        ELSE NULL
+      END
+    `;
+
     const orderByClause =
       orderColumn === "prev_coleta"
-        ? `to_date(NULLIF(prev_coleta, ''), 'DD/MM/YY') ${orderDirection} NULLS LAST`
+        ? `${prevColetaOrderExpr} ${orderDirection} NULLS LAST`
         : `${orderColumn} ${orderDirection}`;
 
     const result = await database.query({
