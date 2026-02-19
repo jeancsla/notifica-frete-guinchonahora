@@ -23,6 +23,8 @@ async function handleGet(request, response) {
     const limitParam = url.searchParams.get("limit");
     const offsetParam = url.searchParams.get("offset");
     const notified = url.searchParams.get("notified");
+    const sortBy = url.searchParams.get("sortBy");
+    const sortOrder = url.searchParams.get("sortOrder");
 
     const limit = limitParam ? parseInt(limitParam) : 10;
     if (isNaN(limit) || limit < 1 || limit > 100) {
@@ -41,15 +43,24 @@ async function handleGet(request, response) {
     let cargas;
     let total;
 
+    const sortOptions = {};
+    if (sortBy) sortOptions.sortBy = sortBy;
+    if (sortOrder) sortOptions.sortOrder = sortOrder;
+
     if (notified === "false") {
       const notNotifiedLimit = Math.min(limit, 100);
       cargas = await cargasRepository.findNotNotified({
         limit: notNotifiedLimit,
         offset,
+        ...sortOptions,
       });
       total = await cargasRepository.countNotNotified();
     } else {
-      cargas = await cargasRepository.findAll({ limit, offset });
+      cargas = await cargasRepository.findAll({
+        limit,
+        offset,
+        ...sortOptions,
+      });
       total = await cargasRepository.count();
     }
 
