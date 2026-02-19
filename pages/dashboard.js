@@ -25,6 +25,8 @@ export default function Dashboard({ allowMigrations }) {
     offset: 0,
     total: 0,
   });
+  const [pendingTotal, setPendingTotal] = useState(0);
+  const [showingRecentFallback, setShowingRecentFallback] = useState(false);
   const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [isMigrating, setIsMigrating] = useState(false);
@@ -40,20 +42,44 @@ export default function Dashboard({ allowMigrations }) {
   async function load() {
     try {
       setError("");
-      const response = await fetchCargas({
+      const pendingResponse = await fetchCargas({
         limit: pagination.limit,
         offset: pagination.offset,
         notified: false,
         sortBy: "prev_coleta",
         sortOrder: "DESC",
       });
-      setData(response.cargas || []);
+      const pendingCount = pendingResponse.pagination?.total ?? 0;
+      setPendingTotal(pendingCount);
+
+      if (pendingCount > 0) {
+        setShowingRecentFallback(false);
+        setData(pendingResponse.cargas || []);
+        setPagination((prev) => ({
+          ...prev,
+          total: pendingCount,
+        }));
+        if (!selectedId && pendingResponse.cargas?.length) {
+          setSelectedId(pendingResponse.cargas[0].id_viagem);
+        }
+        return;
+      }
+
+      const fallbackResponse = await fetchCargas({
+        limit: pagination.limit,
+        offset: pagination.offset,
+        sortBy: "created_at",
+        sortOrder: "DESC",
+      });
+
+      setShowingRecentFallback(true);
+      setData(fallbackResponse.cargas || []);
       setPagination((prev) => ({
         ...prev,
-        total: response.pagination?.total ?? prev.total,
+        total: fallbackResponse.pagination?.total ?? prev.total,
       }));
-      if (!selectedId && response.cargas?.length) {
-        setSelectedId(response.cargas[0].id_viagem);
+      if (!selectedId && fallbackResponse.cargas?.length) {
+        setSelectedId(fallbackResponse.cargas[0].id_viagem);
       }
     } catch (err) {
       setError(err.message);
@@ -138,9 +164,7 @@ export default function Dashboard({ allowMigrations }) {
       <section className="grid cols-2">
         <div className="card">
           <h3>Total pendentes</h3>
-          <p style={{ fontSize: "32px", fontWeight: 700 }}>
-            {pagination.total}
-          </p>
+          <p style={{ fontSize: "32px", fontWeight: 700 }}>{pendingTotal}</p>
           <p className="muted">Fretes aguardando notificacao</p>
         </div>
         <div className="card">
@@ -164,6 +188,11 @@ export default function Dashboard({ allowMigrations }) {
               Exibindo {showingStart}-{showingEnd} de {pagination.total}
             </span>
           </div>
+          {showingRecentFallback ? (
+            <p className="muted" style={{ marginBottom: "12px" }}>
+              Nenhum frete pendente no momento. Exibindo fretes recentes.
+            </p>
+          ) : null}
           <div className="table-wrap">
             <table className="table">
               <thead>
@@ -191,6 +220,13 @@ export default function Dashboard({ allowMigrations }) {
                     <td>{formatDateTime(item.created_at)}</td>
                   </tr>
                 ))}
+                {data.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="table-empty">
+                      Nenhum frete encontrado.
+                    </td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>
