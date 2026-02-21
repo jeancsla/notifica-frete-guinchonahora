@@ -148,7 +148,7 @@ export default function Dashboard({ allowMigrations }) {
   return (
     <Layout
       title="Dashboard"
-      subtitle="Fretes pendentes de notificacao"
+      subtitle="Fretes pendentes de notificação"
       actions={
         <>
           <LoadingButton
@@ -243,7 +243,7 @@ export default function Dashboard({ allowMigrations }) {
                       <th>Origem</th>
                       <th>Destino</th>
                       <th>Produto</th>
-                      <th>Previsao</th>
+                      <th>Previsão</th>
                       <th>Criado em</th>
                     </tr>
                   </thead>
@@ -295,14 +295,14 @@ export default function Dashboard({ allowMigrations }) {
                     }))
                   }
                 >
-                  Proxima
+                  Próxima
                 </button>
               </div>
             </>
           )}
         </div>
         <div className="card">
-          <h3>Detalhe rapido</h3>
+          <h3>Detalhe rápido</h3>
           {isLoading ? (
             <div className="detail-list">
               <SkeletonBlock height={14} width="100%" />

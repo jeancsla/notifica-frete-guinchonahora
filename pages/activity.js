@@ -63,7 +63,7 @@ export default function Activity() {
   return (
     <Layout
       title="Activity"
-      subtitle="Linha do tempo das operacoes e eventos recentes."
+      subtitle="Linha do tempo das operações e eventos recentes."
       actions={
         <>
           <LoadingButton

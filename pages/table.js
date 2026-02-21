@@ -61,7 +61,7 @@ export default function TableView() {
   return (
     <Layout
       title="Table View"
-      subtitle="Lista completa de cargas com paginacao."
+      subtitle="Lista completa de cargas com paginação."
       actions={
         <>
           <LoadingButton
@@ -156,7 +156,7 @@ export default function TableView() {
                   }))
                 }
               >
-                Proxima
+                Próxima
               </button>
             </div>
           </>

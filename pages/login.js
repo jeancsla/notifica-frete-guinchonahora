@@ -53,7 +53,7 @@ export default function Login() {
             aria-disabled={loading ? "true" : "false"}
           >
             <div className="flex-column" style={{ gap: "8px" }}>
-              <label htmlFor="username">Usuario</label>
+              <label htmlFor="username">Usuário</label>
               <input
                 id="username"
                 type="text"

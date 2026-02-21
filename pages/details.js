@@ -120,7 +120,7 @@ export default function Details() {
           </div>
         </div>
         <div className="card">
-          <h3>Informacoes da carga</h3>
+          <h3>Informações da carga</h3>
           {isLoading ? (
             <div className="detail-list">
               <SkeletonBlock height={14} width="100%" />
@@ -136,7 +136,7 @@ export default function Details() {
                 <strong>{selected.id_viagem}</strong>
               </div>
               <div className="detail-item">
-                <span>Tipo transporte</span>
+                <span>Tipo de transporte</span>
                 <strong>{selected.tipo_transporte || "N/A"}</strong>
               </div>
               <div className="detail-item">

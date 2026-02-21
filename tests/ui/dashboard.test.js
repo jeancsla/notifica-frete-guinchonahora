@@ -97,7 +97,7 @@ describe("Dashboard page", () => {
     expect(headerTexts).toContain("Origem");
     expect(headerTexts).toContain("Destino");
     expect(headerTexts).toContain("Produto");
-    expect(headerTexts).toContain("Previsao");
+    expect(headerTexts).toContain("Previsão");
     expect(headerTexts).toContain("Criado em");
     expect(screen.getByText(/Exibindo/)).toBeInTheDocument();
     expect(screen.getAllByText("20/02/2026").length).toBeGreaterThanOrEqual(2);

@@ -10,7 +10,7 @@ export default function Settings() {
   return (
     <Layout
       title="Settings"
-      subtitle="Configuracoes de operacao, notificacoes e alertas."
+      subtitle="Configurações de operação, notificações e alertas."
       actions={
         <>
           <LoadingButton
@@ -47,10 +47,10 @@ export default function Settings() {
         aria-busy={isRefreshing ? "true" : "false"}
       >
         <div className="card">
-          <h3>Notificacoes</h3>
+          <h3>Notificações</h3>
           <div className="detail-list">
             <div className="detail-item">
-              <span>Canal primario</span>
+              <span>Canal primário</span>
               <strong>WhatsApp</strong>
             </div>
             <div className="detail-item">
@@ -66,7 +66,7 @@ export default function Settings() {
         <div className="card">
           <h3>Prioridades</h3>
           <p className="muted">
-            Ajustes sao controlados pelo backend. Esta tela mostra o estado
+            Ajustes são controlados pelo backend. Esta tela mostra o estado
             atual.
           </p>
           <div style={{ marginTop: "12px" }} className="badge">
