@@ -43,7 +43,9 @@ function getPidMeta(pid) {
   let cwd = "";
   try {
     cwd = fs.readlinkSync(`/proc/${pid}/cwd`);
-  } catch {}
+  } catch {
+    cwd = "";
+  }
 
   return { pid, cmdline, cwd };
 }
