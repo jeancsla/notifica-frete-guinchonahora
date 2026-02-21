@@ -1,13 +1,53 @@
 module.exports = {
   reactStrictMode: true,
   async rewrites() {
-    const apiOrigin =
-      process.env.API_ORIGIN ||
-      (process.env.NODE_ENV === "production" ? null : "http://localhost:4000");
+    const apiOrigin = process.env.API_ORIGIN?.trim();
 
+    // Mono deploy mode: API handled inside this same Next.js project.
     if (!apiOrigin) {
+      return {
+        beforeFiles: [],
+        afterFiles: [],
+        fallback: [],
+      };
+    }
+
+    let apiUrl;
+    try {
+      apiUrl = new URL(apiOrigin);
+    } catch {
       throw new Error(
-        "API_ORIGIN is required in production to route /api/v1/* to Bun API.",
+        "API_ORIGIN must be a valid absolute URL, e.g. https://your-bun-api.vercel.app",
+      );
+    }
+
+    const toHost = (value) => {
+      if (!value) return null;
+      const input = String(value).trim();
+      if (!input) return null;
+
+      try {
+        return new URL(input).host;
+      } catch {
+        const host = input.replace(/^https?:\/\//, "").replace(/\/$/, "");
+        return host || null;
+      }
+    };
+
+    const currentHosts = new Set(
+      [
+        process.env.VERCEL_URL,
+        process.env.VERCEL_BRANCH_URL,
+        process.env.VERCEL_PROJECT_PRODUCTION_URL,
+        process.env.NEXT_PUBLIC_APP_URL,
+      ]
+        .map(toHost)
+        .filter(Boolean),
+    );
+
+    if (currentHosts.has(apiUrl.host)) {
+      throw new Error(
+        "API_ORIGIN cannot point to the same host as the Next.js app; this causes an infinite /api/v1 rewrite loop.",
       );
     }
 

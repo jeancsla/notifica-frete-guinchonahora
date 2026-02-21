@@ -67,6 +67,7 @@
     "cheerio": "^1.2.0",
     "dotenv": "^16.4.4",
     "dotenv-expand": "^11.0.6",
+    "elysia": "^1.1.27",
     "next": "^16.1.6",
     "node-cron": "^3.0.3",
     "node-pg-migrate": "^6.2.2",
