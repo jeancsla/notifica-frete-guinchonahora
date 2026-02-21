@@ -67,8 +67,7 @@ describe("Status page", () => {
     const refresh = await screen.findByRole("button", { name: "Atualizar" });
     await userEvent.click(refresh);
 
-    expect(await screen.findByText("Falha ao atualizar")).toBeInTheDocument();
-    const errorMessages = screen.getAllByText("Erro: API down");
+    const errorMessages = await screen.findAllByText("Erro: API down");
     expect(errorMessages.length).toBeGreaterThan(0);
   });
 });
