@@ -1,15 +1,43 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
 import cargoProcessor from "services/cargo-processor.js";
 import tegmaScraper from "services/tegma-scraper.js";
 import whatsappNotifier from "services/whatsapp-notifier.js";
 import cargasRepository from "repositories/cargas-repository.js";
 import database from "infra/database.js";
 import Carga from "models/carga.js";
-import orchestrator from "tests/orchestrator.js";
+import orchestrator from "tests/orchestrator.bun.js";
 
 // Mock dependencies
-jest.mock("services/tegma-scraper.js");
-jest.mock("services/whatsapp-notifier.js");
-jest.mock("repositories/cargas-repository.js");
+jest.mock("services/tegma-scraper.js", () => ({
+  default: {
+    fetchCargas: jest.fn(),
+  },
+}));
+
+jest.mock("services/whatsapp-notifier.js", () => ({
+  default: {
+    notifyJean: jest.fn(),
+    notifyJefferson: jest.fn(),
+  },
+}));
+
+jest.mock("repositories/cargas-repository.js", () => ({
+  default: {
+    existsBatch: jest.fn(),
+    save: jest.fn(),
+    markAsNotified: jest.fn(),
+  },
+}));
 
 beforeAll(async () => {
   process.env.NODE_ENV = "test";

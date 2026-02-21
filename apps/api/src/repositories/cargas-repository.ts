@@ -1,0 +1,208 @@
+import { query } from "../infra/database";
+import type { CargaRecord } from "../types";
+
+const ALL_COLUMNS = [
+  "id",
+  "id_viagem",
+  "tipo_transporte",
+  "origem",
+  "destino",
+  "produto",
+  "equipamento",
+  "prev_coleta",
+  "qtd_entregas",
+  "vr_frete",
+  "termino",
+  "notificado_em",
+  "created_at",
+];
+
+const SORTABLE_COLUMNS = [
+  "created_at",
+  "prev_coleta",
+  "id_viagem",
+  "origem",
+  "destino",
+  "produto",
+];
+const SORT_ORDERS = ["ASC", "DESC"];
+
+function getSelectedColumns(fields?: string[]) {
+  if (!fields || fields.length === 0) {
+    return ALL_COLUMNS.join(", ");
+  }
+
+  const sanitized = fields.filter((field) => ALL_COLUMNS.includes(field));
+  if (sanitized.length === 0) {
+    return ALL_COLUMNS.join(", ");
+  }
+
+  return sanitized.join(", ");
+}
+
+export const cargasRepository = {
+  async exists(id_viagem: string) {
+    const result = await query({
+      text: "SELECT EXISTS (SELECT 1 FROM cargas WHERE id_viagem = $1);",
+      values: [id_viagem],
+    });
+
+    return result.rows[0]?.exists as boolean;
+  },
+
+  async existsBatch(idViagemList: string[]) {
+    if (!idViagemList || idViagemList.length === 0) {
+      return new Set<string>();
+    }
+
+    const result = await query({
+      text: "SELECT id_viagem FROM cargas WHERE id_viagem = ANY($1);",
+      values: [idViagemList],
+    });
+
+    return new Set<string>(result.rows.map((row) => row.id_viagem as string));
+  },
+
+  async save(carga: CargaRecord & { toDatabase?: () => CargaRecord }) {
+    const dbData = carga.toDatabase ? carga.toDatabase() : carga;
+
+    const result = await query({
+      text: `
+        INSERT INTO cargas (
+          id_viagem, tipo_transporte, origem, destino, produto,
+          equipamento, prev_coleta, qtd_entregas, vr_frete, termino
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+        ) RETURNING *;
+      `,
+      values: [
+        dbData.id_viagem,
+        dbData.tipo_transporte,
+        dbData.origem,
+        dbData.destino,
+        dbData.produto,
+        dbData.equipamento,
+        dbData.prev_coleta,
+        dbData.qtd_entregas,
+        dbData.vr_frete,
+        dbData.termino,
+      ],
+    });
+
+    return result.rows[0] as CargaRecord;
+  },
+
+  async markAsNotified(id_viagem: string) {
+    await query({
+      text: "UPDATE cargas SET notificado_em = CURRENT_TIMESTAMP WHERE id_viagem = $1;",
+      values: [id_viagem],
+    });
+  },
+
+  async findAll({
+    limit = 10,
+    offset = 0,
+    sortBy = "created_at",
+    sortOrder = "DESC",
+    fields,
+  }: {
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    sortOrder?: string;
+    fields?: string[];
+  } = {}) {
+    const selectedColumns = getSelectedColumns(fields);
+    const orderColumn = SORTABLE_COLUMNS.includes(sortBy)
+      ? sortBy
+      : "created_at";
+    const orderDirection = SORT_ORDERS.includes(sortOrder.toUpperCase())
+      ? sortOrder.toUpperCase()
+      : "DESC";
+
+    const prevColetaOrderExpr = `
+      CASE
+        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{4}$' THEN to_date(prev_coleta, 'DD/MM/YYYY')
+        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{2}$' THEN to_date(prev_coleta, 'DD/MM/YY')
+        ELSE NULL
+      END
+    `;
+
+    const orderByClause =
+      orderColumn === "prev_coleta"
+        ? `${prevColetaOrderExpr} ${orderDirection} NULLS LAST`
+        : `${orderColumn} ${orderDirection}`;
+
+    const result = await query({
+      text: `
+        SELECT ${selectedColumns}
+        FROM cargas
+        ORDER BY ${orderByClause}
+        LIMIT $1 OFFSET $2;
+      `,
+      values: [limit, offset],
+    });
+
+    return result.rows as CargaRecord[];
+  },
+
+  async findNotNotified({
+    limit = 100,
+    offset = 0,
+    sortBy = "created_at",
+    sortOrder = "DESC",
+    fields,
+  }: {
+    limit?: number;
+    offset?: number;
+    sortBy?: string;
+    sortOrder?: string;
+    fields?: string[];
+  } = {}) {
+    const selectedColumns = getSelectedColumns(fields);
+    const orderColumn = SORTABLE_COLUMNS.includes(sortBy)
+      ? sortBy
+      : "created_at";
+    const orderDirection = SORT_ORDERS.includes(sortOrder.toUpperCase())
+      ? sortOrder.toUpperCase()
+      : "DESC";
+
+    const prevColetaOrderExpr = `
+      CASE
+        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{4}$' THEN to_date(prev_coleta, 'DD/MM/YYYY')
+        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{2}$' THEN to_date(prev_coleta, 'DD/MM/YY')
+        ELSE NULL
+      END
+    `;
+
+    const orderByClause =
+      orderColumn === "prev_coleta"
+        ? `${prevColetaOrderExpr} ${orderDirection} NULLS LAST`
+        : `${orderColumn} ${orderDirection}`;
+
+    const result = await query({
+      text: `
+        SELECT ${selectedColumns}
+        FROM cargas
+        WHERE notificado_em IS NULL
+        ORDER BY ${orderByClause}
+        LIMIT $1 OFFSET $2;
+      `,
+      values: [limit, offset],
+    });
+
+    return result.rows as CargaRecord[];
+  },
+
+  async countNotNotified() {
+    const result = await query({
+      text: "SELECT COUNT(*) FROM cargas WHERE notificado_em IS NULL;",
+    });
+    return parseInt(String(result.rows[0]?.count ?? 0), 10);
+  },
+
+  async count() {
+    const result = await query("SELECT COUNT(*) FROM cargas;");
+    return parseInt(String(result.rows[0]?.count ?? 0), 10);
+  },
+};

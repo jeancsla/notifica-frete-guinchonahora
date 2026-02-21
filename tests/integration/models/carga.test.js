@@ -1,3 +1,14 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
 import Carga from "models/carga.js";
 
 describe("Carga Model", () => {

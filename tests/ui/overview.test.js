@@ -1,5 +1,17 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
+import "tests/ui.setup.js";
 /** @jest-environment jsdom */
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import Overview from "pages/index";
 
 jest.mock("next/link", () => {
@@ -14,9 +26,9 @@ jest.mock("next/router", () => ({
 
 describe("Overview page", () => {
   it("renders hero content", () => {
-    render(<Overview />);
-    expect(screen.getByText("Controle de Operações")).toBeInTheDocument();
-    expect(screen.getByText("Abrir dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Ver tabela")).toBeInTheDocument();
+    const view = render(<Overview />);
+    expect(view.getByText("Controle de Operações")).toBeInTheDocument();
+    expect(view.getByText("Abrir dashboard")).toBeInTheDocument();
+    expect(view.getByText("Ver tabela")).toBeInTheDocument();
   });
 });

@@ -1,4 +1,15 @@
-import orchestrator from "tests/orchestrator.js";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
+import orchestrator from "tests/orchestrator.bun.js";
 
 beforeAll(async () => {
   await orchestrator.waitForAllServices();

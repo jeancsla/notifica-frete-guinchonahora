@@ -1,5 +1,17 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
+import "tests/ui.setup.js";
 /** @jest-environment jsdom */
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Dashboard from "pages/dashboard";
 import { fetchCargas } from "lib/api";
@@ -52,24 +64,22 @@ describe("Dashboard page", () => {
         pagination: { total: 1, limit: 10, offset: 0 },
       });
 
-    render(<Dashboard allowMigrations={false} />);
+    const view = render(<Dashboard allowMigrations={false} />);
 
-    const firstId = await screen.findAllByText("123");
+    const firstId = await view.findAllByText("123");
     expect(firstId.length).toBeGreaterThan(0);
-    expect(screen.getByText("Total pendentes")).toBeInTheDocument();
-    expect(screen.getByText("Fretes pendentes")).toBeInTheDocument();
-    expect(screen.getByText(/Exibindo/)).toBeInTheDocument();
+    expect(view.getByText("Total pendentes")).toBeInTheDocument();
+    expect(view.getByText("Fretes pendentes")).toBeInTheDocument();
+    expect(view.getByText(/Exibindo/)).toBeInTheDocument();
 
-    const refresh = screen.getByRole("button", { name: "Atualizar" });
+    const refresh = view.getByRole("button", { name: "Atualizar" });
     await userEvent.click(refresh);
 
     await waitFor(() => expect(fetchCargas).toHaveBeenCalledTimes(2));
-    const secondId = await screen.findAllByText("456");
+    const secondId = await view.findAllByText("456");
     expect(secondId.length).toBeGreaterThan(0);
-    expect(
-      await screen.findByText("Atualizado com sucesso"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Atualizado agora")).toBeInTheDocument();
+    expect(await view.findByText("Atualizado com sucesso")).toBeInTheDocument();
+    expect(view.getByText("Atualizado agora")).toBeInTheDocument();
   });
 
   it("displays table with correct columns", async () => {
@@ -87,11 +97,11 @@ describe("Dashboard page", () => {
       pagination: { total: 5, limit: 10, offset: 0 },
     });
 
-    render(<Dashboard allowMigrations={false} />);
+    const view = render(<Dashboard allowMigrations={false} />);
 
-    await screen.findAllByText("789");
+    await view.findAllByText("789");
 
-    const headers = screen.getAllByRole("columnheader");
+    const headers = view.getAllByRole("columnheader");
     const headerTexts = headers.map((h) => h.textContent);
     expect(headerTexts).toContain("Viagem");
     expect(headerTexts).toContain("Origem");
@@ -99,8 +109,8 @@ describe("Dashboard page", () => {
     expect(headerTexts).toContain("Produto");
     expect(headerTexts).toContain("Previsão");
     expect(headerTexts).toContain("Criado em");
-    expect(screen.getByText(/Exibindo/)).toBeInTheDocument();
-    expect(screen.getAllByText("20/02/2026").length).toBeGreaterThanOrEqual(2);
+    expect(view.getByText(/Exibindo/)).toBeInTheDocument();
+    expect(view.getAllByText("20/02/2026").length).toBeGreaterThanOrEqual(2);
   });
 
   it("renders fallback for invalid previsao date", async () => {
@@ -118,12 +128,12 @@ describe("Dashboard page", () => {
       pagination: { total: 1, limit: 10, offset: 0 },
     });
 
-    render(<Dashboard allowMigrations={false} />);
+    const view = render(<Dashboard allowMigrations={false} />);
 
-    await screen.findAllByText("999");
+    await view.findAllByText("999");
 
-    expect(screen.queryByText("Invalid Date")).not.toBeInTheDocument();
-    expect(screen.getAllByText("-").length).toBeGreaterThan(0);
+    expect(view.queryByText("Invalid Date")).not.toBeInTheDocument();
+    expect(view.getAllByText("-").length).toBeGreaterThan(0);
   });
 
   it("shows recent fretes when there are no pending fretes", async () => {
@@ -146,16 +156,16 @@ describe("Dashboard page", () => {
         pagination: { total: 1, limit: 10, offset: 0 },
       });
 
-    render(<Dashboard allowMigrations={false} />);
+    const view = render(<Dashboard allowMigrations={false} />);
 
-    await screen.findAllByText("105712");
+    await view.findAllByText("105712");
 
     expect(
-      screen.getByText(
+      view.getByText(
         "Nenhum frete pendente no momento. Exibindo fretes recentes.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("0")).toBeInTheDocument();
+    expect(view.getByText("0")).toBeInTheDocument();
     expect(fetchCargas).toHaveBeenCalledTimes(2);
   });
 
@@ -174,12 +184,12 @@ describe("Dashboard page", () => {
       pagination: { total: 1, limit: 10, offset: 0 },
     });
 
-    render(<Dashboard allowMigrations={true} />);
+    const view = render(<Dashboard allowMigrations={true} />);
 
-    await screen.findAllByText("001");
+    await view.findAllByText("001");
 
     expect(
-      screen.getByRole("button", { name: "Rodar migrations" }),
+      view.getByRole("button", { name: "Rodar migrations" }),
     ).toBeInTheDocument();
   });
 
@@ -198,12 +208,12 @@ describe("Dashboard page", () => {
       pagination: { total: 1, limit: 10, offset: 0 },
     });
 
-    render(<Dashboard allowMigrations={false} />);
+    const view = render(<Dashboard allowMigrations={false} />);
 
-    await screen.findAllByText("002");
+    await view.findAllByText("002");
 
     expect(
-      screen.queryByRole("button", { name: "Rodar migrations" }),
+      view.queryByRole("button", { name: "Rodar migrations" }),
     ).not.toBeInTheDocument();
   });
 });

@@ -3,16 +3,30 @@ name: Automated Tests
 on: pull_request
 
 jobs:
-  jest:
-    name: Jest Ubuntu
+  bun_api:
+    name: Bun API
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          node-version: "v24.11.1"
+          bun-version: latest
 
-      - run: npm ci
+      - run: bun install
 
-      - run: npm run test
+      - run: bun run api:test
+
+  bun_web:
+    name: Bun Web and Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install
+
+      - run: bun run test

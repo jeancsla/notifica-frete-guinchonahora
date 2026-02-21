@@ -1,5 +1,17 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
+import "tests/ui.setup.js";
 /** @jest-environment jsdom */
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Status from "pages/status";
 import { fetchStatus } from "lib/api";
@@ -35,17 +47,15 @@ describe("Status page", () => {
       },
     });
 
-    render(<Status />);
+    const view = render(<Status />);
 
-    expect(await screen.findByText("16.1")).toBeInTheDocument();
-    expect(screen.getByText("100")).toBeInTheDocument();
+    expect(await view.findByText("16.1")).toBeInTheDocument();
+    expect(view.getByText("100")).toBeInTheDocument();
 
-    const refresh = screen.getByRole("button", { name: "Atualizar" });
+    const refresh = view.getByRole("button", { name: "Atualizar" });
     await userEvent.click(refresh);
-    expect(
-      await screen.findByText("Atualizado com sucesso"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Atualizado agora")).toBeInTheDocument();
+    expect(await view.findByText("Atualizado com sucesso")).toBeInTheDocument();
+    expect(view.getByText("Atualizado agora")).toBeInTheDocument();
   });
 
   it("shows error feedback when refresh fails", async () => {
@@ -62,12 +72,13 @@ describe("Status page", () => {
       })
       .mockRejectedValueOnce(new Error("API down"));
 
-    render(<Status />);
+    const view = render(<Status />);
 
-    const refresh = await screen.findByRole("button", { name: "Atualizar" });
+    const refresh = await view.findByRole("button", { name: "Atualizar" });
     await userEvent.click(refresh);
 
-    const errorMessages = await screen.findAllByText("Erro: API down");
+    expect(await view.findByText("Falha ao atualizar")).toBeInTheDocument();
+    const errorMessages = view.getAllByText("Erro: API down");
     expect(errorMessages.length).toBeGreaterThan(0);
   });
 });

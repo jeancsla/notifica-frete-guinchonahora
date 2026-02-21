@@ -1,5 +1,17 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
+import "tests/ui.setup.js";
 /** @jest-environment jsdom */
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import TableView from "pages/table";
 import { fetchCargas } from "lib/api";
@@ -32,16 +44,14 @@ describe("Table view", () => {
       pagination: { total: 1, limit: 15, offset: 0 },
     });
 
-    render(<TableView />);
+    const view = render(<TableView />);
 
-    expect(await screen.findByText("789")).toBeInTheDocument();
-    expect(screen.getByText("Rodoviario")).toBeInTheDocument();
+    expect(await view.findByText("789")).toBeInTheDocument();
+    expect(view.getByText("Rodoviario")).toBeInTheDocument();
 
-    const refresh = screen.getByRole("button", { name: "Atualizar" });
+    const refresh = view.getByRole("button", { name: "Atualizar" });
     await userEvent.click(refresh);
-    expect(
-      await screen.findByText("Atualizado com sucesso"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Atualizado agora")).toBeInTheDocument();
+    expect(await view.findByText("Atualizado com sucesso")).toBeInTheDocument();
+    expect(view.getByText("Atualizado agora")).toBeInTheDocument();
   });
 });

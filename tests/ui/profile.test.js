@@ -1,5 +1,17 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
+import "tests/ui.setup.js";
 /** @jest-environment jsdom */
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Profile from "pages/profile";
 
@@ -15,15 +27,13 @@ jest.mock("next/router", () => ({
 
 describe("Profile page", () => {
   it("renders profile details", async () => {
-    render(<Profile />);
-    expect(screen.getByText("Operador principal")).toBeInTheDocument();
-    expect(screen.getByText("Equipe Guincho Na Hora")).toBeInTheDocument();
+    const view = render(<Profile />);
+    expect(view.getByText("Operador principal")).toBeInTheDocument();
+    expect(view.getByText("Equipe Guincho Na Hora")).toBeInTheDocument();
 
-    const refresh = screen.getByRole("button", { name: "Atualizar" });
+    const refresh = view.getByRole("button", { name: "Atualizar" });
     await userEvent.click(refresh);
-    expect(
-      await screen.findByText("Atualizado com sucesso"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Atualizado agora")).toBeInTheDocument();
+    expect(await view.findByText("Atualizado com sucesso")).toBeInTheDocument();
+    expect(view.getByText("Atualizado agora")).toBeInTheDocument();
   });
 });

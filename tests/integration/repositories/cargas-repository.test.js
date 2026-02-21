@@ -1,3 +1,14 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
 import cargasRepository from "repositories/cargas-repository.js";
 import database from "infra/database.js";
 import Carga from "models/carga.js";
@@ -98,9 +109,8 @@ describe("Cargas Repository", () => {
     });
 
     test("should not throw when id_viagem does not exist", async () => {
-      await expect(
-        cargasRepository.markAsNotified("99999"),
-      ).resolves.not.toThrow();
+      await cargasRepository.markAsNotified("99999");
+      expect(true).toBe(true);
     });
   });
 
