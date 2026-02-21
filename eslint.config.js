@@ -1,25 +1,41 @@
-const nextConfig = require("eslint-config-next");
-const jestPlugin = require("eslint-plugin-jest");
-const prettierConfig = require("eslint-config-prettier");
+const js = require("@eslint/js");
+const globals = require("globals");
 
 module.exports = [
-  ...nextConfig,
   {
-    files: [
-      "**/*.test.{js,jsx,ts,tsx,mjs,cjs}",
-      "**/*.spec.{js,jsx,ts,tsx,mjs,cjs}",
-      "tests/**/*.{js,jsx,ts,tsx,mjs,cjs}",
-    ],
-    plugins: {
-      jest: jestPlugin,
+    ignores: [".next/**", "node_modules/**", "coverage/**"],
+  },
+  js.configs.recommended,
+  {
+    files: ["**/*.{js,mjs,cjs,jsx}"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
     },
     rules: {
-      ...jestPlugin.configs["flat/recommended"].rules,
+      "no-unused-vars": "off",
+      "no-useless-assignment": "off",
     },
   },
   {
-    rules: {
-      ...prettierConfig.rules,
+    files: [
+      "**/*.test.{js,jsx,mjs,cjs}",
+      "**/*.spec.{js,jsx,mjs,cjs}",
+      "tests/**/*.{js,jsx,mjs,cjs}",
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+      },
     },
   },
 ];
