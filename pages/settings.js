@@ -1,4 +1,5 @@
 import Layout from "../components/Layout";
+import { InlineRefreshStatus, LoadingButton } from "../components/LoadingUI";
 import Toast from "../components/Toast";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 
@@ -9,26 +10,30 @@ export default function Settings() {
   return (
     <Layout
       title="Settings"
-      subtitle="Configuracoes de operacao, notificacoes e alertas."
+      subtitle="Configurações de operação, notificações e alertas."
       actions={
         <>
-          <button
+          <LoadingButton
             className="button secondary"
-            onClick={() => wrapRefresh(async () => {})}
-            disabled={isRefreshing}
+            onClick={() =>
+              wrapRefresh(
+                () =>
+                  new Promise((resolve) => {
+                    setTimeout(resolve, 320);
+                  }),
+              )
+            }
+            loading={isRefreshing}
+            loadingLabel="Atualizando..."
           >
-            {isRefreshing ? "Atualizando..." : "Atualizar"}
-          </button>
-          <div
-            className={`refresh-status${refreshError ? " error" : ""}`}
-            role="status"
-          >
-            {refreshError
-              ? `Erro: ${refreshError}`
-              : lastUpdatedAt
-                ? "Atualizado agora"
-                : ""}
-          </div>
+            Atualizar
+          </LoadingButton>
+          <InlineRefreshStatus
+            isLoading={false}
+            isValidating={isRefreshing}
+            error={refreshError}
+            lastUpdatedAt={lastUpdatedAt}
+          />
         </>
       }
     >
@@ -37,12 +42,15 @@ export default function Settings() {
         type={toast.type}
         visible={toast.visible}
       />
-      <section className="grid cols-2">
+      <section
+        className={`grid cols-2${isRefreshing ? " soft-loading" : ""}`}
+        aria-busy={isRefreshing ? "true" : "false"}
+      >
         <div className="card">
-          <h3>Notificacoes</h3>
+          <h3>Notificações</h3>
           <div className="detail-list">
             <div className="detail-item">
-              <span>Canal primario</span>
+              <span>Canal primário</span>
               <strong>WhatsApp</strong>
             </div>
             <div className="detail-item">
@@ -58,7 +66,7 @@ export default function Settings() {
         <div className="card">
           <h3>Prioridades</h3>
           <p className="muted">
-            Ajustes sao controlados pelo backend. Esta tela mostra o estado
+            Ajustes são controlados pelo backend. Esta tela mostra o estado
             atual.
           </p>
           <div style={{ marginTop: "12px" }} className="badge">

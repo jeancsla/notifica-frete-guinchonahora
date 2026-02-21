@@ -1,4 +1,5 @@
 import Layout from "../components/Layout";
+import { InlineRefreshStatus, LoadingButton } from "../components/LoadingUI";
 import Toast from "../components/Toast";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 
@@ -9,26 +10,30 @@ export default function Profile() {
   return (
     <Layout
       title="Profile"
-      subtitle="Informacoes operacionais do responsavel pelo turno."
+      subtitle="Informações operacionais do responsável pelo turno."
       actions={
         <>
-          <button
+          <LoadingButton
             className="button secondary"
-            onClick={() => wrapRefresh(async () => {})}
-            disabled={isRefreshing}
+            onClick={() =>
+              wrapRefresh(
+                () =>
+                  new Promise((resolve) => {
+                    setTimeout(resolve, 320);
+                  }),
+              )
+            }
+            loading={isRefreshing}
+            loadingLabel="Atualizando..."
           >
-            {isRefreshing ? "Atualizando..." : "Atualizar"}
-          </button>
-          <div
-            className={`refresh-status${refreshError ? " error" : ""}`}
-            role="status"
-          >
-            {refreshError
-              ? `Erro: ${refreshError}`
-              : lastUpdatedAt
-                ? "Atualizado agora"
-                : ""}
-          </div>
+            Atualizar
+          </LoadingButton>
+          <InlineRefreshStatus
+            isLoading={false}
+            isValidating={isRefreshing}
+            error={refreshError}
+            lastUpdatedAt={lastUpdatedAt}
+          />
         </>
       }
     >
@@ -37,13 +42,16 @@ export default function Profile() {
         type={toast.type}
         visible={toast.visible}
       />
-      <section className="grid cols-2">
+      <section
+        className={`grid cols-2${isRefreshing ? " soft-loading" : ""}`}
+        aria-busy={isRefreshing ? "true" : "false"}
+      >
         <div className="card">
           <h3>Operador principal</h3>
           <div className="detail-list">
             <div className="detail-item">
               <span>Nome</span>
-              <strong>Equipe Guincho Agora</strong>
+              <strong>Equipe Guincho Na Hora</strong>
             </div>
             <div className="detail-item">
               <span>Turno</span>
@@ -60,7 +68,7 @@ export default function Profile() {
           <div className="detail-list">
             <div className="detail-item">
               <span>Email</span>
-              <strong>operacoes@guinchoagora.com</strong>
+              <strong>operacoes@guinchonahora.com</strong>
             </div>
             <div className="detail-item">
               <span>Telefone</span>
@@ -73,17 +81,21 @@ export default function Profile() {
           </div>
         </div>
       </section>
-      <section style={{ marginTop: "24px" }} className="grid cols-3">
+      <section
+        style={{ marginTop: "24px" }}
+        className={`grid cols-3${isRefreshing ? " soft-loading" : ""}`}
+        aria-busy={isRefreshing ? "true" : "false"}
+      >
         <div className="card">
           <h3>Escala</h3>
-          <p className="muted">Rodizio automatico via API de turnos.</p>
+          <p className="muted">Rodízio automático via API de turnos.</p>
         </div>
         <div className="card">
-          <h3>Permissoes</h3>
-          <p className="muted">Dashboard leitura total.</p>
+          <h3>Permissões</h3>
+          <p className="muted">Dashboard de leitura total.</p>
         </div>
         <div className="card">
-          <h3>Ultima atualizacao</h3>
+          <h3>Última atualização</h3>
           <p className="muted">Sincronizado automaticamente.</p>
         </div>
       </section>

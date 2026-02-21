@@ -1,45 +1,67 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
+import useSWR from "swr";
 import Layout from "../components/Layout";
 import Toast from "../components/Toast";
+import {
+  InlineRefreshStatus,
+  LoadingButton,
+  SkeletonBlock,
+} from "../components/LoadingUI";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchCargas } from "../lib/api";
 
+const EMPTY_ARRAY = [];
+
 export default function Details() {
   const router = useRouter();
-  const [data, setData] = useState([]);
-  const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
-  const { isRefreshing, lastUpdatedAt, refreshError, toast, wrapRefresh } =
-    useRefreshFeedback();
+  const {
+    isRefreshing,
+    lastUpdatedAt,
+    refreshError,
+    toast,
+    wrapRefresh,
+    markUpdated,
+  } = useRefreshFeedback();
 
-  async function load() {
-    try {
-      setError("");
-      const response = await fetchCargas({ limit: 20, offset: 0 });
-      setData(response.cargas || []);
-      if (!selectedId && response.cargas?.length) {
-        setSelectedId(response.cargas[0].id_viagem);
-      }
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    }
-  }
+  const {
+    data: response,
+    error,
+    isLoading,
+    isValidating,
+    mutate,
+  } = useSWR(
+    "details-cargas",
+    () => fetchCargas({ limit: 20, offset: 0, includeTotal: false }),
+    {
+      dedupingInterval: 0,
+      revalidateOnMount: true,
+    },
+  );
 
   useEffect(() => {
-    if (!router.isReady) return;
-    if (router.query.id) {
-      setSelectedId(String(router.query.id));
+    if (response) {
+      markUpdated();
     }
-    wrapRefresh(load);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router.isReady]);
+  }, [response, markUpdated]);
+
+  const data = response?.cargas || EMPTY_ARRAY;
+  const selectedIdFromRoute =
+    router.isReady && router.query.id ? String(router.query.id) : null;
+  const effectiveSelectedId =
+    selectedId || selectedIdFromRoute || data[0]?.id_viagem;
 
   const selected = useMemo(
-    () => data.find((item) => item.id_viagem === selectedId),
-    [data, selectedId],
+    () => data.find((item) => item.id_viagem === effectiveSelectedId),
+    [data, effectiveSelectedId],
   );
+
+  async function handleRefresh() {
+    await wrapRefresh(() =>
+      mutate(undefined, { revalidate: true, throwOnError: true }),
+    );
+  }
 
   return (
     <Layout
@@ -47,23 +69,20 @@ export default function Details() {
       subtitle="Detalhamento profundo de uma carga selecionada."
       actions={
         <>
-          <button
+          <LoadingButton
             className="button secondary"
-            onClick={() => wrapRefresh(load)}
-            disabled={isRefreshing}
+            onClick={handleRefresh}
+            loading={isRefreshing}
+            loadingLabel="Atualizando..."
           >
-            {isRefreshing ? "Atualizando..." : "Atualizar"}
-          </button>
-          <div
-            className={`refresh-status${refreshError ? " error" : ""}`}
-            role="status"
-          >
-            {refreshError
-              ? `Erro: ${refreshError}`
-              : lastUpdatedAt
-                ? "Atualizado agora"
-                : ""}
-          </div>
+            Atualizar
+          </LoadingButton>
+          <InlineRefreshStatus
+            isLoading={isLoading}
+            isValidating={isValidating || isRefreshing}
+            error={refreshError || error?.message}
+            lastUpdatedAt={lastUpdatedAt}
+          />
         </>
       }
     >
@@ -72,34 +91,52 @@ export default function Details() {
         type={toast.type}
         visible={toast.visible}
       />
-      {error ? <div className="card">Erro: {error}</div> : null}
-      <section className="grid cols-2">
+      {error ? <div className="card">Erro: {error.message}</div> : null}
+      <section
+        className={`grid cols-2${isValidating && !isLoading ? " soft-loading" : ""}`}
+      >
         <div className="card">
           <h3>Cargas recentes</h3>
           <div className="detail-list">
-            {data.map((item) => (
-              <button
-                key={item.id_viagem}
-                className="button secondary"
-                style={{ justifyContent: "space-between" }}
-                onClick={() => setSelectedId(item.id_viagem)}
-              >
-                <span>{item.id_viagem}</span>
-                <span>{item.destino || "N/A"}</span>
-              </button>
-            ))}
+            {isLoading
+              ? Array.from({ length: 6 }).map((_, idx) => (
+                  <SkeletonBlock
+                    key={`btn-skeleton-${idx}`}
+                    height={34}
+                    width="100%"
+                  />
+                ))
+              : data.map((item) => (
+                  <button
+                    key={item.id_viagem}
+                    className="button secondary"
+                    style={{ justifyContent: "space-between" }}
+                    onClick={() => setSelectedId(item.id_viagem)}
+                  >
+                    <span>{item.id_viagem}</span>
+                    <span>{item.destino || "N/A"}</span>
+                  </button>
+                ))}
           </div>
         </div>
         <div className="card">
-          <h3>Informacoes da carga</h3>
-          {selected ? (
+          <h3>Informações da carga</h3>
+          {isLoading ? (
+            <div className="detail-list">
+              <SkeletonBlock height={14} width="100%" />
+              <SkeletonBlock height={14} width="100%" />
+              <SkeletonBlock height={14} width="100%" />
+              <SkeletonBlock height={14} width="100%" />
+              <SkeletonBlock height={14} width="100%" />
+            </div>
+          ) : selected ? (
             <div className="detail-list">
               <div className="detail-item">
                 <span>Viagem</span>
                 <strong>{selected.id_viagem}</strong>
               </div>
               <div className="detail-item">
-                <span>Tipo transporte</span>
+                <span>Tipo de transporte</span>
                 <strong>{selected.tipo_transporte || "N/A"}</strong>
               </div>
               <div className="detail-item">

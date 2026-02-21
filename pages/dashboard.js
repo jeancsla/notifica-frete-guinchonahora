@@ -1,10 +1,55 @@
 import { useEffect, useMemo, useState } from "react";
+import useSWR from "swr";
 import Layout from "../components/Layout";
 import Toast from "../components/Toast";
+import {
+  InlineRefreshStatus,
+  LoadingButton,
+  SkeletonBlock,
+  StatCardSkeleton,
+  TableSkeleton,
+} from "../components/LoadingUI";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchCargas } from "../lib/api";
 import { formatDateBR } from "../lib/date-format";
 import { getSession } from "lib/session";
+
+const EMPTY_ARRAY = [];
+
+async function fetchDashboardData({ limit, offset }) {
+  const pendingResponse = await fetchCargas({
+    limit,
+    offset,
+    notified: false,
+    sortBy: "prev_coleta",
+    sortOrder: "DESC",
+  });
+
+  const pendingCount = pendingResponse.pagination?.total ?? 0;
+
+  if (pendingCount > 0) {
+    return {
+      pendingTotal: pendingCount,
+      showingRecentFallback: false,
+      cargas: pendingResponse.cargas || [],
+      total: pendingCount,
+    };
+  }
+
+  const fallbackResponse = await fetchCargas({
+    limit,
+    offset,
+    sortBy: "created_at",
+    sortOrder: "DESC",
+  });
+
+  return {
+    pendingTotal: pendingCount,
+    showingRecentFallback: true,
+    cargas: fallbackResponse.cargas || [],
+    total: fallbackResponse.pagination?.total ?? 0,
+  };
+}
 
 function formatDateTime(dateString) {
   if (!dateString) return "-";
@@ -19,15 +64,10 @@ function formatDateTime(dateString) {
 }
 
 export default function Dashboard({ allowMigrations }) {
-  const [data, setData] = useState([]);
   const [pagination, setPagination] = useState({
     limit: 10,
     offset: 0,
-    total: 0,
   });
-  const [pendingTotal, setPendingTotal] = useState(0);
-  const [showingRecentFallback, setShowingRecentFallback] = useState(false);
-  const [error, setError] = useState("");
   const [selectedId, setSelectedId] = useState(null);
   const [isMigrating, setIsMigrating] = useState(false);
   const {
@@ -37,60 +77,41 @@ export default function Dashboard({ allowMigrations }) {
     toast,
     wrapRefresh,
     showToast,
+    markUpdated,
   } = useRefreshFeedback();
 
-  async function load() {
-    try {
-      setError("");
-      const pendingResponse = await fetchCargas({
-        limit: pagination.limit,
-        offset: pagination.offset,
-        notified: false,
-        sortBy: "prev_coleta",
-        sortOrder: "DESC",
-      });
-      const pendingCount = pendingResponse.pagination?.total ?? 0;
-      setPendingTotal(pendingCount);
-
-      if (pendingCount > 0) {
-        setShowingRecentFallback(false);
-        setData(pendingResponse.cargas || []);
-        setPagination((prev) => ({
-          ...prev,
-          total: pendingCount,
-        }));
-        if (!selectedId && pendingResponse.cargas?.length) {
-          setSelectedId(pendingResponse.cargas[0].id_viagem);
-        }
-        return;
-      }
-
-      const fallbackResponse = await fetchCargas({
-        limit: pagination.limit,
-        offset: pagination.offset,
-        sortBy: "created_at",
-        sortOrder: "DESC",
-      });
-
-      setShowingRecentFallback(true);
-      setData(fallbackResponse.cargas || []);
-      setPagination((prev) => ({
-        ...prev,
-        total: fallbackResponse.pagination?.total ?? prev.total,
-      }));
-      if (!selectedId && fallbackResponse.cargas?.length) {
-        setSelectedId(fallbackResponse.cargas[0].id_viagem);
-      }
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    }
-  }
+  const {
+    data: dashboard,
+    error,
+    isLoading,
+    isValidating,
+    mutate,
+  } = useSWR(
+    ["dashboard-cargas", pagination.limit, pagination.offset],
+    ([, limit, offset]) => fetchDashboardData({ limit, offset }),
+    {
+      dedupingInterval: 0,
+      revalidateOnMount: true,
+    },
+  );
 
   useEffect(() => {
-    wrapRefresh(load);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pagination.offset, pagination.limit]);
+    if (dashboard) {
+      markUpdated();
+    }
+  }, [dashboard, markUpdated]);
+
+  useEffect(() => {
+    if (!selectedId && dashboard?.cargas?.length) {
+      setSelectedId(dashboard.cargas[0].id_viagem);
+    }
+  }, [dashboard, selectedId]);
+
+  async function handleRefresh() {
+    await wrapRefresh(() =>
+      mutate(undefined, { revalidate: true, throwOnError: true }),
+    );
+  }
 
   async function handleMigrations() {
     setIsMigrating(true);
@@ -108,50 +129,53 @@ export default function Dashboard({ allowMigrations }) {
     }
   }
 
+  const data = dashboard?.cargas || EMPTY_ARRAY;
+  const pendingTotal = dashboard?.pendingTotal ?? 0;
+  const showingRecentFallback = dashboard?.showingRecentFallback;
+  const total = dashboard?.total ?? 0;
+
+  const effectiveSelectedId = data.some((item) => item.id_viagem === selectedId)
+    ? selectedId
+    : data[0]?.id_viagem;
   const selected = useMemo(
-    () => data.find((item) => item.id_viagem === selectedId),
-    [data, selectedId],
+    () => data.find((item) => item.id_viagem === effectiveSelectedId),
+    [data, effectiveSelectedId],
   );
 
-  const showingStart = pagination.total > 0 ? pagination.offset + 1 : 0;
-  const showingEnd = Math.min(
-    pagination.offset + pagination.limit,
-    pagination.total,
-  );
+  const showingStart = total > 0 ? pagination.offset + 1 : 0;
+  const showingEnd = Math.min(pagination.offset + pagination.limit, total);
 
   return (
     <Layout
       title="Dashboard"
-      subtitle="Fretes pendentes de notificacao"
+      subtitle="Fretes pendentes de notificação"
       actions={
         <>
-          <button
+          <LoadingButton
             className="button secondary"
-            onClick={() => wrapRefresh(load)}
-            disabled={isRefreshing}
+            onClick={handleRefresh}
+            loading={isRefreshing}
+            loadingLabel="Atualizando..."
           >
-            {isRefreshing ? "Atualizando..." : "Atualizar"}
-          </button>
+            Atualizar
+          </LoadingButton>
           {allowMigrations && (
-            <button
+            <LoadingButton
               className="button secondary"
               onClick={handleMigrations}
-              disabled={isMigrating}
+              loading={isMigrating}
+              loadingLabel="Migrando..."
               title="Executa migrations do banco"
             >
-              {isMigrating ? "Migrando..." : "Rodar migrations"}
-            </button>
+              Rodar migrations
+            </LoadingButton>
           )}
-          <div
-            className={`refresh-status${refreshError ? " error" : ""}`}
-            role="status"
-          >
-            {refreshError
-              ? `Erro: ${refreshError}`
-              : lastUpdatedAt
-                ? "Atualizado agora"
-                : ""}
-          </div>
+          <InlineRefreshStatus
+            isLoading={isLoading}
+            isValidating={isValidating || isRefreshing}
+            error={refreshError || error?.message}
+            lastUpdatedAt={lastUpdatedAt}
+          />
         </>
       }
     >
@@ -160,20 +184,34 @@ export default function Dashboard({ allowMigrations }) {
         type={toast.type}
         visible={toast.visible}
       />
-      {error ? <div className="card">Erro: {error}</div> : null}
+      {error ? <div className="card">Erro: {error.message}</div> : null}
       <section className="grid cols-2">
-        <div className="card">
-          <h3>Total pendentes</h3>
-          <p style={{ fontSize: "32px", fontWeight: 700 }}>{pendingTotal}</p>
-          <p className="muted">Fretes aguardando notificacao</p>
-        </div>
-        <div className="card">
-          <h3>Status</h3>
-          <div className="status-dot">Canal ativo</div>
-          <p className="muted">Monitorando API em tempo real</p>
-        </div>
+        {isLoading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <div className="card">
+              <h3>Total pendentes</h3>
+              <p style={{ fontSize: "32px", fontWeight: 700 }}>
+                {pendingTotal}
+              </p>
+              <p className="muted">Fretes aguardando notificacao</p>
+            </div>
+            <div className="card">
+              <h3>Status</h3>
+              <div className="status-dot">Canal ativo</div>
+              <p className="muted">Monitorando API em tempo real</p>
+            </div>
+          </>
+        )}
       </section>
-      <section style={{ marginTop: "24px" }} className="grid cols-2">
+      <section
+        style={{ marginTop: "24px" }}
+        className={`grid cols-2${isValidating && !isLoading ? " soft-loading" : ""}`}
+      >
         <div className="card">
           <div
             style={{
@@ -185,7 +223,7 @@ export default function Dashboard({ allowMigrations }) {
           >
             <h3 style={{ margin: 0 }}>Fretes pendentes</h3>
             <span className="muted">
-              Exibindo {showingStart}-{showingEnd} de {pagination.total}
+              Exibindo {showingStart}-{showingEnd} de {total}
             </span>
           </div>
           {showingRecentFallback ? (
@@ -193,75 +231,86 @@ export default function Dashboard({ allowMigrations }) {
               Nenhum frete pendente no momento. Exibindo fretes recentes.
             </p>
           ) : null}
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Viagem</th>
-                  <th>Origem</th>
-                  <th>Destino</th>
-                  <th>Produto</th>
-                  <th>Previsao</th>
-                  <th>Criado em</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((item) => (
-                  <tr
-                    key={item.id_viagem}
-                    onClick={() => setSelectedId(item.id_viagem)}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <td>{item.id_viagem}</td>
-                    <td>{item.origem || "N/A"}</td>
-                    <td>{item.destino || "N/A"}</td>
-                    <td>{item.produto || "N/A"}</td>
-                    <td>{formatDateBR(item.prev_coleta)}</td>
-                    <td>{formatDateTime(item.created_at)}</td>
-                  </tr>
-                ))}
-                {data.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="table-empty">
-                      Nenhum frete encontrado.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-          <div style={{ marginTop: "16px", display: "flex", gap: "12px" }}>
-            <button
-              className="button secondary"
-              disabled={pagination.offset === 0}
-              onClick={() =>
-                setPagination((prev) => ({
-                  ...prev,
-                  offset: Math.max(prev.offset - prev.limit, 0),
-                }))
-              }
-            >
-              Anterior
-            </button>
-            <button
-              className="button secondary"
-              disabled={
-                pagination.offset + pagination.limit >= pagination.total
-              }
-              onClick={() =>
-                setPagination((prev) => ({
-                  ...prev,
-                  offset: prev.offset + prev.limit,
-                }))
-              }
-            >
-              Proxima
-            </button>
-          </div>
+          {isLoading ? (
+            <TableSkeleton rows={6} columns={6} />
+          ) : (
+            <>
+              <div className="table-wrap">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Viagem</th>
+                      <th>Origem</th>
+                      <th>Destino</th>
+                      <th>Produto</th>
+                      <th>Previsão</th>
+                      <th>Criado em</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.map((item) => (
+                      <tr
+                        key={item.id_viagem}
+                        onClick={() => setSelectedId(item.id_viagem)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <td>{item.id_viagem}</td>
+                        <td>{item.origem || "N/A"}</td>
+                        <td>{item.destino || "N/A"}</td>
+                        <td>{item.produto || "N/A"}</td>
+                        <td>{formatDateBR(item.prev_coleta)}</td>
+                        <td>{formatDateTime(item.created_at)}</td>
+                      </tr>
+                    ))}
+                    {data.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="table-empty">
+                          Nenhum frete encontrado.
+                        </td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ marginTop: "16px", display: "flex", gap: "12px" }}>
+                <button
+                  className="button secondary"
+                  disabled={pagination.offset === 0}
+                  onClick={() =>
+                    setPagination((prev) => ({
+                      ...prev,
+                      offset: Math.max(prev.offset - prev.limit, 0),
+                    }))
+                  }
+                >
+                  Anterior
+                </button>
+                <button
+                  className="button secondary"
+                  disabled={pagination.offset + pagination.limit >= total}
+                  onClick={() =>
+                    setPagination((prev) => ({
+                      ...prev,
+                      offset: prev.offset + prev.limit,
+                    }))
+                  }
+                >
+                  Próxima
+                </button>
+              </div>
+            </>
+          )}
         </div>
         <div className="card">
-          <h3>Detalhe rapido</h3>
-          {selected ? (
+          <h3>Detalhe rápido</h3>
+          {isLoading ? (
+            <div className="detail-list">
+              <SkeletonBlock height={14} width="100%" />
+              <SkeletonBlock height={14} width="100%" />
+              <SkeletonBlock height={14} width="100%" />
+              <SkeletonBlock height={14} width="100%" />
+            </div>
+          ) : selected ? (
             <div className="detail-list">
               <div className="detail-item">
                 <span>Viagem</span>

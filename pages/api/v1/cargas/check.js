@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import cargoProcessor from "services/cargo-processor.js";
+import { invalidateServerCacheByTag } from "lib/server-cache";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -74,6 +75,8 @@ async function checkHandler(request, response) {
     console.log("[Check API] Starting manual cargo check...");
 
     const result = await cargoProcessor.process();
+    invalidateServerCacheByTag("cargas");
+    invalidateServerCacheByTag("status");
 
     return response.status(200).json({
       processed: result.processed,

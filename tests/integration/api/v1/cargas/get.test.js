@@ -244,4 +244,53 @@ describe("GET /api/v1/cargas", () => {
     const responseBody = await response.json();
     expect(responseBody.error).toBeDefined();
   });
+
+  test("should return cache headers and stable etag", async () => {
+    await cargasRepository.save(
+      new Carga({ id_viagem: "77777", origem: "SP" }),
+    );
+
+    const firstResponse = await fetch("http://localhost:3000/api/v1/cargas", {
+      headers: { cookie: authCookie },
+    });
+
+    expect(firstResponse.status).toBe(200);
+    expect(firstResponse.headers.get("cache-control")).toContain("private");
+    expect(firstResponse.headers.get("x-response-time")).toMatch(/ms$/);
+    expect(firstResponse.headers.get("etag")).toBeTruthy();
+
+    const secondResponse = await fetch("http://localhost:3000/api/v1/cargas", {
+      headers: { cookie: authCookie },
+    });
+
+    expect(secondResponse.status).toBe(200);
+    expect(secondResponse.headers.get("etag")).toBe(
+      firstResponse.headers.get("etag"),
+    );
+  });
+
+  test("should support selecting a subset of fields", async () => {
+    await cargasRepository.save(
+      new Carga({
+        id_viagem: "88888",
+        origem: "Sao Paulo - SP",
+        destino: "Rio de Janeiro - RJ",
+        produto: "Carga Geral",
+      }),
+    );
+
+    const response = await fetch(
+      "http://localhost:3000/api/v1/cargas?fields=id_viagem,origem",
+      { headers: { cookie: authCookie } },
+    );
+
+    expect(response.status).toBe(200);
+
+    const responseBody = await response.json();
+    expect(responseBody.cargas[0]).toMatchObject({
+      id_viagem: "88888",
+      origem: "Sao Paulo - SP",
+    });
+    expect(responseBody.cargas[0].destino).toBeUndefined();
+  });
 });

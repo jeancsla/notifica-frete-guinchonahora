@@ -16,7 +16,7 @@ jest.mock("next/router", () => ({
 describe("Settings page", () => {
   it("renders settings content", async () => {
     render(<Settings />);
-    expect(screen.getByText("Notificacoes")).toBeInTheDocument();
+    expect(screen.getByText("Notificações")).toBeInTheDocument();
     expect(screen.getByText("WhatsApp")).toBeInTheDocument();
 
     const refresh = screen.getByRole("button", { name: "Atualizar" });

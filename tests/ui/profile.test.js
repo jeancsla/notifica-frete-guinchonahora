@@ -17,7 +17,7 @@ describe("Profile page", () => {
   it("renders profile details", async () => {
     render(<Profile />);
     expect(screen.getByText("Operador principal")).toBeInTheDocument();
-    expect(screen.getByText("Equipe Guincho Agora")).toBeInTheDocument();
+    expect(screen.getByText("Equipe Guincho Na Hora")).toBeInTheDocument();
 
     const refresh = screen.getByRole("button", { name: "Atualizar" });
     await userEvent.click(refresh);

@@ -1,5 +1,45 @@
 import database from "infra/database.js";
 
+const ALL_COLUMNS = [
+  "id",
+  "id_viagem",
+  "tipo_transporte",
+  "origem",
+  "destino",
+  "produto",
+  "equipamento",
+  "prev_coleta",
+  "qtd_entregas",
+  "vr_frete",
+  "termino",
+  "notificado_em",
+  "created_at",
+];
+
+const SORTABLE_COLUMNS = [
+  "created_at",
+  "prev_coleta",
+  "id_viagem",
+  "origem",
+  "destino",
+  "produto",
+];
+
+const SORT_ORDERS = ["ASC", "DESC"];
+
+function getSelectedColumns(fields) {
+  if (!fields || fields.length === 0) {
+    return ALL_COLUMNS.join(", ");
+  }
+
+  const sanitized = fields.filter((field) => ALL_COLUMNS.includes(field));
+  if (sanitized.length === 0) {
+    return ALL_COLUMNS.join(", ");
+  }
+
+  return sanitized.join(", ");
+}
+
 const cargasRepository = {
   async exists(id_viagem) {
     const result = await database.query({
@@ -63,19 +103,13 @@ const cargasRepository = {
     offset = 0,
     sortBy = "created_at",
     sortOrder = "DESC",
+    fields,
   } = {}) {
-    const allowedColumns = [
-      "created_at",
-      "prev_coleta",
-      "id_viagem",
-      "origem",
-      "destino",
-      "produto",
-    ];
-    const allowedOrders = ["ASC", "DESC"];
-
-    const orderColumn = allowedColumns.includes(sortBy) ? sortBy : "created_at";
-    const orderDirection = allowedOrders.includes(sortOrder.toUpperCase())
+    const selectedColumns = getSelectedColumns(fields);
+    const orderColumn = SORTABLE_COLUMNS.includes(sortBy)
+      ? sortBy
+      : "created_at";
+    const orderDirection = SORT_ORDERS.includes(sortOrder.toUpperCase())
       ? sortOrder.toUpperCase()
       : "DESC";
 
@@ -94,7 +128,8 @@ const cargasRepository = {
 
     const result = await database.query({
       text: `
-        SELECT * FROM cargas
+        SELECT ${selectedColumns}
+        FROM cargas
         ORDER BY ${orderByClause}
         LIMIT $1 OFFSET $2;
       `,
@@ -109,19 +144,13 @@ const cargasRepository = {
     offset = 0,
     sortBy = "created_at",
     sortOrder = "DESC",
+    fields,
   } = {}) {
-    const allowedColumns = [
-      "created_at",
-      "prev_coleta",
-      "id_viagem",
-      "origem",
-      "destino",
-      "produto",
-    ];
-    const allowedOrders = ["ASC", "DESC"];
-
-    const orderColumn = allowedColumns.includes(sortBy) ? sortBy : "created_at";
-    const orderDirection = allowedOrders.includes(sortOrder.toUpperCase())
+    const selectedColumns = getSelectedColumns(fields);
+    const orderColumn = SORTABLE_COLUMNS.includes(sortBy)
+      ? sortBy
+      : "created_at";
+    const orderDirection = SORT_ORDERS.includes(sortOrder.toUpperCase())
       ? sortOrder.toUpperCase()
       : "DESC";
 
@@ -140,7 +169,8 @@ const cargasRepository = {
 
     const result = await database.query({
       text: `
-        SELECT * FROM cargas
+        SELECT ${selectedColumns}
+        FROM cargas
         WHERE notificado_em IS NULL
         ORDER BY ${orderByClause}
         LIMIT $1 OFFSET $2;

@@ -1,54 +1,70 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import useSWR from "swr";
 import Layout from "../components/Layout";
 import Toast from "../components/Toast";
+import {
+  InlineRefreshStatus,
+  LoadingButton,
+  SkeletonBlock,
+  StatCardSkeleton,
+} from "../components/LoadingUI";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchStatus } from "../lib/api";
 
 export default function Status() {
-  const [status, setStatus] = useState(null);
-  const [error, setError] = useState("");
-  const { isRefreshing, lastUpdatedAt, refreshError, toast, wrapRefresh } =
-    useRefreshFeedback();
+  const {
+    isRefreshing,
+    lastUpdatedAt,
+    refreshError,
+    toast,
+    wrapRefresh,
+    markUpdated,
+  } = useRefreshFeedback();
 
-  async function load() {
-    try {
-      setError("");
-      const response = await fetchStatus();
-      setStatus(response);
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    }
-  }
+  const {
+    data: status,
+    error,
+    isLoading,
+    isValidating,
+    mutate,
+  } = useSWR("status", fetchStatus, {
+    dedupingInterval: 0,
+    revalidateOnMount: true,
+  });
 
   useEffect(() => {
-    wrapRefresh(load);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (status) {
+      markUpdated();
+    }
+  }, [status, markUpdated]);
+
+  async function handleRefresh() {
+    await wrapRefresh(async () => {
+      const freshStatus = await fetchStatus();
+      await mutate(freshStatus, { revalidate: false });
+    });
+  }
 
   return (
     <Layout
       title="Status"
-      subtitle="Saude do backend e conexoes criticas."
+      subtitle="Saúde do backend e conexões críticas."
       actions={
         <>
-          <button
+          <LoadingButton
             className="button secondary"
-            onClick={() => wrapRefresh(load)}
-            disabled={isRefreshing}
+            onClick={handleRefresh}
+            loading={isRefreshing}
+            loadingLabel="Atualizando..."
           >
-            {isRefreshing ? "Atualizando..." : "Atualizar"}
-          </button>
-          <div
-            className={`refresh-status${refreshError ? " error" : ""}`}
-            role="status"
-          >
-            {refreshError
-              ? `Erro: ${refreshError}`
-              : lastUpdatedAt
-                ? "Atualizado agora"
-                : ""}
-          </div>
+            Atualizar
+          </LoadingButton>
+          <InlineRefreshStatus
+            isLoading={isLoading}
+            isValidating={isValidating || isRefreshing}
+            error={refreshError || error?.message}
+            lastUpdatedAt={lastUpdatedAt}
+          />
         </>
       }
     >
@@ -57,50 +73,71 @@ export default function Status() {
         type={toast.type}
         visible={toast.visible}
       />
-      {error ? <div className="card">Erro: {error}</div> : null}
+      {error ? <div className="card">Erro: {error.message}</div> : null}
       <section className="grid cols-2">
-        <div className="card">
-          <h3>Atualizacao</h3>
-          <p style={{ fontSize: "18px", fontWeight: 600 }}>
-            {status?.updated_at || "-"}
-          </p>
-          <p className="muted">Ultima verificacao do status.</p>
-        </div>
-        <div className="card">
-          <h3>Banco de dados</h3>
-          <div className="detail-list">
-            <div className="detail-item">
-              <span>Versao</span>
-              <strong>{status?.dependencies?.database?.version || "-"}</strong>
+        {isLoading ? (
+          <>
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </>
+        ) : (
+          <>
+            <div className="card">
+              <h3>Atualização</h3>
+              <p style={{ fontSize: "18px", fontWeight: 600 }}>
+                {status?.updated_at || "-"}
+              </p>
+              <p className="muted">Última verificação do status.</p>
             </div>
-            <div className="detail-item">
-              <span>Max conexoes</span>
-              <strong>
-                {status?.dependencies?.database?.max_connections ?? "-"}
-              </strong>
+            <div className="card">
+              <h3>Banco de dados</h3>
+              <div className="detail-list">
+                <div className="detail-item">
+                  <span>Versao</span>
+                  <strong>
+                    {status?.dependencies?.database?.version || "-"}
+                  </strong>
+                </div>
+                <div className="detail-item">
+                  <span>Máx. conexões</span>
+                  <strong>
+                    {status?.dependencies?.database?.max_connections ?? "-"}
+                  </strong>
+                </div>
+                <div className="detail-item">
+                  <span>Conexões abertas</span>
+                  <strong>
+                    {status?.dependencies?.database?.opened_connections ?? "-"}
+                  </strong>
+                </div>
+              </div>
             </div>
-            <div className="detail-item">
-              <span>Conexoes abertas</span>
-              <strong>
-                {status?.dependencies?.database?.opened_connections ?? "-"}
-              </strong>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
       </section>
-      <section style={{ marginTop: "24px" }} className="grid cols-3">
+      <section
+        style={{ marginTop: "24px" }}
+        className={`grid cols-3${isValidating && !isLoading ? " soft-loading" : ""}`}
+      >
         <div className="card">
-          <h3>Integracao</h3>
+          <h3>Integração</h3>
           <p className="muted">API online e operando.</p>
           <div className="status-dot">Operacional</div>
         </div>
         <div className="card">
-          <h3>Fila de notificacoes</h3>
-          <p className="muted">Pendencias avaliadas via dashboard.</p>
+          <h3>Fila de notificações</h3>
+          <p className="muted">Pendências avaliadas via dashboard.</p>
         </div>
         <div className="card">
           <h3>Logs</h3>
-          <p className="muted">Eventos recentes estao sendo registrados.</p>
+          <p className="muted">Eventos recentes estão sendo registrados.</p>
+          {isValidating ? (
+            <SkeletonBlock
+              height={12}
+              width="60%"
+              className="skeleton-gap-sm"
+            />
+          ) : null}
         </div>
       </section>
     </Layout>

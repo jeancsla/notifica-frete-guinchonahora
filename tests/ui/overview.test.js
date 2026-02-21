@@ -15,7 +15,7 @@ jest.mock("next/router", () => ({
 describe("Overview page", () => {
   it("renders hero content", () => {
     render(<Overview />);
-    expect(screen.getByText("Controle de Operacoes")).toBeInTheDocument();
+    expect(screen.getByText("Controle de Operações")).toBeInTheDocument();
     expect(screen.getByText("Abrir dashboard")).toBeInTheDocument();
     expect(screen.getByText("Ver tabela")).toBeInTheDocument();
   });

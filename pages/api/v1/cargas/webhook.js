@@ -1,4 +1,5 @@
 import cargoProcessor from "services/cargo-processor.js";
+import { invalidateServerCacheByTag } from "lib/server-cache";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -50,6 +51,8 @@ async function webhookHandler(request, response) {
     }
 
     const result = await cargoProcessor.process();
+    invalidateServerCacheByTag("cargas");
+    invalidateServerCacheByTag("status");
 
     console.log(
       `[Webhook] Completed. Processed: ${result.processed}, New: ${result.new_cargas?.length || 0}`,

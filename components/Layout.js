@@ -19,7 +19,7 @@ export default function Layout({ title, subtitle, actions, children }) {
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <strong>Guincho Agora</strong>
+          <strong>Guincho Na Hora</strong>
           <span>Fretes & cargas em tempo real</span>
         </div>
         <nav className="nav">
