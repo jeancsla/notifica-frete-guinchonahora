@@ -1,5 +1,17 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
+import "tests/ui.setup.js";
 /** @jest-environment jsdom */
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Activity from "pages/activity";
 import { fetchCargas, fetchStatus } from "lib/api";
@@ -34,9 +46,9 @@ describe("Activity page", () => {
       updated_at: "2026-02-17T10:05:00Z",
     });
 
-    render(<Activity />);
-    expect(await screen.findByText("Timeline")).toBeInTheDocument();
-    expect(await screen.findByText("Carga capturada")).toBeInTheDocument();
+    const view = render(<Activity />);
+    expect(await view.findByText("Timeline")).toBeInTheDocument();
+    expect(await view.findByText("Carga capturada")).toBeInTheDocument();
   });
 
   it("shows refresh feedback after update", async () => {
@@ -48,14 +60,12 @@ describe("Activity page", () => {
       updated_at: "2026-02-17T10:05:00Z",
     });
 
-    render(<Activity />);
+    const view = render(<Activity />);
 
-    const refresh = await screen.findByRole("button", { name: "Atualizar" });
+    const refresh = await view.findByRole("button", { name: "Atualizar" });
     await userEvent.click(refresh);
 
-    expect(
-      await screen.findByText("Atualizado com sucesso"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Atualizado agora")).toBeInTheDocument();
+    expect(await view.findByText("Atualizado com sucesso")).toBeInTheDocument();
+    expect(view.getByText("Atualizado agora")).toBeInTheDocument();
   });
 });

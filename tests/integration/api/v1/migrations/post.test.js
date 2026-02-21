@@ -1,5 +1,16 @@
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
 import database from "infra/database.js";
-import orchestrator from "tests/orchestrator.js";
+import orchestrator from "tests/orchestrator.bun.js";
 
 beforeAll(async () => {
   await orchestrator.waitForAllServices();

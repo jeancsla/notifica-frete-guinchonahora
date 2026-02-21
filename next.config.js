@@ -1,5 +1,28 @@
 module.exports = {
   reactStrictMode: true,
+  async rewrites() {
+    const apiOrigin =
+      process.env.API_ORIGIN ||
+      (process.env.NODE_ENV === "production" ? null : "http://localhost:4000");
+
+    if (!apiOrigin) {
+      throw new Error(
+        "API_ORIGIN is required in production to route /api/v1/* to Bun API.",
+      );
+    }
+
+    const base = apiOrigin.replace(/\/$/, "");
+    return {
+      beforeFiles: [
+        {
+          source: "/api/v1/:path*",
+          destination: `${base}/api/v1/:path*`,
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
   async headers() {
     const isProd = process.env.NODE_ENV === "production";
     const securityHeaders = [

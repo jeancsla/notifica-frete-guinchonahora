@@ -1,4 +1,15 @@
-import orchestrator from "tests/orchestrator.js";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  test,
+} from "bun:test";
+import orchestrator from "tests/orchestrator.bun.js";
 import database from "infra/database.js";
 import Carga from "models/carga.js";
 import cargasRepository from "repositories/cargas-repository.js";

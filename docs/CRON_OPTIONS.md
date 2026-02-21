@@ -50,14 +50,14 @@ curl -X POST https://your-app.vercel.app/api/v1/cargas/webhook \
 
 ## 2. Self-Hosted (Local/Server/Docker)
 
-**Command:** `npm run cron`
+**Command:** `bun run cron`
 
 Run the cron job on your own server or local machine.
 
 **Pros:**
 
 - Full control
-- Works anywhere Node.js runs
+- Works anywhere Bun runs
 - No platform limitations
 - Free
 
@@ -70,12 +70,12 @@ Run the cron job on your own server or local machine.
 
 ```bash
 # Local development
-npm run services:up
-npm run migration:up
-npm run cron
+bun run services:up
+bun run migration:up
+bun run cron
 
 # Or with PM2 for production
-pm2 start infra/cron-runner.js --name "cargas-cron"
+pm2 start "bun run cron" --name "cargas-cron"
 ```
 
 **Docker Compose Option:**
@@ -84,7 +84,7 @@ pm2 start infra/cron-runner.js --name "cargas-cron"
 services:
   cron:
     build: .
-    command: npm run cron
+    command: bun run cron
     environment:
       - DATABASE_URL=postgres://...
       - CRON_WEBHOOK_SECRET=your-secret
