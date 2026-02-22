@@ -14,3 +14,5 @@ IMPLEMENTATION_SUMMARY.md
 .env.production
 .env.test
 *.local
+tsconfig.tsbuildinfo
+next-dev.d.ts

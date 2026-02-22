@@ -1,9 +1,10 @@
-module.exports = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   reactStrictMode: true,
   async rewrites() {
     const apiOrigin = process.env.API_ORIGIN?.trim();
 
-    // Mono deploy mode: API handled inside this same Next.js project.
     if (!apiOrigin) {
       return {
         beforeFiles: [],
@@ -12,7 +13,7 @@ module.exports = {
       };
     }
 
-    let apiUrl;
+    let apiUrl: URL;
     try {
       apiUrl = new URL(apiOrigin);
     } catch {
@@ -21,7 +22,7 @@ module.exports = {
       );
     }
 
-    const toHost = (value) => {
+    const toHost = (value?: string): string | null => {
       if (!value) return null;
       const input = String(value).trim();
       if (!input) return null;
@@ -42,7 +43,7 @@ module.exports = {
         process.env.NEXT_PUBLIC_APP_URL,
       ]
         .map(toHost)
-        .filter(Boolean),
+        .filter((host): host is string => Boolean(host)),
     );
 
     if (currentHosts.has(apiUrl.host)) {
@@ -108,3 +109,5 @@ module.exports = {
     ];
   },
 };
+
+export default nextConfig;
