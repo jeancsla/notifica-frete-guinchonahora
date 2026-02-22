@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useCallback, useRef } from "react";
 
 const navItems = [
   { href: "/", label: "Overview" },
@@ -14,6 +15,16 @@ const navItems = [
 
 export default function Layout({ title, subtitle, actions, children }) {
   const router = useRouter();
+  const prefetchedRoutes = useRef(new Set());
+
+  const prefetchRoute = useCallback(
+    (href) => {
+      if (!href || prefetchedRoutes.current.has(href)) return;
+      prefetchedRoutes.current.add(href);
+      router.prefetch(href).catch(() => {});
+    },
+    [router],
+  );
 
   return (
     <div className="app-shell">
@@ -27,7 +38,10 @@ export default function Layout({ title, subtitle, actions, children }) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={router.pathname === item.href ? "active" : ""}
+              onMouseEnter={() => prefetchRoute(item.href)}
+              onFocus={() => prefetchRoute(item.href)}
             >
               <span>{item.label}</span>
               <span>→</span>
@@ -35,16 +49,18 @@ export default function Layout({ title, subtitle, actions, children }) {
           ))}
         </nav>
       </aside>
-      <main>
-        <div className="topbar">
-          <div>
-            <div className="chip">Operacional</div>
-            <h1>{title}</h1>
-            {subtitle ? <p className="muted">{subtitle}</p> : null}
+      <main className="main">
+        <div className="content">
+          <div className="topbar">
+            <div>
+              <div className="chip">Operacional</div>
+              <h1>{title}</h1>
+              {subtitle ? <p className="muted">{subtitle}</p> : null}
+            </div>
+            <div className="topbar-actions">{actions}</div>
           </div>
-          <div className="topbar-actions">{actions}</div>
+          {children}
         </div>
-        {children}
       </main>
     </div>
   );

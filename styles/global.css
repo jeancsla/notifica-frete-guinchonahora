@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap");
-
 :root {
   --bg: #0d0f14;
   --bg-2: #151a23;
@@ -12,6 +10,8 @@
   --stroke: #2b3445;
   --card: #121720;
   --shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  --focus: rgba(0, 224, 164, 0.35);
+  --content-max: 1200px;
 }
 
 * {
@@ -21,7 +21,18 @@
 }
 
 body {
-  font-family: "Space Grotesk", "IBM Plex Mono", ui-sans-serif, system-ui;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: 15px;
+  line-height: 1.5;
   background:
     radial-gradient(1200px 800px at 10% -20%, #273149 0%, transparent 60%),
     radial-gradient(1000px 700px at 90% 0%, #1a2a2a 0%, transparent 55%),
@@ -38,6 +49,11 @@ label {
 a {
   color: inherit;
   text-decoration: none;
+}
+
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .route-loading {
@@ -64,7 +80,7 @@ a {
   animation: route-progress 1s ease-in-out infinite;
 }
 
-main {
+.main {
   padding: 32px;
   min-width: 0;
 }
@@ -73,6 +89,12 @@ main {
   display: grid;
   grid-template-columns: 260px 1fr;
   min-height: 100vh;
+}
+
+.content {
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
 }
 
 .sidebar {
@@ -92,9 +114,9 @@ main {
 }
 
 .brand strong {
-  font-size: 20px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  text-transform: none;
 }
 
 .brand span {
@@ -190,6 +212,11 @@ main {
   box-shadow: none;
   border-color: #445268;
   background: rgba(255, 255, 255, 0.03);
+}
+
+.button.secondary.active {
+  border-color: rgba(0, 224, 164, 0.5);
+  background: rgba(0, 224, 164, 0.08);
 }
 
 .button:disabled {
@@ -304,8 +331,9 @@ main {
   border-bottom: 1px solid var(--stroke);
   font-size: 14px;
   vertical-align: top;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .table th {
@@ -315,8 +343,33 @@ main {
   font-size: 11px;
 }
 
+.table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  z-index: 1;
+}
+
 .table tr:hover {
   background: rgba(255, 255, 255, 0.02);
+}
+
+.table tr.selectable {
+  cursor: pointer;
+}
+
+.table tr[aria-selected="true"] {
+  background: rgba(0, 224, 164, 0.08);
+}
+
+.cell-wrap {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.cell-num {
+  font-variant-numeric: tabular-nums;
 }
 
 .table-empty {
@@ -514,7 +567,7 @@ main {
 }
 
 @media (max-width: 720px) {
-  main {
+  .main {
     padding: 16px;
   }
 
