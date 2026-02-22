@@ -10,6 +10,7 @@ import {
   test,
 } from "bun:test";
 import {
+  BUSINESS_TIME_ZONE,
   buildActivityEvents,
   countActivityAlerts,
   countTodayEvents,
@@ -34,6 +35,7 @@ describe("activity helpers", () => {
     expect(
       events.find((event) => event.title === "Status checado"),
     ).toBeTruthy();
+    expect(events.every((event) => event.id)).toBe(true);
   });
 
   it("counts alerts for missing fields", () => {
@@ -46,14 +48,25 @@ describe("activity helpers", () => {
     expect(alerts).toBe(2);
   });
 
-  it("counts only events from the current day", () => {
-    const today = new Date("2026-02-17T12:00:00Z");
+  it("counts only events from the current day in Sao Paulo timezone", () => {
+    const today = new Date("2026-02-17T18:00:00Z");
     const events = [
-      { timestamp: new Date("2026-02-17T01:00:00Z").getTime() },
-      { timestamp: new Date("2026-02-17T23:59:00Z").getTime() },
-      { timestamp: new Date("2026-02-16T23:59:00Z").getTime() },
+      { timestamp: new Date("2026-02-17T14:00:00Z").getTime() },
+      { timestamp: new Date("2026-02-17T02:00:00Z").getTime() },
+      { timestamp: null },
     ];
 
-    expect(countTodayEvents(events, today)).toBe(2);
+    expect(countTodayEvents(events, today, BUSINESS_TIME_ZONE)).toBe(1);
+  });
+
+  it("keeps unknown dates as 'Sem data' and out of today's count", () => {
+    const events = buildActivityEvents(
+      [{ id_viagem: "1", created_at: null, prev_coleta: null }],
+      null,
+    );
+
+    expect(events[0].time).toBe("Sem data");
+    expect(events[0].timestamp).toBeNull();
+    expect(countTodayEvents(events, new Date("2026-02-17T12:00:00Z"))).toBe(0);
   });
 });

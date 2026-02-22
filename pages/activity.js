@@ -109,10 +109,7 @@ export default function Activity() {
                   />
                 ))
               : events.map((event) => (
-                  <div
-                    key={`${event.title}-${event.time}`}
-                    className="detail-item"
-                  >
+                  <div key={event.id} className="detail-item">
                     <div>
                       <strong>{event.title}</strong>
                       <div className="muted">{event.description}</div>
