@@ -1,5 +1,8 @@
 import retry from "async-retry";
 import type Carga from "@notifica/shared/models/Carga";
+import { logger } from "../apps/api/src/lib/logger";
+
+const log = logger.child({ component: "legacy_whatsapp_notifier" });
 
 function isTest() {
   return process.env.NODE_ENV === "test";
@@ -20,15 +23,21 @@ async function withRetry<T>(fn: () => Promise<T>, operationName: string) {
     minTimeout: 5000,
     maxTimeout: 30000,
     onRetry: (error: Error, attempt: number) => {
-      console.log(
-        `[WhatsAppNotifier] Retry ${attempt} for ${operationName}: ${error.message}`,
-      );
+      log.warn("legacy_whatsapp_notifier.retry", {
+        attempt,
+        operation: operationName,
+        error,
+      });
     },
   });
 }
 
 const whatsappNotifier = {
-  async sendNotification(phone: string, carga: Carga) {
+  async sendNotification(
+    phone: string,
+    carga: Carga,
+    recipient: "jean" | "jefferson" | "sebastiao" | "unknown" = "unknown",
+  ) {
     const apiBaseUrl = getEnvVar("EVOLUTION_API_BASE_URL");
     if (!apiBaseUrl) {
       throw new Error("EVOLUTION_API_BASE_URL not configured");
@@ -66,9 +75,9 @@ const whatsappNotifier = {
         );
       }
 
-      console.log(`[WhatsAppNotifier] Message sent to ${phone}`);
+      log.info("legacy_whatsapp_notifier.sent", { recipient });
       return response.json();
-    }, `sendNotification-${phone}`);
+    }, `sendNotification-${recipient}`);
   },
 
   formatMessage(carga: Partial<Carga>) {
@@ -88,8 +97,7 @@ const whatsappNotifier = {
     if (!jeanPhone) {
       throw new Error("Jean phone number not configured");
     }
-    console.log("[WhatsAppNotifier] Notifying Jean...");
-    return this.sendNotification(jeanPhone, carga);
+    return this.sendNotification(jeanPhone, carga, "jean");
   },
 
   async notifyJefferson(carga: Carga) {
@@ -97,8 +105,7 @@ const whatsappNotifier = {
     if (!jeffersonPhone) {
       throw new Error("Jefferson phone number not configured");
     }
-    console.log("[WhatsAppNotifier] Notifying Jefferson...");
-    return this.sendNotification(jeffersonPhone, carga);
+    return this.sendNotification(jeffersonPhone, carga, "jefferson");
   },
 
   async notifySebastiao(carga: Carga) {
@@ -106,8 +113,7 @@ const whatsappNotifier = {
     if (!sebastiaoPhone) {
       throw new Error("Sebastiao phone number not configured");
     }
-    console.log("[WhatsAppNotifier] Notifying Sebastiao...");
-    return this.sendNotification(sebastiaoPhone, carga);
+    return this.sendNotification(sebastiaoPhone, carga, "sebastiao");
   },
 };
 
