@@ -40,10 +40,6 @@ export default function Activity() {
   const { data, error, isLoading, isValidating, mutate } = useSWR(
     "activity-data",
     fetchActivityData,
-    {
-      dedupingInterval: 0,
-      revalidateOnMount: true,
-    },
   );
 
   useEffect(() => {

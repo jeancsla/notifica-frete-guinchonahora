@@ -32,13 +32,8 @@ export default function Details() {
     isLoading,
     isValidating,
     mutate,
-  } = useSWR(
-    "details-cargas",
-    () => fetchCargas({ limit: 20, offset: 0, includeTotal: false }),
-    {
-      dedupingInterval: 0,
-      revalidateOnMount: true,
-    },
+  } = useSWR("details-cargas", () =>
+    fetchCargas({ limit: 20, offset: 0, includeTotal: false }),
   );
 
   useEffect(() => {
@@ -110,9 +105,10 @@ export default function Details() {
               : data.map((item) => (
                   <button
                     key={item.id_viagem}
-                    className="button secondary"
+                    className={`button secondary${item.id_viagem === effectiveSelectedId ? " active" : ""}`}
                     style={{ justifyContent: "space-between" }}
                     onClick={() => setSelectedId(item.id_viagem)}
+                    aria-pressed={item.id_viagem === effectiveSelectedId}
                   >
                     <span>{item.id_viagem}</span>
                     <span>{item.destino || "N/A"}</span>

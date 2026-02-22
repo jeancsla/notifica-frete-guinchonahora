@@ -28,10 +28,7 @@ export default function Status() {
     isLoading,
     isValidating,
     mutate,
-  } = useSWR("status", fetchStatus, {
-    dedupingInterval: 0,
-    revalidateOnMount: true,
-  });
+  } = useSWR("status", fetchStatus);
 
   useEffect(() => {
     if (status) {

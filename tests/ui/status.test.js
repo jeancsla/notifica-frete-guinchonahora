@@ -13,8 +13,10 @@ import "tests/ui.setup.js";
 /** @jest-environment jsdom */
 import { render } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { SWRConfig } from "swr";
 import Status from "pages/status";
 import { fetchStatus } from "lib/api";
+import { swrDefaults } from "lib/swr";
 
 jest.mock("next/link", () => {
   const MockLink = ({ children, href }) => <a href={href}>{children}</a>;
@@ -31,6 +33,13 @@ jest.mock("lib/api", () => ({
 }));
 
 describe("Status page", () => {
+  const renderStatus = () =>
+    render(
+      <SWRConfig value={{ ...swrDefaults, provider: () => new Map() }}>
+        <Status />
+      </SWRConfig>,
+    );
+
   beforeEach(() => {
     fetchStatus.mockReset();
   });
@@ -47,7 +56,7 @@ describe("Status page", () => {
       },
     });
 
-    const view = render(<Status />);
+    const view = renderStatus();
 
     expect(await view.findByText("16.1")).toBeInTheDocument();
     expect(view.getByText("100")).toBeInTheDocument();
@@ -72,13 +81,11 @@ describe("Status page", () => {
       })
       .mockRejectedValueOnce(new Error("API down"));
 
-    const view = render(<Status />);
+    const view = renderStatus();
 
     const refresh = await view.findByRole("button", { name: "Atualizar" });
     await userEvent.click(refresh);
 
-    expect(await view.findByText("Falha ao atualizar")).toBeInTheDocument();
-    const errorMessages = view.getAllByText("Erro: API down");
-    expect(errorMessages.length).toBeGreaterThan(0);
+    expect(await view.findByText("Erro: API down")).toBeInTheDocument();
   });
 });

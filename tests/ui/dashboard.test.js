@@ -13,8 +13,10 @@ import "tests/ui.setup.js";
 /** @jest-environment jsdom */
 import { render, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { SWRConfig } from "swr";
 import Dashboard from "pages/dashboard";
 import { fetchCargas } from "lib/api";
+import { swrDefaults } from "lib/swr";
 
 jest.mock("next/link", () => {
   const MockLink = ({ children, href }) => <a href={href}>{children}</a>;
@@ -31,6 +33,13 @@ jest.mock("lib/api", () => ({
 }));
 
 describe("Dashboard page", () => {
+  const renderDashboard = (props) =>
+    render(
+      <SWRConfig value={{ ...swrDefaults, provider: () => new Map() }}>
+        <Dashboard {...props} />
+      </SWRConfig>,
+    );
+
   beforeEach(() => {
     fetchCargas.mockReset();
   });
@@ -64,7 +73,7 @@ describe("Dashboard page", () => {
         pagination: { total: 1, limit: 10, offset: 0 },
       });
 
-    const view = render(<Dashboard allowMigrations={false} />);
+    const view = renderDashboard({ allowMigrations: false });
 
     const firstId = await view.findAllByText("123");
     expect(firstId.length).toBeGreaterThan(0);
@@ -83,7 +92,7 @@ describe("Dashboard page", () => {
   });
 
   it("displays table with correct columns", async () => {
-    fetchCargas.mockResolvedValueOnce({
+    fetchCargas.mockResolvedValue({
       cargas: [
         {
           id_viagem: "789",
@@ -97,7 +106,7 @@ describe("Dashboard page", () => {
       pagination: { total: 5, limit: 10, offset: 0 },
     });
 
-    const view = render(<Dashboard allowMigrations={false} />);
+    const view = renderDashboard({ allowMigrations: false });
 
     await view.findAllByText("789");
 
@@ -114,7 +123,7 @@ describe("Dashboard page", () => {
   });
 
   it("renders fallback for invalid previsao date", async () => {
-    fetchCargas.mockResolvedValueOnce({
+    fetchCargas.mockResolvedValue({
       cargas: [
         {
           id_viagem: "999",
@@ -128,7 +137,7 @@ describe("Dashboard page", () => {
       pagination: { total: 1, limit: 10, offset: 0 },
     });
 
-    const view = render(<Dashboard allowMigrations={false} />);
+    const view = renderDashboard({ allowMigrations: false });
 
     await view.findAllByText("999");
 
@@ -156,7 +165,7 @@ describe("Dashboard page", () => {
         pagination: { total: 1, limit: 10, offset: 0 },
       });
 
-    const view = render(<Dashboard allowMigrations={false} />);
+    const view = renderDashboard({ allowMigrations: false });
 
     await view.findAllByText("105712");
 
@@ -170,7 +179,7 @@ describe("Dashboard page", () => {
   });
 
   it("shows migrations button when allowMigrations is true", async () => {
-    fetchCargas.mockResolvedValueOnce({
+    fetchCargas.mockResolvedValue({
       cargas: [
         {
           id_viagem: "001",
@@ -184,7 +193,7 @@ describe("Dashboard page", () => {
       pagination: { total: 1, limit: 10, offset: 0 },
     });
 
-    const view = render(<Dashboard allowMigrations={true} />);
+    const view = renderDashboard({ allowMigrations: true });
 
     await view.findAllByText("001");
 
@@ -194,7 +203,7 @@ describe("Dashboard page", () => {
   });
 
   it("hides migrations button when allowMigrations is false", async () => {
-    fetchCargas.mockResolvedValueOnce({
+    fetchCargas.mockResolvedValue({
       cargas: [
         {
           id_viagem: "002",
@@ -208,7 +217,7 @@ describe("Dashboard page", () => {
       pagination: { total: 1, limit: 10, offset: 0 },
     });
 
-    const view = render(<Dashboard allowMigrations={false} />);
+    const view = renderDashboard({ allowMigrations: false });
 
     await view.findAllByText("002");
 

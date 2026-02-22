@@ -35,13 +35,10 @@ export default function TableView() {
     ["table-cargas", pagination.limit, pagination.offset],
     ([, limit, offset]) =>
       fetchCargas({
-        limit,
+        limit: limit + 1,
         offset,
+        includeTotal: false,
       }),
-    {
-      dedupingInterval: 0,
-      revalidateOnMount: true,
-    },
   );
 
   useEffect(() => {
@@ -50,8 +47,9 @@ export default function TableView() {
     }
   }, [response, markUpdated]);
 
-  const data = response?.cargas || [];
-  const total = response?.pagination?.total ?? 0;
+  const rawData = response?.cargas || [];
+  const hasNextPage = rawData.length > pagination.limit;
+  const data = rawData.slice(0, pagination.limit);
 
   async function handleRefresh() {
     await wrapRefresh(() =>
@@ -99,29 +97,38 @@ export default function TableView() {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Viagem</th>
+                    <th className="cell-num">Viagem</th>
                     <th>Tipo</th>
                     <th>Origem</th>
                     <th>Destino</th>
-                    <th>Produto</th>
-                    <th>Equipamento</th>
-                    <th>Coleta</th>
-                    <th>Entregas</th>
-                    <th>Frete</th>
+                    <th className="cell-wrap">Produto</th>
+                    <th className="cell-wrap">Equipamento</th>
+                    <th className="cell-num">Coleta</th>
+                    <th className="cell-num">Entregas</th>
+                    <th className="cell-num">Frete</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.map((item) => (
                     <tr key={item.id_viagem}>
-                      <td>{item.id_viagem}</td>
+                      <td className="cell-num">{item.id_viagem}</td>
                       <td>{item.tipo_transporte || "N/A"}</td>
                       <td>{item.origem || "N/A"}</td>
                       <td>{item.destino || "N/A"}</td>
-                      <td>{item.produto || "N/A"}</td>
-                      <td>{item.equipamento || "N/A"}</td>
-                      <td>{formatDateBR(item.prev_coleta)}</td>
-                      <td>{item.qtd_entregas || "-"}</td>
-                      <td>{item.vr_frete || "-"}</td>
+                      <td className="cell-wrap" title={item.produto || "N/A"}>
+                        {item.produto || "N/A"}
+                      </td>
+                      <td
+                        className="cell-wrap"
+                        title={item.equipamento || "N/A"}
+                      >
+                        {item.equipamento || "N/A"}
+                      </td>
+                      <td className="cell-num">
+                        {formatDateBR(item.prev_coleta)}
+                      </td>
+                      <td className="cell-num">{item.qtd_entregas || "-"}</td>
+                      <td className="cell-num">{item.vr_frete || "-"}</td>
                     </tr>
                   ))}
                   {data.length === 0 ? (
@@ -149,7 +156,7 @@ export default function TableView() {
               </button>
               <button
                 className="button secondary"
-                disabled={pagination.offset + pagination.limit >= total}
+                disabled={!hasNextPage}
                 onClick={() =>
                   setPagination((prev) => ({
                     ...prev,

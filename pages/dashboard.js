@@ -77,10 +77,6 @@ export default function Dashboard({ allowMigrations }) {
   } = useSWR(
     ["dashboard-cargas", pagination.limit, pagination.offset],
     ([, limit, offset]) => fetchDashboardData({ limit, offset }),
-    {
-      dedupingInterval: 0,
-      revalidateOnMount: true,
-    },
   );
 
   useEffect(() => {
@@ -227,12 +223,12 @@ export default function Dashboard({ allowMigrations }) {
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Viagem</th>
+                      <th className="cell-num">Viagem</th>
                       <th>Origem</th>
                       <th>Destino</th>
-                      <th>Produto</th>
-                      <th>Previsão</th>
-                      <th>Criado em</th>
+                      <th className="cell-wrap">Produto</th>
+                      <th className="cell-num">Previsão</th>
+                      <th className="cell-num">Criado em</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -240,14 +236,21 @@ export default function Dashboard({ allowMigrations }) {
                       <tr
                         key={item.id_viagem}
                         onClick={() => setSelectedId(item.id_viagem)}
-                        style={{ cursor: "pointer" }}
+                        className="selectable"
+                        aria-selected={item.id_viagem === effectiveSelectedId}
                       >
-                        <td>{item.id_viagem}</td>
+                        <td className="cell-num">{item.id_viagem}</td>
                         <td>{item.origem || "N/A"}</td>
                         <td>{item.destino || "N/A"}</td>
-                        <td>{item.produto || "N/A"}</td>
-                        <td>{formatDateBR(item.prev_coleta)}</td>
-                        <td>{formatDateTimeBR(item.created_at)}</td>
+                        <td className="cell-wrap" title={item.produto || "N/A"}>
+                          {item.produto || "N/A"}
+                        </td>
+                        <td className="cell-num">
+                          {formatDateBR(item.prev_coleta)}
+                        </td>
+                        <td className="cell-num">
+                          {formatDateTimeBR(item.created_at)}
+                        </td>
                       </tr>
                     ))}
                     {data.length === 0 ? (
