@@ -14,6 +14,15 @@ import cargasRepository from "repositories/cargas-repository";
 import Carga from "@notifica/shared/models/Carga";
 import { asMock } from "tests/test-utils";
 
+const jestWithSpy = jest as unknown as {
+  spyOn: (target: object, method: string) => unknown;
+  restoreAllMocks: () => void;
+};
+
+function spyOn(target: object, method: string) {
+  return jestWithSpy.spyOn(target, method as never) as (...args: any[]) => any;
+}
+
 beforeAll(async () => {
   const env = process.env as Record<string, string | undefined>;
   env.NODE_ENV = "test";
@@ -25,23 +34,21 @@ afterAll(async () => {
 });
 
 afterEach(() => {
-  (jest as unknown as { restoreAllMocks: () => void }).restoreAllMocks();
+  jestWithSpy.restoreAllMocks();
 });
 
 describe("Cargo Processor", () => {
   describe("process", () => {
     test("should process new cargas and send notifications", async () => {
-      const fetchCargasMock = asMock(jest.spyOn(tegmaScraper, "fetchCargas"));
-      const existsBatchMock = asMock(
-        jest.spyOn(cargasRepository, "existsBatch"),
-      );
-      const saveMock = asMock(jest.spyOn(cargasRepository, "save"));
+      const fetchCargasMock = asMock(spyOn(tegmaScraper, "fetchCargas"));
+      const existsBatchMock = asMock(spyOn(cargasRepository, "existsBatch"));
+      const saveMock = asMock(spyOn(cargasRepository, "save"));
       const markAsNotifiedMock = asMock(
-        jest.spyOn(cargasRepository, "markAsNotified"),
+        spyOn(cargasRepository, "markAsNotified"),
       );
-      const notifyJeanMock = asMock(jest.spyOn(whatsappNotifier, "notifyJean"));
+      const notifyJeanMock = asMock(spyOn(whatsappNotifier, "notifyJean"));
       const notifyJeffersonMock = asMock(
-        jest.spyOn(whatsappNotifier, "notifyJefferson"),
+        spyOn(whatsappNotifier, "notifyJefferson"),
       );
 
       const mockCargas = [
@@ -78,17 +85,15 @@ describe("Cargo Processor", () => {
     });
 
     test("should skip cargas that already exist", async () => {
-      const fetchCargasMock = asMock(jest.spyOn(tegmaScraper, "fetchCargas"));
-      const existsBatchMock = asMock(
-        jest.spyOn(cargasRepository, "existsBatch"),
-      );
-      const saveMock = asMock(jest.spyOn(cargasRepository, "save"));
+      const fetchCargasMock = asMock(spyOn(tegmaScraper, "fetchCargas"));
+      const existsBatchMock = asMock(spyOn(cargasRepository, "existsBatch"));
+      const saveMock = asMock(spyOn(cargasRepository, "save"));
       const markAsNotifiedMock = asMock(
-        jest.spyOn(cargasRepository, "markAsNotified"),
+        spyOn(cargasRepository, "markAsNotified"),
       );
-      const notifyJeanMock = asMock(jest.spyOn(whatsappNotifier, "notifyJean"));
+      const notifyJeanMock = asMock(spyOn(whatsappNotifier, "notifyJean"));
       const notifyJeffersonMock = asMock(
-        jest.spyOn(whatsappNotifier, "notifyJefferson"),
+        spyOn(whatsappNotifier, "notifyJefferson"),
       );
 
       const mockCargas = [
@@ -119,9 +124,9 @@ describe("Cargo Processor", () => {
     });
 
     test("should return 0 when no cargas are found", async () => {
-      const fetchCargasMock = asMock(jest.spyOn(tegmaScraper, "fetchCargas"));
-      const saveMock = asMock(jest.spyOn(cargasRepository, "save"));
-      const notifyJeanMock = asMock(jest.spyOn(whatsappNotifier, "notifyJean"));
+      const fetchCargasMock = asMock(spyOn(tegmaScraper, "fetchCargas"));
+      const saveMock = asMock(spyOn(cargasRepository, "save"));
+      const notifyJeanMock = asMock(spyOn(whatsappNotifier, "notifyJean"));
 
       fetchCargasMock.mockResolvedValue([]);
 
@@ -133,11 +138,9 @@ describe("Cargo Processor", () => {
     });
 
     test("should return 0 when all cargas already exist", async () => {
-      const fetchCargasMock = asMock(jest.spyOn(tegmaScraper, "fetchCargas"));
-      const existsBatchMock = asMock(
-        jest.spyOn(cargasRepository, "existsBatch"),
-      );
-      const saveMock = asMock(jest.spyOn(cargasRepository, "save"));
+      const fetchCargasMock = asMock(spyOn(tegmaScraper, "fetchCargas"));
+      const existsBatchMock = asMock(spyOn(cargasRepository, "existsBatch"));
+      const saveMock = asMock(spyOn(cargasRepository, "save"));
 
       const mockCargas = [
         {
@@ -160,7 +163,7 @@ describe("Cargo Processor", () => {
     });
 
     test("should handle scraper errors", async () => {
-      const fetchCargasMock = asMock(jest.spyOn(tegmaScraper, "fetchCargas"));
+      const fetchCargasMock = asMock(spyOn(tegmaScraper, "fetchCargas"));
 
       fetchCargasMock.mockRejectedValue(new Error("Network error"));
 
@@ -168,17 +171,15 @@ describe("Cargo Processor", () => {
     });
 
     test("should continue processing if one notification fails", async () => {
-      const fetchCargasMock = asMock(jest.spyOn(tegmaScraper, "fetchCargas"));
-      const existsBatchMock = asMock(
-        jest.spyOn(cargasRepository, "existsBatch"),
-      );
-      const saveMock = asMock(jest.spyOn(cargasRepository, "save"));
+      const fetchCargasMock = asMock(spyOn(tegmaScraper, "fetchCargas"));
+      const existsBatchMock = asMock(spyOn(cargasRepository, "existsBatch"));
+      const saveMock = asMock(spyOn(cargasRepository, "save"));
       const markAsNotifiedMock = asMock(
-        jest.spyOn(cargasRepository, "markAsNotified"),
+        spyOn(cargasRepository, "markAsNotified"),
       );
-      const notifyJeanMock = asMock(jest.spyOn(whatsappNotifier, "notifyJean"));
+      const notifyJeanMock = asMock(spyOn(whatsappNotifier, "notifyJean"));
       const notifyJeffersonMock = asMock(
-        jest.spyOn(whatsappNotifier, "notifyJefferson"),
+        spyOn(whatsappNotifier, "notifyJefferson"),
       );
 
       const mockCargas = [
@@ -208,17 +209,15 @@ describe("Cargo Processor", () => {
     });
 
     test("should convert scraped data to Carga model before saving", async () => {
-      const fetchCargasMock = asMock(jest.spyOn(tegmaScraper, "fetchCargas"));
-      const existsBatchMock = asMock(
-        jest.spyOn(cargasRepository, "existsBatch"),
-      );
-      const saveMock = asMock(jest.spyOn(cargasRepository, "save"));
+      const fetchCargasMock = asMock(spyOn(tegmaScraper, "fetchCargas"));
+      const existsBatchMock = asMock(spyOn(cargasRepository, "existsBatch"));
+      const saveMock = asMock(spyOn(cargasRepository, "save"));
       const markAsNotifiedMock = asMock(
-        jest.spyOn(cargasRepository, "markAsNotified"),
+        spyOn(cargasRepository, "markAsNotified"),
       );
-      const notifyJeanMock = asMock(jest.spyOn(whatsappNotifier, "notifyJean"));
+      const notifyJeanMock = asMock(spyOn(whatsappNotifier, "notifyJean"));
       const notifyJeffersonMock = asMock(
-        jest.spyOn(whatsappNotifier, "notifyJefferson"),
+        spyOn(whatsappNotifier, "notifyJefferson"),
       );
 
       const mockCargas = [
@@ -253,17 +252,15 @@ describe("Cargo Processor", () => {
     });
 
     test("should process multiple cargas in order", async () => {
-      const fetchCargasMock = asMock(jest.spyOn(tegmaScraper, "fetchCargas"));
-      const existsBatchMock = asMock(
-        jest.spyOn(cargasRepository, "existsBatch"),
-      );
-      const saveMock = asMock(jest.spyOn(cargasRepository, "save"));
+      const fetchCargasMock = asMock(spyOn(tegmaScraper, "fetchCargas"));
+      const existsBatchMock = asMock(spyOn(cargasRepository, "existsBatch"));
+      const saveMock = asMock(spyOn(cargasRepository, "save"));
       const markAsNotifiedMock = asMock(
-        jest.spyOn(cargasRepository, "markAsNotified"),
+        spyOn(cargasRepository, "markAsNotified"),
       );
-      const notifyJeanMock = asMock(jest.spyOn(whatsappNotifier, "notifyJean"));
+      const notifyJeanMock = asMock(spyOn(whatsappNotifier, "notifyJean"));
       const notifyJeffersonMock = asMock(
-        jest.spyOn(whatsappNotifier, "notifyJefferson"),
+        spyOn(whatsappNotifier, "notifyJefferson"),
       );
 
       const mockCargas = [

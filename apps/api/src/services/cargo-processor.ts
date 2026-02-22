@@ -1,13 +1,18 @@
 import { Carga } from "@notifica/shared/models/Carga";
+import { logger } from "../lib/logger";
 import { cargasRepository } from "../repositories/cargas-repository";
 import { tegmaScraper } from "./tegma-scraper";
 import { whatsappNotifier } from "./whatsapp-notifier";
 
+const log = logger.child({ component: "cargo_processor" });
+
 export const cargoProcessor = {
   async process() {
+    log.info("cargo_processor.start");
     const scrapedCargas = await tegmaScraper.fetchCargas();
 
     if (!scrapedCargas || scrapedCargas.length === 0) {
+      log.info("cargo_processor.no_cargas");
       return { processed: 0, new_cargas: [] as unknown[] };
     }
 
@@ -53,6 +58,11 @@ export const cargoProcessor = {
             recipient: "jean",
             error: (error as Error).message,
           });
+          log.warn("cargo_processor.notify_failed", {
+            recipient: "jean",
+            id_viagem: carga.id_viagem,
+            error,
+          });
         }
 
         try {
@@ -61,6 +71,11 @@ export const cargoProcessor = {
           notificationErrors.push({
             recipient: "jefferson",
             error: (error as Error).message,
+          });
+          log.warn("cargo_processor.notify_failed", {
+            recipient: "jefferson",
+            id_viagem: carga.id_viagem,
+            error,
           });
         }
 
@@ -81,8 +96,17 @@ export const cargoProcessor = {
           id_viagem: scrapedCarga.viagem,
           error: (error as Error).message,
         });
+        log.error("cargo_processor.process_item_failed", {
+          id_viagem: scrapedCarga.viagem,
+          error,
+        });
       }
     }
+
+    log.info("cargo_processor.completed", {
+      processed: processedCargas.length,
+      failed: failedCargas.length,
+    });
 
     return {
       processed: processedCargas.length,

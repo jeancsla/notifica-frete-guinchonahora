@@ -13,7 +13,12 @@ export function parseCookies(request: Request) {
     }
     const key = part.slice(0, eq).trim();
     const value = part.slice(eq + 1).trim();
-    cookies.set(key, decodeURIComponent(value));
+    try {
+      cookies.set(key, decodeURIComponent(value));
+    } catch {
+      // Ignore malformed cookie values instead of failing the entire request.
+      continue;
+    }
   }
 
   return cookies;

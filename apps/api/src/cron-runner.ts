@@ -1,6 +1,7 @@
 import { setupCronJobs } from "./cron-jobs";
+import { logger } from "./lib/logger";
 
-console.log("[Cron Runner] Starting cron jobs...");
+logger.info("cron_runner.starting");
 setupCronJobs();
 
 setInterval(() => {}, 60000);

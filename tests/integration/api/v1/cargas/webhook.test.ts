@@ -14,7 +14,18 @@ beforeAll(async () => {
   process.env.CRON_WEBHOOK_SECRET = "test-secret";
 });
 
-const webhookSecret = process.env.CRON_WEBHOOK_SECRET ?? "";
+function getWebhookSecret() {
+  return process.env.CRON_WEBHOOK_SECRET ?? "";
+}
+
+function buildSecureWebhookHeaders(extra: Record<string, string> = {}) {
+  return {
+    "x-cron-secret": getWebhookSecret(),
+    "x-cron-timestamp": String(Math.floor(Date.now() / 1000)),
+    "x-cron-id": crypto.randomUUID(),
+    ...extra,
+  };
+}
 
 describeIfIntegration("POST /api/v1/cargas/webhook", () => {
   describe("Authentication", () => {
@@ -47,6 +58,23 @@ describeIfIntegration("POST /api/v1/cargas/webhook", () => {
       const data = await response.json();
       expect(data.error).toBe("Unauthorized");
     });
+
+    test("should return 400 when timestamp header is missing", async () => {
+      const response = await fetch(
+        "http://localhost:3000/api/v1/cargas/webhook",
+        {
+          method: "POST",
+          headers: {
+            "x-cron-secret": getWebhookSecret(),
+            "x-cron-id": crypto.randomUUID(),
+          },
+        },
+      );
+
+      expect(response.status).toBe(400);
+      const data = await response.json();
+      expect(data.error).toBe("Bad request");
+    });
   });
 
   describe("Method validation", () => {
@@ -56,7 +84,7 @@ describeIfIntegration("POST /api/v1/cargas/webhook", () => {
         {
           method: "GET",
           headers: {
-            "x-cron-secret": webhookSecret,
+            "x-cron-secret": getWebhookSecret(),
           },
         },
       );
@@ -82,10 +110,11 @@ describeIfIntegration("POST /api/v1/cargas/webhook", () => {
         {
           method: "POST",
           headers: {
-            "x-cron-secret": webhookSecret,
-            "x-cron-source": "n8n",
+            ...buildSecureWebhookHeaders({
+              "x-cron-source": "n8n",
+            }),
             "x-test-processor-result": JSON.stringify(mockedResult),
-          },
+          } as Record<string, string>,
         },
       );
 
@@ -97,28 +126,54 @@ describeIfIntegration("POST /api/v1/cargas/webhook", () => {
       expect(data.new_cargas).toHaveLength(2);
     });
 
-    test("should accept secret in query string", async () => {
+    test("should reject secret in query string", async () => {
       const mockedResult = {
         processed: 1,
         new_cargas: [{ id_viagem: "11111", origem: "Belo Horizonte - MG" }],
       };
 
       const response = await fetch(
-        `http://localhost:3000/api/v1/cargas/webhook?secret=${webhookSecret}`,
+        `http://localhost:3000/api/v1/cargas/webhook?secret=${getWebhookSecret()}`,
         {
           method: "POST",
           headers: {
-            "x-cron-source": "external",
+            ...buildSecureWebhookHeaders({
+              "x-cron-source": "external",
+            }),
             "x-test-processor-result": JSON.stringify(mockedResult),
-          },
+          } as Record<string, string>,
         },
       );
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(400);
       const data = await response.json();
-      expect(data.success).toBe(true);
-      expect(data.source).toBe("external");
-      expect(data.processed).toBe(1);
+      expect(data.error).toBe("Bad request");
+    });
+
+    test("should reject replayed webhook event id", async () => {
+      const eventId = crypto.randomUUID();
+      const headers = {
+        ...buildSecureWebhookHeaders({ "x-cron-id": eventId }),
+        "x-test-processor-result": JSON.stringify({
+          processed: 1,
+          new_cargas: [{ id_viagem: "replay", origem: "SP" }],
+        }),
+      };
+
+      const first = await fetch("http://localhost:3000/api/v1/cargas/webhook", {
+        method: "POST",
+        headers,
+      });
+      expect(first.status).toBe(200);
+
+      const second = await fetch(
+        "http://localhost:3000/api/v1/cargas/webhook",
+        {
+          method: "POST",
+          headers,
+        },
+      );
+      expect(second.status).toBe(409);
     });
   });
 
@@ -129,16 +184,16 @@ describeIfIntegration("POST /api/v1/cargas/webhook", () => {
         {
           method: "POST",
           headers: {
-            "x-cron-secret": webhookSecret,
+            ...buildSecureWebhookHeaders(),
             "x-test-processor-error": "Scraper connection failed",
-          },
+          } as Record<string, string>,
         },
       );
 
       expect(response.status).toBe(500);
       const data = await response.json();
       expect(data.error).toBe("Internal server error");
-      expect(data.message).toBe("Scraper connection failed");
+      expect(data.message).toBe("Unexpected error");
     });
   });
 });

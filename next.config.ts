@@ -66,6 +66,9 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     const isProd = process.env.NODE_ENV === "production";
+    const scriptSrc = isProd
+      ? "script-src 'self' 'unsafe-inline'"
+      : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
     const securityHeaders = [
       {
         key: "X-Frame-Options",
@@ -89,8 +92,7 @@ const nextConfig: NextConfig = {
       },
       {
         key: "Content-Security-Policy",
-        value:
-          "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:;",
+        value: `default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; ${scriptSrc}; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:;`,
       },
     ];
 

@@ -1,5 +1,10 @@
 import { query } from "../infra/database";
 import { buildWeakEtag, isEtagMatch, setCacheControl } from "../lib/http-cache";
+import {
+  isWebhookTimestampValid,
+  registerWebhookEventId,
+} from "../lib/replay-protection";
+import { attachRequestIdHeader, createRequestLogger } from "../lib/logger";
 import { getSessionUser } from "../lib/session";
 import {
   buildCacheKey,
@@ -19,11 +24,6 @@ function isTestMode() {
   return process.env.TEST_MODE === "1";
 }
 
-function isVercelCron(request: Request) {
-  const userAgent = request.headers.get("user-agent") || "";
-  return userAgent.includes("vercel-cron");
-}
-
 function hasAdminApiKey(request: Request) {
   const apiKey = request.headers.get("x-admin-key") || "";
   const expected = process.env.ADMIN_API_KEY || "";
@@ -34,6 +34,42 @@ function hasAdminApiKey(request: Request) {
   return timingSafeEqualString(apiKey, expected);
 }
 
+function hasCronSecret(request: Request) {
+  const secret = request.headers.get("x-cron-secret") || "";
+  const expectedSecret = process.env.CRON_WEBHOOK_SECRET || "";
+  if (!secret || !expectedSecret) {
+    return false;
+  }
+
+  return timingSafeEqualString(secret, expectedSecret);
+}
+
+function hasSessionOrAdminAccess(request: Request) {
+  return Boolean(getSessionUser(request)) || hasAdminApiKey(request);
+}
+
+function isValidCronEventId(value: string) {
+  return /^[a-zA-Z0-9._:-]{1,128}$/.test(value);
+}
+
+function parseMockedResult(value: string) {
+  try {
+    return JSON.parse(value) as { processed?: number; new_cargas?: unknown[] };
+  } catch {
+    return null;
+  }
+}
+
+function getContentLength(request: Request) {
+  const raw = request.headers.get("content-length");
+  if (!raw) {
+    return 0;
+  }
+
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export async function cargasIndexHandler({
   request,
   set,
@@ -41,13 +77,18 @@ export async function cargasIndexHandler({
   request: Request;
   set: { status?: number | string; headers: Record<string, string | number> };
 }) {
+  const log = createRequestLogger(request).child({ handler: "cargas.index" });
+  attachRequestIdHeader(set.headers, request);
+
   if (!getSessionUser(request)) {
     set.status = 401;
+    log.warn("cargas.index.unauthorized");
     return { error: "Unauthorized" };
   }
 
   if (request.method !== "GET") {
     set.status = 405;
+    log.warn("cargas.index.method_not_allowed", { method: request.method });
     return { error: "Method not allowed" };
   }
 
@@ -107,6 +148,7 @@ export async function cargasIndexHandler({
       : null;
 
     if (cachedPayload) {
+      log.debug("cargas.index.cache_hit", { cache_key: cacheKey });
       const etag = buildWeakEtag(cachedPayload);
       setCacheControl(set.headers, {
         visibility: "private",
@@ -160,6 +202,11 @@ export async function cargasIndexHandler({
     }
 
     dbElapsedMs = getElapsedMs(dbStart);
+    log.info("cargas.index.loaded", {
+      count: Array.isArray(cargas) ? cargas.length : 0,
+      include_total: includeTotal,
+      db_elapsed_ms: dbElapsedMs,
+    });
 
     const payload = {
       cargas,
@@ -199,7 +246,7 @@ export async function cargasIndexHandler({
 
     return payload;
   } catch (error) {
-    console.error("[Cargas API] Error fetching cargas:", error);
+    log.error("cargas.index.failed", { error });
 
     if ((error as { code?: string }).code === "42P01") {
       set.status = 503;
@@ -213,7 +260,7 @@ export async function cargasIndexHandler({
     set.status = 500;
     return {
       error: "Internal server error",
-      message: (error as Error).message,
+      message: "Unexpected error",
     };
   }
 }
@@ -223,15 +270,23 @@ export async function cargasCheckHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number | string };
+  set: { status?: number | string; headers?: Record<string, string | number> };
 }) {
-  if (!isVercelCron(request) && !hasAdminApiKey(request)) {
+  const log = createRequestLogger(request).child({ handler: "cargas.check" });
+  attachRequestIdHeader(set.headers, request);
+
+  if (!hasAdminApiKey(request) && !hasCronSecret(request)) {
     set.status = 401;
-    return { error: "Unauthorized", message: "Invalid or missing API key" };
+    log.warn("cargas.check.unauthorized");
+    return {
+      error: "Unauthorized",
+      message: "Invalid or missing admin API key / cron secret",
+    };
   }
 
   if (request.method !== "POST") {
     set.status = 405;
+    log.warn("cargas.check.method_not_allowed", { method: request.method });
     return { error: "Method not allowed" };
   }
 
@@ -244,10 +299,15 @@ export async function cargasCheckHandler({
 
       const mockedResult = request.headers.get("x-test-processor-result");
       if (mockedResult) {
-        const parsed = JSON.parse(mockedResult) as {
-          processed?: number;
-          new_cargas?: unknown[];
-        };
+        const parsed = parseMockedResult(mockedResult);
+        if (!parsed) {
+          set.status = 400;
+          log.warn("cargas.check.invalid_mock_payload");
+          return { error: "Invalid mocked result payload" };
+        }
+        log.info("cargas.check.mocked_response", {
+          processed: parsed.processed ?? 0,
+        });
         return {
           processed: parsed.processed ?? 0,
           new_cargas: parsed.new_cargas ?? [],
@@ -258,19 +318,21 @@ export async function cargasCheckHandler({
     const result = await cargoProcessor.process();
     invalidateServerCacheByTag("cargas");
     invalidateServerCacheByTag("status");
+    log.info("cargas.check.completed", {
+      processed: result.processed,
+      new_cargas_count: result.new_cargas.length,
+    });
 
     return {
       processed: result.processed,
       new_cargas: result.new_cargas,
     };
   } catch (error) {
+    log.error("cargas.check.failed", { error });
     set.status = 500;
     return {
       error: "Internal server error",
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Unexpected error"
-          : (error as Error).message,
+      message: "Unexpected error",
     };
   }
 }
@@ -280,26 +342,77 @@ export async function cargasWebhookHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number | string };
+  set: { status?: number | string; headers?: Record<string, string | number> };
 }) {
+  const log = createRequestLogger(request).child({ handler: "cargas.webhook" });
+  attachRequestIdHeader(set.headers, request);
+
   if (request.method !== "POST") {
     set.status = 405;
+    log.warn("cargas.webhook.method_not_allowed", { method: request.method });
     return { error: "Method not allowed" };
   }
 
   const url = new URL(request.url);
-  const secret =
-    request.headers.get("x-cron-secret") ||
-    url.searchParams.get("secret") ||
-    "";
-  const expectedSecret = process.env.CRON_WEBHOOK_SECRET || "";
+  if (url.searchParams.has("secret")) {
+    set.status = 400;
+    log.warn("cargas.webhook.secret_in_query_rejected");
+    return {
+      error: "Bad request",
+      message: "Webhook secret must be sent in x-cron-secret header",
+    };
+  }
 
-  if (!expectedSecret || !timingSafeEqualString(secret, expectedSecret)) {
+  if (getContentLength(request) > 1_024) {
+    set.status = 413;
+    log.warn("cargas.webhook.payload_too_large", {
+      content_length: request.headers.get("content-length"),
+    });
+    return { error: "Payload too large" };
+  }
+
+  if (!hasCronSecret(request)) {
     set.status = 401;
+    log.warn("cargas.webhook.unauthorized");
     return {
       error: "Unauthorized",
       message: "Invalid or missing webhook secret",
     };
+  }
+
+  const timestampHeader = request.headers.get("x-cron-timestamp") || "";
+  const timestampSeconds = parseInt(timestampHeader, 10);
+  if (!Number.isFinite(timestampSeconds)) {
+    set.status = 400;
+    log.warn("cargas.webhook.invalid_timestamp");
+    return {
+      error: "Bad request",
+      message: "Missing or invalid x-cron-timestamp header",
+    };
+  }
+
+  if (!isWebhookTimestampValid(timestampSeconds)) {
+    set.status = 401;
+    log.warn("cargas.webhook.expired_timestamp", {
+      timestamp_seconds: timestampSeconds,
+    });
+    return { error: "Unauthorized", message: "Webhook timestamp expired" };
+  }
+
+  const cronEventId = request.headers.get("x-cron-id") || "";
+  if (!isValidCronEventId(cronEventId)) {
+    set.status = 400;
+    log.warn("cargas.webhook.invalid_event_id");
+    return {
+      error: "Bad request",
+      message: "Missing or invalid x-cron-id header",
+    };
+  }
+
+  if (!registerWebhookEventId(cronEventId)) {
+    set.status = 409;
+    log.warn("cargas.webhook.replay_detected", { cron_event_id: cronEventId });
+    return { error: "Conflict", message: "Webhook event already processed" };
   }
 
   const source = request.headers.get("x-cron-source") || "unknown";
@@ -313,10 +426,16 @@ export async function cargasWebhookHandler({
 
       const mockedResult = request.headers.get("x-test-processor-result");
       if (mockedResult) {
-        const parsed = JSON.parse(mockedResult) as {
-          processed?: number;
-          new_cargas?: unknown[];
-        };
+        const parsed = parseMockedResult(mockedResult);
+        if (!parsed) {
+          set.status = 400;
+          log.warn("cargas.webhook.invalid_mock_payload");
+          return { error: "Invalid mocked result payload" };
+        }
+        log.info("cargas.webhook.mocked_response", {
+          source,
+          processed: parsed.processed ?? 0,
+        });
         return {
           success: true,
           source,
@@ -329,6 +448,12 @@ export async function cargasWebhookHandler({
     const result = await cargoProcessor.process();
     invalidateServerCacheByTag("cargas");
     invalidateServerCacheByTag("status");
+    log.info("cargas.webhook.completed", {
+      source,
+      cron_event_id: cronEventId,
+      processed: result.processed,
+      new_cargas_count: result.new_cargas.length,
+    });
 
     return {
       success: true,
@@ -337,10 +462,11 @@ export async function cargasWebhookHandler({
       new_cargas: result.new_cargas,
     };
   } catch (error) {
+    log.error("cargas.webhook.failed", { error, source });
     set.status = 500;
     return {
       error: "Internal server error",
-      message: (error as Error).message,
+      message: "Unexpected error",
     };
   }
 }
@@ -350,11 +476,21 @@ export async function cargasHealthHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number | string };
+  set: { status?: number | string; headers?: Record<string, string | number> };
 }) {
+  const log = createRequestLogger(request).child({ handler: "cargas.health" });
+  attachRequestIdHeader(set.headers, request);
+
   if (request.method !== "GET") {
     set.status = 405;
+    log.warn("cargas.health.method_not_allowed", { method: request.method });
     return { error: "Method not allowed" };
+  }
+
+  if (!hasSessionOrAdminAccess(request)) {
+    set.status = 401;
+    log.warn("cargas.health.unauthorized");
+    return { error: "Unauthorized", message: "Invalid or missing credentials" };
   }
 
   try {
@@ -388,6 +524,11 @@ export async function cargasHealthHandler({
     const isBusinessHours = hour >= 7 && hour <= 18;
     const shouldHaveRecentCargas =
       isBusinessHours && Number(minutesSinceLastCarga) > 30;
+    log.info("cargas.health.loaded", {
+      minutes_since_last_carga: minutesSinceLastCarga,
+      is_business_hours: isBusinessHours,
+      status: shouldHaveRecentCargas ? "warning" : "healthy",
+    });
 
     return {
       status: shouldHaveRecentCargas ? "warning" : "healthy",
@@ -409,10 +550,11 @@ export async function cargasHealthHandler({
       },
     };
   } catch (error) {
+    log.error("cargas.health.failed", { error });
     set.status = 500;
     return {
       status: "error",
-      error: (error as Error).message,
+      error: "Unexpected error",
     };
   }
 }
