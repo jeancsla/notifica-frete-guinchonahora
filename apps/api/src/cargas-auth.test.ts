@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, test } from "bun:test";
 import { createApp } from "./app";
+import { resetReplayProtectionState } from "./lib/replay-protection";
 
 beforeAll(() => {
   process.env.TEST_MODE = "1";
@@ -40,9 +41,29 @@ describe("/api/v1/cargas/check auth", () => {
     const body = await response.json();
     expect(body.processed).toBe(2);
   });
+
+  test("returns 401 when user-agent spoof attempts vercel cron bypass", async () => {
+    const app = createApp();
+    const response = await app.handle(
+      new Request("http://localhost/api/v1/cargas/check", {
+        method: "POST",
+        headers: {
+          "user-agent": "vercel-cron/1.0",
+        },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+  });
 });
 
 describe("/api/v1/cargas/webhook auth", () => {
+  const secureHeaders = () => ({
+    "x-cron-secret": "test-cron-secret",
+    "x-cron-timestamp": String(Math.floor(Date.now() / 1000)),
+    "x-cron-id": crypto.randomUUID(),
+  });
+
   test("returns 401 without secret", async () => {
     const app = createApp();
     const response = await app.handle(
@@ -55,12 +76,13 @@ describe("/api/v1/cargas/webhook auth", () => {
   });
 
   test("returns 200 with secret and mocked result", async () => {
+    resetReplayProtectionState();
     const app = createApp();
     const response = await app.handle(
       new Request("http://localhost/api/v1/cargas/webhook", {
         method: "POST",
         headers: {
-          "x-cron-secret": "test-cron-secret",
+          ...secureHeaders(),
           "x-test-processor-result": JSON.stringify({
             processed: 1,
             new_cargas: [{ id_viagem: "abc" }],
@@ -72,5 +94,51 @@ describe("/api/v1/cargas/webhook auth", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.success).toBe(true);
+  });
+
+  test("rejects secret in query string", async () => {
+    const app = createApp();
+    const headers = secureHeaders();
+    const response = await app.handle(
+      new Request(
+        `http://localhost/api/v1/cargas/webhook?secret=${headers["x-cron-secret"]}`,
+        {
+          method: "POST",
+          headers,
+        },
+      ),
+    );
+
+    expect(response.status).toBe(400);
+  });
+
+  test("rejects replayed x-cron-id", async () => {
+    resetReplayProtectionState();
+    const app = createApp();
+    const replayId = crypto.randomUUID();
+    const headers = {
+      ...secureHeaders(),
+      "x-cron-id": replayId,
+      "x-test-processor-result": JSON.stringify({
+        processed: 1,
+        new_cargas: [{ id_viagem: "abc" }],
+      }),
+    };
+
+    const first = await app.handle(
+      new Request("http://localhost/api/v1/cargas/webhook", {
+        method: "POST",
+        headers,
+      }),
+    );
+    expect(first.status).toBe(200);
+
+    const second = await app.handle(
+      new Request("http://localhost/api/v1/cargas/webhook", {
+        method: "POST",
+        headers,
+      }),
+    );
+    expect(second.status).toBe(409);
   });
 });

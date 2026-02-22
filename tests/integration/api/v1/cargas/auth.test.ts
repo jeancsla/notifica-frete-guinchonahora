@@ -43,5 +43,21 @@ describeIfIntegration("POST /api/v1/cargas/check", () => {
       const data = await response.json();
       expect(data.error).toBe("Unauthorized");
     });
+
+    test("should return 401 when user-agent spoof attempts cron bypass", async () => {
+      const response = await fetch(
+        "http://localhost:3000/api/v1/cargas/check",
+        {
+          method: "POST",
+          headers: {
+            "User-Agent": "vercel-cron/1.0",
+          },
+        },
+      );
+
+      expect(response.status).toBe(401);
+      const data = await response.json();
+      expect(data.error).toBe("Unauthorized");
+    });
   });
 });

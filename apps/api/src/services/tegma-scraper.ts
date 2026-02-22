@@ -1,6 +1,9 @@
 import { load } from "cheerio";
 import retry from "async-retry";
 import type { ScrapedCargaInput } from "@notifica/shared/models/Carga";
+import { logger } from "../lib/logger";
+
+const log = logger.child({ component: "tegma_scraper" });
 
 function isTest() {
   return process.env.NODE_ENV === "test";
@@ -25,9 +28,11 @@ async function withRetry<T>(fn: () => Promise<T>, operationName: string) {
     minTimeout: 5000,
     maxTimeout: 30000,
     onRetry: (error: Error, attempt: number) => {
-      console.log(
-        `[TegmaScraper] Retry ${attempt} for ${operationName}: ${error.message}`,
-      );
+      log.warn("tegma_scraper.retry", {
+        attempt,
+        operation: operationName,
+        error,
+      });
     },
   });
 }
@@ -167,12 +172,12 @@ export const tegmaScraper = {
   },
 
   async fetchCargas() {
-    console.log("[TegmaScraper] Starting cargo fetch...");
+    log.info("tegma_scraper.fetch.start");
     let cookie = await this.getCookie();
     cookie = await this.login(cookie);
     const html = await this.fetchCargasPage(cookie);
     const cargas = this.parseCargas(html);
-    console.log(`[TegmaScraper] Found ${cargas.length} cargas`);
+    log.info("tegma_scraper.fetch.completed", { count: cargas.length });
     return cargas;
   },
 };

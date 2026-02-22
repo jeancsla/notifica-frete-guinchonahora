@@ -2,14 +2,10 @@ import migrationRunner from "node-pg-migrate";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { getNewClient } from "../infra/database";
-import { getSessionUser } from "../lib/session";
+import { attachRequestIdHeader, createRequestLogger } from "../lib/logger";
 import { timingSafeEqualString } from "../lib/security";
 
-function isAuthorized(request: Request) {
-  if (getSessionUser(request)) {
-    return true;
-  }
-
+function hasAdminApiKey(request: Request) {
   const apiKey = request.headers.get("x-admin-key") || "";
   const expectedKey = process.env.ADMIN_API_KEY || "";
   if (!apiKey || !expectedKey) {
@@ -24,10 +20,14 @@ export async function migrationsHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number | string };
+  set: { status?: number | string; headers?: Record<string, string | number> };
 }) {
-  if (!isAuthorized(request)) {
+  const log = createRequestLogger(request).child({ handler: "migrations" });
+  attachRequestIdHeader(set.headers, request);
+
+  if (!hasAdminApiKey(request)) {
     set.status = 401;
+    log.warn("migrations.unauthorized");
     return { error: "Unauthorized", message: "Invalid or missing API key" };
   }
 
@@ -36,6 +36,7 @@ export async function migrationsHandler({
     process.env.ALLOW_PRODUCTION_MIGRATIONS !== "true"
   ) {
     set.status = 403;
+    log.warn("migrations.forbidden_in_production");
     return {
       error: "Forbidden",
       message:
@@ -46,6 +47,7 @@ export async function migrationsHandler({
   const method = request.method.toUpperCase();
   if (method !== "GET" && method !== "POST") {
     set.status = 405;
+    log.warn("migrations.method_not_allowed", { method: request.method });
     return {
       error: `Method ${request.method} not allowed.`,
     };
@@ -72,12 +74,19 @@ export async function migrationsHandler({
       set.status = result.length > 0 ? 201 : 200;
     }
 
+    log.info("migrations.executed", {
+      method,
+      applied_count: result.length,
+      dry_run: method === "GET",
+    });
+
     return result;
   } catch (error) {
+    log.error("migrations.failed", { error });
     set.status = 500;
     return {
       error: "Failed to run migrations",
-      message: (error as Error).message,
+      message: "Unexpected error",
     };
   } finally {
     if (dbClient) {

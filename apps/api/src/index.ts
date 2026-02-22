@@ -1,7 +1,8 @@
 import { createApp } from "./app";
+import { logger } from "./lib/logger";
 
 const port = Number(process.env.API_PORT || process.env.PORT || 4000);
 
 createApp().listen(port);
 
-console.log(`[Bun API] Listening on port ${port}`);
+logger.info("api.started", { port });

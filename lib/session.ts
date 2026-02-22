@@ -43,7 +43,11 @@ function parseCookieHeader(cookieHeader = ""): Record<string, string> {
 
       const key = part.slice(0, eq).trim();
       const value = part.slice(eq + 1).trim();
-      cookies[key] = decodeURIComponent(value);
+      try {
+        cookies[key] = decodeURIComponent(value);
+      } catch {
+        // Ignore malformed cookie values.
+      }
     });
 
   return cookies;

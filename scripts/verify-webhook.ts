@@ -13,10 +13,25 @@ type WebhookTest = {
   expectStatus: number;
 };
 
+function buildSecureHeaders(
+  overrides: Record<string, string> = {},
+): Record<string, string> {
+  const now = Math.floor(Date.now() / 1_000);
+  const eventId = `verify-${crypto.randomUUID()}`;
+  return {
+    "x-cron-secret": CRON_SECRET,
+    "x-cron-timestamp": String(now),
+    "x-cron-id": eventId,
+    ...overrides,
+  };
+}
+
 async function testWebhook() {
   console.log("Testing webhook endpoint...\n");
   console.log(`Base URL: ${BASE_URL}`);
   console.log(`Secret: ***${CRON_SECRET.slice(-4)}\n`);
+
+  const replayHeaders = buildSecureHeaders();
 
   const tests: WebhookTest[] = [
     {
@@ -41,31 +56,52 @@ async function testWebhook() {
       name: "Valid secret in header (should return 200)",
       request: {
         method: "POST",
-        headers: {
-          "x-cron-secret": CRON_SECRET,
+        headers: buildSecureHeaders({
           "x-cron-source": "n8n",
-        },
+        }),
       },
       expectStatus: 200,
     },
     {
-      name: "Valid secret in query string (should return 200)",
+      name: "Secret in query string (should return 400)",
       request: {
         method: "POST",
         url: `${BASE_URL}/api/v1/cargas/webhook?secret=${CRON_SECRET}`,
-        headers: {
-          "x-cron-source": "test",
-        },
+        headers: buildSecureHeaders({ "x-cron-source": "test" }),
+      },
+      expectStatus: 400,
+    },
+    {
+      name: "Expired timestamp (should return 401)",
+      request: {
+        method: "POST",
+        headers: buildSecureHeaders({
+          "x-cron-timestamp": "1",
+        }),
+      },
+      expectStatus: 401,
+    },
+    {
+      name: "First event id use (should return 200)",
+      request: {
+        method: "POST",
+        headers: replayHeaders,
       },
       expectStatus: 200,
+    },
+    {
+      name: "Replay event id reused (should return 409)",
+      request: {
+        method: "POST",
+        headers: replayHeaders,
+      },
+      expectStatus: 409,
     },
     {
       name: "GET request (should return 405)",
       request: {
         method: "GET",
-        headers: {
-          "x-cron-secret": CRON_SECRET,
-        },
+        headers: buildSecureHeaders(),
       },
       expectStatus: 405,
     },

@@ -29,6 +29,33 @@ export default [
     },
   },
   {
+    files: [
+      "app/**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}",
+      "pages/**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}",
+      "components/**/*.{js,mjs,cjs,jsx,ts,tsx,mts,cts}",
+      "lib/api.ts",
+      "lib/activity.ts",
+      "lib/date-format.ts",
+      "lib/swr.ts",
+    ],
+    ignores: ["app/api/**"],
+    rules: {
+      "no-console": "error",
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["services/*", "infra/*", "apps/api/*", "repositories/*"],
+              message:
+                "Client/UI code must not import server-side modules or server logging code.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["**/*.{ts,tsx,mts,cts}"],
     languageOptions: {
       parser: tsParser,

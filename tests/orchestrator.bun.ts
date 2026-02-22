@@ -85,12 +85,20 @@ async function runMigrations() {
 }
 
 export async function getAuthCookie() {
+  const username = process.env.ADMIN_USERNAME;
+  const password = process.env.ADMIN_PASSWORD;
+  if (!username || !password) {
+    throw new Error(
+      "ADMIN_USERNAME and ADMIN_PASSWORD must be set for integration tests.",
+    );
+  }
+
   const response = await safeFetch(`${WEB_BASE_URL}/api/v1/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      username: process.env.ADMIN_USERNAME || "admin",
-      password: process.env.ADMIN_PASSWORD || "admin",
+      username,
+      password,
     }),
   });
 

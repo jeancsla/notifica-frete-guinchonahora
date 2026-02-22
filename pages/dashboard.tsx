@@ -339,7 +339,7 @@ export const getServerSideProps: GetServerSideProps<DashboardProps> = async ({
   return {
     props: {
       user,
-      allowMigrations: true,
+      allowMigrations: process.env.ENABLE_DASHBOARD_MIGRATIONS === "true",
     },
   };
 };

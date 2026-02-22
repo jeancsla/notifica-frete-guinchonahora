@@ -1,4 +1,5 @@
 import { Client, type QueryResult } from "pg";
+import { logger } from "../lib/logger";
 
 export async function query(
   queryObject: string | { text: string; values?: unknown[] },
@@ -9,7 +10,9 @@ export async function query(
     const result = await client.query(queryObject as never);
     return result as QueryResult;
   } catch (error) {
-    console.error(error);
+    logger.child({ component: "database" }).error("database.query_failed", {
+      error,
+    });
     throw error;
   } finally {
     if (client) {
@@ -49,6 +52,7 @@ function getDatabaseConfig() {
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
     ssl,
+    options: getConnectionOptions(),
   };
 }
 
@@ -60,4 +64,19 @@ function getSSLValues() {
   }
 
   return process.env.NODE_ENV === "production" ? true : false;
+}
+
+function getConnectionOptions() {
+  const explicit = process.env.POSTGRES_OPTIONS?.trim();
+  if (explicit) {
+    return explicit;
+  }
+
+  return [
+    "-c search_path=public",
+    "-c statement_timeout=10000",
+    "-c lock_timeout=5000",
+    "-c idle_in_transaction_session_timeout=10000",
+    "-c app.current_role=api",
+  ].join(" ");
 }

@@ -1,14 +1,16 @@
 import cron from "node-cron";
+import { logger } from "./lib/logger";
 import { cargoProcessor } from "./services/cargo-processor";
 
 let isRunning = false;
+const log = logger.child({ component: "cron_jobs" });
 
 export function setupCronJobs() {
   cron.schedule(
     "*/15 7-18 * * *",
     async () => {
       if (isRunning) {
-        console.log("[Cron] Previous job still running, skipping...");
+        log.warn("cron.skipped_previous_job_running");
         return;
       }
 
@@ -16,9 +18,9 @@ export function setupCronJobs() {
 
       try {
         const result = await cargoProcessor.process();
-        console.log(`[Cron] Completed. Processed ${result.processed} cargas`);
+        log.info("cron.completed", { processed: result.processed });
       } catch (error) {
-        console.error("[Cron] Error processing cargas:", error);
+        log.error("cron.failed", { error });
       } finally {
         isRunning = false;
       }

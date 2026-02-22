@@ -33,6 +33,7 @@ export type StatusResponse = {
   updated_at: string;
   dependencies: {
     database: {
+      status?: string;
       version?: string;
       max_connections?: number;
       opened_connections?: number;

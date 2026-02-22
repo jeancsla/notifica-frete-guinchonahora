@@ -95,7 +95,7 @@ describeIfIntegration("POST /api/v1/cargas/check", () => {
 
     const responseBody = await response.json();
     expect(responseBody.error).toBeDefined();
-    expect(responseBody.message).toBe("Scraper failed");
+    expect(responseBody.message).toBe("Unexpected error");
   });
 
   test("should return proper error message for network errors", async () => {
@@ -111,6 +111,6 @@ describeIfIntegration("POST /api/v1/cargas/check", () => {
 
     const responseBody = await response.json();
     expect(responseBody.error).toBe("Internal server error");
-    expect(responseBody.message).toBe("Network request failed");
+    expect(responseBody.message).toBe("Unexpected error");
   });
 });

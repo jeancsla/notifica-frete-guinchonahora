@@ -1,5 +1,8 @@
 import retry from "async-retry";
 import type { Carga } from "@notifica/shared/models/Carga";
+import { logger } from "../lib/logger";
+
+const log = logger.child({ component: "whatsapp_notifier" });
 
 function isTest() {
   return process.env.NODE_ENV === "test";
@@ -20,15 +23,21 @@ async function withRetry<T>(fn: () => Promise<T>, operationName: string) {
     minTimeout: 5000,
     maxTimeout: 30000,
     onRetry: (error: Error, attempt: number) => {
-      console.log(
-        `[WhatsAppNotifier] Retry ${attempt} for ${operationName}: ${error.message}`,
-      );
+      log.warn("whatsapp_notifier.retry", {
+        attempt,
+        operation: operationName,
+        error,
+      });
     },
   });
 }
 
 export const whatsappNotifier = {
-  async sendNotification(phone: string, carga: Carga) {
+  async sendNotification(
+    phone: string,
+    carga: Carga,
+    recipient: "jean" | "jefferson" | "unknown" = "unknown",
+  ) {
     const apiBaseUrl = getEnvVar("EVOLUTION_API_BASE_URL");
     if (!apiBaseUrl) {
       throw new Error("EVOLUTION_API_BASE_URL not configured");
@@ -62,8 +71,10 @@ export const whatsappNotifier = {
         );
       }
 
-      return response.json();
-    }, `sendNotification-${phone}`);
+      const result = await response.json();
+      log.info("whatsapp_notifier.sent", { recipient });
+      return result;
+    }, `sendNotification-${recipient}`);
   },
 
   async notifyJean(carga: Carga) {
@@ -71,7 +82,7 @@ export const whatsappNotifier = {
     if (!phone) {
       throw new Error("Jean phone number not configured");
     }
-    return this.sendNotification(phone, carga);
+    return this.sendNotification(phone, carga, "jean");
   },
 
   async notifyJefferson(carga: Carga) {
@@ -79,6 +90,6 @@ export const whatsappNotifier = {
     if (!phone) {
       throw new Error("Jefferson phone number not configured");
     }
-    return this.sendNotification(phone, carga);
+    return this.sendNotification(phone, carga, "jefferson");
   },
 };
