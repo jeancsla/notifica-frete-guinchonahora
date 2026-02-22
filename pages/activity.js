@@ -9,7 +9,11 @@ import {
 } from "../components/LoadingUI";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchCargas, fetchStatus } from "../lib/api";
-import { buildActivityEvents, countActivityAlerts } from "../lib/activity";
+import {
+  buildActivityEvents,
+  countActivityAlerts,
+  countTodayEvents,
+} from "../lib/activity";
 
 async function fetchActivityData() {
   const [cargasResponse, statusResponse] = await Promise.all([
@@ -53,6 +57,7 @@ export default function Activity() {
     [data],
   );
   const alerts = useMemo(() => countActivityAlerts(data?.cargas || []), [data]);
+  const eventsToday = useMemo(() => countTodayEvents(events), [events]);
 
   async function handleRefresh() {
     await wrapRefresh(() =>
@@ -104,10 +109,7 @@ export default function Activity() {
                   />
                 ))
               : events.map((event) => (
-                  <div
-                    key={`${event.title}-${event.time}`}
-                    className="detail-item"
-                  >
+                  <div key={event.id} className="detail-item">
                     <div>
                       <strong>{event.title}</strong>
                       <div className="muted">{event.description}</div>
@@ -122,7 +124,7 @@ export default function Activity() {
           <div className="detail-list">
             <div className="detail-item">
               <span>Eventos hoje</span>
-              <strong>{isLoading ? "-" : events.length}</strong>
+              <strong>{isLoading ? "-" : eventsToday}</strong>
             </div>
             <div className="detail-item">
               <span>Alertas ativos</span>

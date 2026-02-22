@@ -66,6 +66,7 @@ a {
 
 main {
   padding: 32px;
+  min-width: 0;
 }
 
 .app-shell {
@@ -81,6 +82,7 @@ main {
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
 }
 
 .brand {
@@ -104,6 +106,7 @@ main {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
 }
 
 .nav a {
@@ -133,6 +136,13 @@ main {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 28px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .topbar h1 {
@@ -278,6 +288,13 @@ main {
 .table-wrap {
   width: 100%;
   overflow-x: auto;
+}
+
+.pagination-controls {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .table th,
@@ -459,9 +476,32 @@ main {
   }
 
   .sidebar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    position: static;
+    border-right: 0;
+    border-bottom: 1px solid var(--stroke);
+    padding: 18px 16px 14px;
+    gap: 14px;
+  }
+
+  .brand strong {
+    font-size: 18px;
+  }
+
+  .nav {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  .nav a {
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  .nav a span:last-child {
+    display: none;
   }
 
   .grid.cols-3 {
@@ -475,12 +515,47 @@ main {
 
 @media (max-width: 720px) {
   main {
-    padding: 20px;
+    padding: 16px;
   }
 
   .topbar {
     flex-direction: column;
     align-items: flex-start;
+    margin-bottom: 20px;
+  }
+
+  .topbar h1 {
+    font-size: 26px;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .topbar-actions .button {
+    width: 100%;
+  }
+
+  .topbar-actions .refresh-status {
+    width: 100%;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .detail-item {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .detail-item span {
+    flex: 1 1 auto;
+  }
+
+  .detail-item strong {
+    text-align: left;
   }
 }
 

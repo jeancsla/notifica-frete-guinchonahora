@@ -10,6 +10,7 @@ import {
 } from "../components/LoadingUI";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchCargas } from "../lib/api";
+import { formatDateBR } from "../lib/date-format";
 
 const EMPTY_ARRAY = [];
 
@@ -157,7 +158,7 @@ export default function Details() {
               </div>
               <div className="detail-item">
                 <span>Prev. coleta</span>
-                <strong>{selected.prev_coleta || "N/A"}</strong>
+                <strong>{formatDateBR(selected.prev_coleta)}</strong>
               </div>
               <div className="detail-item">
                 <span>Entregas</span>

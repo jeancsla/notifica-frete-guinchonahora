@@ -49,6 +49,21 @@ describe("Activity page", () => {
     const view = render(<Activity />);
     expect(await view.findByText("Timeline")).toBeInTheDocument();
     expect(await view.findByText("Carga capturada")).toBeInTheDocument();
+    expect(view.queryByText("2026-02-17T10:00:00Z")).not.toBeInTheDocument();
+  });
+
+  it("shows 'Sem data' when event timestamp is missing", async () => {
+    fetchCargas.mockResolvedValueOnce({
+      cargas: [{ id_viagem: "123", created_at: null, prev_coleta: null }],
+      pagination: { total: 1, limit: 10, offset: 0 },
+    });
+    fetchStatus.mockResolvedValueOnce({
+      updated_at: null,
+    });
+
+    const view = render(<Activity />);
+    const badges = await view.findAllByText("Sem data");
+    expect(badges.length).toBeGreaterThan(0);
   });
 
   it("shows refresh feedback after update", async () => {

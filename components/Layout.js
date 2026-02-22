@@ -22,7 +22,7 @@ export default function Layout({ title, subtitle, actions, children }) {
           <strong>Guincho Na Hora</strong>
           <span>Fretes & cargas em tempo real</span>
         </div>
-        <nav className="nav">
+        <nav className="nav" aria-label="Main navigation">
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -42,9 +42,7 @@ export default function Layout({ title, subtitle, actions, children }) {
             <h1>{title}</h1>
             {subtitle ? <p className="muted">{subtitle}</p> : null}
           </div>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-            {actions}
-          </div>
+          <div className="topbar-actions">{actions}</div>
         </div>
         {children}
       </main>

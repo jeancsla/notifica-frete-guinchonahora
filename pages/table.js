@@ -9,6 +9,7 @@ import {
 } from "../components/LoadingUI";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchCargas } from "../lib/api";
+import { formatDateBR } from "../lib/date-format";
 
 export default function TableView() {
   const [pagination, setPagination] = useState({
@@ -118,7 +119,7 @@ export default function TableView() {
                       <td>{item.destino || "N/A"}</td>
                       <td>{item.produto || "N/A"}</td>
                       <td>{item.equipamento || "N/A"}</td>
-                      <td>{item.prev_coleta || "-"}</td>
+                      <td>{formatDateBR(item.prev_coleta)}</td>
                       <td>{item.qtd_entregas || "-"}</td>
                       <td>{item.vr_frete || "-"}</td>
                     </tr>
@@ -133,7 +134,7 @@ export default function TableView() {
                 </tbody>
               </table>
             </div>
-            <div style={{ marginTop: "16px", display: "flex", gap: "12px" }}>
+            <div className="pagination-controls">
               <button
                 className="button secondary"
                 disabled={pagination.offset === 0}
