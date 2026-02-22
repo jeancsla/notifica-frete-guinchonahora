@@ -10,6 +10,7 @@ import {
 } from "../components/LoadingUI";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchStatus } from "../lib/api";
+import { formatDateTimeBR } from "../lib/date-format";
 
 export default function Status() {
   const {
@@ -85,7 +86,7 @@ export default function Status() {
             <div className="card">
               <h3>Atualização</h3>
               <p style={{ fontSize: "18px", fontWeight: 600 }}>
-                {status?.updated_at || "-"}
+                {formatDateTimeBR(status?.updated_at)}
               </p>
               <p className="muted">Última verificação do status.</p>
             </div>

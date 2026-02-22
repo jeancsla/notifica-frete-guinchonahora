@@ -11,7 +11,7 @@ import {
 } from "../components/LoadingUI";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchCargas } from "../lib/api";
-import { formatDateBR } from "../lib/date-format";
+import { formatDateBR, formatDateTimeBR } from "../lib/date-format";
 import { getSession } from "lib/session";
 
 const EMPTY_ARRAY = [];
@@ -49,18 +49,6 @@ async function fetchDashboardData({ limit, offset }) {
     cargas: fallbackResponse.cargas || [],
     total: fallbackResponse.pagination?.total ?? 0,
   };
-}
-
-function formatDateTime(dateString) {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 }
 
 export default function Dashboard({ allowMigrations }) {
@@ -259,7 +247,7 @@ export default function Dashboard({ allowMigrations }) {
                         <td>{item.destino || "N/A"}</td>
                         <td>{item.produto || "N/A"}</td>
                         <td>{formatDateBR(item.prev_coleta)}</td>
-                        <td>{formatDateTime(item.created_at)}</td>
+                        <td>{formatDateTimeBR(item.created_at)}</td>
                       </tr>
                     ))}
                     {data.length === 0 ? (
@@ -272,7 +260,7 @@ export default function Dashboard({ allowMigrations }) {
                   </tbody>
                 </table>
               </div>
-              <div style={{ marginTop: "16px", display: "flex", gap: "12px" }}>
+              <div className="pagination-controls">
                 <button
                   className="button secondary"
                   disabled={pagination.offset === 0}

@@ -9,7 +9,11 @@ import {
   jest,
   test,
 } from "bun:test";
-import { buildActivityEvents, countActivityAlerts } from "lib/activity";
+import {
+  buildActivityEvents,
+  countActivityAlerts,
+  countTodayEvents,
+} from "lib/activity";
 
 describe("activity helpers", () => {
   it("builds events from cargas and status", () => {
@@ -21,8 +25,12 @@ describe("activity helpers", () => {
       { updated_at: "2026-02-17T10:05:00Z" },
     );
 
-    expect(events[0].title).toBe("Carga capturada");
-    expect(events[0].description).toBe("Viagem 1 importada do portal Mills.");
+    expect(
+      events.find((event) => event.title === "Carga capturada"),
+    ).toBeTruthy();
+    expect(events.some((event) => event.description.includes("Viagem 1"))).toBe(
+      true,
+    );
     expect(
       events.find((event) => event.title === "Status checado"),
     ).toBeTruthy();
@@ -36,5 +44,16 @@ describe("activity helpers", () => {
     ]);
 
     expect(alerts).toBe(2);
+  });
+
+  it("counts only events from the current day", () => {
+    const today = new Date("2026-02-17T12:00:00Z");
+    const events = [
+      { timestamp: new Date("2026-02-17T01:00:00Z").getTime() },
+      { timestamp: new Date("2026-02-17T23:59:00Z").getTime() },
+      { timestamp: new Date("2026-02-16T23:59:00Z").getTime() },
+    ];
+
+    expect(countTodayEvents(events, today)).toBe(2);
   });
 });

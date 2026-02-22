@@ -49,6 +49,7 @@ describe("Activity page", () => {
     const view = render(<Activity />);
     expect(await view.findByText("Timeline")).toBeInTheDocument();
     expect(await view.findByText("Carga capturada")).toBeInTheDocument();
+    expect(view.queryByText("2026-02-17T10:00:00Z")).not.toBeInTheDocument();
   });
 
   it("shows refresh feedback after update", async () => {
