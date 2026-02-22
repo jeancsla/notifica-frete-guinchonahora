@@ -32,7 +32,7 @@ async function withRetry<T>(fn: () => Promise<T>, operationName: string) {
   });
 }
 
-export const tegmaScraper = {
+const tegmaScraper = {
   async getCookie() {
     const baseUrl = getRequiredEnvVar("TEGMA_BASE_URL");
 
@@ -133,7 +133,7 @@ export const tegmaScraper = {
     }, "fetchCargasPage");
   },
 
-  parseCargas(html: string) {
+  parseCargas(html: string): ScrapedCargaInput[] {
     const $ = load(html);
     const cargas: ScrapedCargaInput[] = [];
 
@@ -168,11 +168,21 @@ export const tegmaScraper = {
 
   async fetchCargas() {
     console.log("[TegmaScraper] Starting cargo fetch...");
+    console.log("[TegmaScraper] Getting cookie...");
     let cookie = await this.getCookie();
+
+    console.log("[TegmaScraper] Logging in...");
     cookie = await this.login(cookie);
+
+    console.log("[TegmaScraper] Fetching cargas page...");
     const html = await this.fetchCargasPage(cookie);
+
+    console.log("[TegmaScraper] Parsing cargas...");
     const cargas = this.parseCargas(html);
+
     console.log(`[TegmaScraper] Found ${cargas.length} cargas`);
     return cargas;
   },
 };
+
+export default tegmaScraper;

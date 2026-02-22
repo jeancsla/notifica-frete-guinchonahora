@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { buildCookie, parseCookies } from "./cookies";
-import type { SessionUser } from "../types";
+import type { SessionUser } from "@notifica/shared/types";
 
 const SESSION_COOKIE = "cargo_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;

@@ -15,7 +15,7 @@ export async function statusHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number; headers: Record<string, string> };
+  set: { status?: number | string; headers: Record<string, string | number> };
 }) {
   if (request.method !== "GET") {
     set.status = 405;

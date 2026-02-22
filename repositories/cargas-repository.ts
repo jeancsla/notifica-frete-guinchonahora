@@ -1,5 +1,5 @@
-import { query } from "../infra/database";
 import type { CargaRecord } from "@notifica/shared/types";
+import database from "infra/database";
 
 const ALL_COLUMNS = [
   "id",
@@ -15,7 +15,7 @@ const ALL_COLUMNS = [
   "termino",
   "notificado_em",
   "created_at",
-];
+] as const;
 
 const SORTABLE_COLUMNS = [
   "created_at",
@@ -24,15 +24,17 @@ const SORTABLE_COLUMNS = [
   "origem",
   "destino",
   "produto",
-];
-const SORT_ORDERS = ["ASC", "DESC"];
+] as const;
+const SORT_ORDERS = ["ASC", "DESC"] as const;
 
 function getSelectedColumns(fields?: string[]) {
   if (!fields || fields.length === 0) {
     return ALL_COLUMNS.join(", ");
   }
 
-  const sanitized = fields.filter((field) => ALL_COLUMNS.includes(field));
+  const sanitized = fields.filter((field) =>
+    ALL_COLUMNS.includes(field as never),
+  );
   if (sanitized.length === 0) {
     return ALL_COLUMNS.join(", ");
   }
@@ -40,14 +42,13 @@ function getSelectedColumns(fields?: string[]) {
   return sanitized.join(", ");
 }
 
-export const cargasRepository = {
+const cargasRepository = {
   async exists(id_viagem: string) {
-    const result = await query({
+    const result = await database.query({
       text: "SELECT EXISTS (SELECT 1 FROM cargas WHERE id_viagem = $1);",
       values: [id_viagem],
     });
-
-    return result.rows[0]?.exists as boolean;
+    return Boolean(result.rows[0]?.exists);
   },
 
   async existsBatch(idViagemList: string[]) {
@@ -55,18 +56,22 @@ export const cargasRepository = {
       return new Set<string>();
     }
 
-    const result = await query({
+    const result = await database.query({
       text: "SELECT id_viagem FROM cargas WHERE id_viagem = ANY($1);",
       values: [idViagemList],
     });
 
-    return new Set<string>(result.rows.map((row) => row.id_viagem as string));
+    return new Set<string>(
+      result.rows.map((row) =>
+        String((row as { id_viagem: string }).id_viagem),
+      ),
+    );
   },
 
   async save(carga: CargaRecord & { toDatabase?: () => CargaRecord }) {
     const dbData = carga.toDatabase ? carga.toDatabase() : carga;
 
-    const result = await query({
+    const result = await database.query({
       text: `
         INSERT INTO cargas (
           id_viagem, tipo_transporte, origem, destino, produto,
@@ -93,7 +98,7 @@ export const cargasRepository = {
   },
 
   async markAsNotified(id_viagem: string) {
-    await query({
+    await database.query({
       text: "UPDATE cargas SET notificado_em = CURRENT_TIMESTAMP WHERE id_viagem = $1;",
       values: [id_viagem],
     });
@@ -113,11 +118,12 @@ export const cargasRepository = {
     fields?: string[];
   } = {}) {
     const selectedColumns = getSelectedColumns(fields);
-    const orderColumn = SORTABLE_COLUMNS.includes(sortBy)
+    const orderColumn = SORTABLE_COLUMNS.includes(sortBy as never)
       ? sortBy
       : "created_at";
-    const orderDirection = SORT_ORDERS.includes(sortOrder.toUpperCase())
-      ? sortOrder.toUpperCase()
+    const upperSortOrder = sortOrder.toUpperCase();
+    const orderDirection = SORT_ORDERS.includes(upperSortOrder as never)
+      ? upperSortOrder
       : "DESC";
 
     const prevColetaOrderExpr = `
@@ -133,7 +139,7 @@ export const cargasRepository = {
         ? `${prevColetaOrderExpr} ${orderDirection} NULLS LAST`
         : `${orderColumn} ${orderDirection}`;
 
-    const result = await query({
+    const result = await database.query({
       text: `
         SELECT ${selectedColumns}
         FROM cargas
@@ -160,11 +166,12 @@ export const cargasRepository = {
     fields?: string[];
   } = {}) {
     const selectedColumns = getSelectedColumns(fields);
-    const orderColumn = SORTABLE_COLUMNS.includes(sortBy)
+    const orderColumn = SORTABLE_COLUMNS.includes(sortBy as never)
       ? sortBy
       : "created_at";
-    const orderDirection = SORT_ORDERS.includes(sortOrder.toUpperCase())
-      ? sortOrder.toUpperCase()
+    const upperSortOrder = sortOrder.toUpperCase();
+    const orderDirection = SORT_ORDERS.includes(upperSortOrder as never)
+      ? upperSortOrder
       : "DESC";
 
     const prevColetaOrderExpr = `
@@ -180,7 +187,7 @@ export const cargasRepository = {
         ? `${prevColetaOrderExpr} ${orderDirection} NULLS LAST`
         : `${orderColumn} ${orderDirection}`;
 
-    const result = await query({
+    const result = await database.query({
       text: `
         SELECT ${selectedColumns}
         FROM cargas
@@ -195,14 +202,16 @@ export const cargasRepository = {
   },
 
   async countNotNotified() {
-    const result = await query({
+    const result = await database.query({
       text: "SELECT COUNT(*) FROM cargas WHERE notificado_em IS NULL;",
     });
-    return parseInt(String(result.rows[0]?.count ?? 0), 10);
+    return parseInt(String((result.rows[0] as { count: string }).count), 10);
   },
 
   async count() {
-    const result = await query("SELECT COUNT(*) FROM cargas;");
-    return parseInt(String(result.rows[0]?.count ?? 0), 10);
+    const result = await database.query("SELECT COUNT(*) FROM cargas;");
+    return parseInt(String((result.rows[0] as { count: string }).count), 10);
   },
 };
+
+export default cargasRepository;

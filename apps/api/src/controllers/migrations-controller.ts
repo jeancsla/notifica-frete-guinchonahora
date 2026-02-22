@@ -24,7 +24,7 @@ export async function migrationsHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number };
+  set: { status?: number | string };
 }) {
   if (!isAuthorized(request)) {
     set.status = 401;

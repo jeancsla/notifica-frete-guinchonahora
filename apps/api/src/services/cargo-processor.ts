@@ -1,4 +1,4 @@
-import { Carga } from "../models/carga";
+import { Carga } from "@notifica/shared/models/Carga";
 import { cargasRepository } from "../repositories/cargas-repository";
 import { tegmaScraper } from "./tegma-scraper";
 import { whatsappNotifier } from "./whatsapp-notifier";
@@ -18,11 +18,15 @@ export const cargoProcessor = {
       (scrapedCarga) => !existingIds.has(scrapedCarga.viagem),
     );
 
-    const processedCargas: Array<
-      Carga & {
-        notificationErrors?: Array<{ recipient: string; error: string }>;
-      }
-    > = [];
+    const processedCargas: Array<{
+      id_viagem: string;
+      origem?: string;
+      destino?: string;
+      produto?: string;
+      equipamento?: string;
+      prevColeta?: string;
+      notificationErrors?: Array<{ recipient: string; error: string }>;
+    }> = [];
     const failedCargas: Array<{ id_viagem: string; error: string }> = [];
 
     for (const scrapedCarga of newCargas) {
@@ -63,7 +67,12 @@ export const cargoProcessor = {
         await cargasRepository.markAsNotified(carga.id_viagem);
 
         processedCargas.push({
-          ...carga,
+          id_viagem: carga.id_viagem,
+          origem: carga.origem,
+          destino: carga.destino,
+          produto: carga.produto,
+          equipamento: carga.equipamento,
+          prevColeta: carga.prevColeta,
           notificationErrors:
             notificationErrors.length > 0 ? notificationErrors : undefined,
         });

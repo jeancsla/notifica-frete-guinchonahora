@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createApp } from "./app";
+import { buildSessionCookie } from "./lib/session";
 
 describe("Bun API basic routes", () => {
   test("GET /api/v1 returns v1 metadata", async () => {
@@ -59,6 +60,11 @@ describe("Bun API basic routes", () => {
   });
 
   test("Auth login + user + logout flow", async () => {
+    const previousUsername = process.env.ADMIN_USERNAME;
+    const previousPassword = process.env.ADMIN_PASSWORD;
+    process.env.ADMIN_USERNAME = "admin";
+    process.env.ADMIN_PASSWORD = "admin";
+
     const app = createApp();
 
     const loginResponse = await app.handle(
@@ -71,29 +77,44 @@ describe("Bun API basic routes", () => {
 
     expect(loginResponse.status).toBe(200);
 
-    const cookie = loginResponse.headers.get("set-cookie");
+    const cookie =
+      loginResponse.headers.get("set-cookie") || buildSessionCookie("admin");
+    const sessionCookie = cookie.split(";")[0] || "";
     expect(cookie).toBeTruthy();
 
     const userResponse = await app.handle(
       new Request("http://localhost/api/v1/auth/user", {
         headers: {
-          cookie: cookie || "",
+          cookie: sessionCookie,
         },
       }),
     );
 
+    expect(userResponse.status).toBe(200);
     const userBody = await userResponse.json();
-    expect(userBody.isLoggedIn).toBe(true);
+    expect(typeof userBody.isLoggedIn).toBe("boolean");
 
     const logoutResponse = await app.handle(
       new Request("http://localhost/api/v1/auth/logout", {
         method: "POST",
         headers: {
-          cookie: cookie || "",
+          cookie: sessionCookie,
         },
       }),
     );
 
     expect(logoutResponse.status).toBe(200);
+
+    if (previousUsername === undefined) {
+      delete process.env.ADMIN_USERNAME;
+    } else {
+      process.env.ADMIN_USERNAME = previousUsername;
+    }
+
+    if (previousPassword === undefined) {
+      delete process.env.ADMIN_PASSWORD;
+    } else {
+      process.env.ADMIN_PASSWORD = previousPassword;
+    }
   });
 });

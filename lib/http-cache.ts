@@ -1,19 +1,29 @@
 import crypto from "node:crypto";
 
+type CacheControlOptions = {
+  visibility?: "private" | "public";
+  maxAge?: number;
+  sMaxAge?: number;
+  staleWhileRevalidate?: number;
+};
+
+type HeaderSetter = {
+  setHeader: (name: string, value: string) => void;
+};
+
+type RequestWithHeaders = {
+  headers: Record<string, string | string[] | undefined>;
+};
+
 export function setCacheControl(
-  headers: Record<string, string | number>,
+  response: HeaderSetter,
   {
     visibility = "private",
     maxAge = 0,
     sMaxAge,
     staleWhileRevalidate,
-  }: {
-    visibility?: "public" | "private";
-    maxAge?: number;
-    sMaxAge?: number;
-    staleWhileRevalidate?: number;
-  } = {},
-) {
+  }: CacheControlOptions = {},
+): void {
   const directives = [visibility, `max-age=${Math.max(0, maxAge)}`];
 
   if (typeof sMaxAge === "number") {
@@ -26,10 +36,10 @@ export function setCacheControl(
     );
   }
 
-  headers["Cache-Control"] = directives.join(", ");
+  response.setHeader("Cache-Control", directives.join(", "));
 }
 
-export function buildWeakEtag(payload: unknown) {
+export function buildWeakEtag(payload: unknown): string {
   const payloadString =
     typeof payload === "string" ? payload : JSON.stringify(payload);
   const hash = crypto
@@ -40,8 +50,15 @@ export function buildWeakEtag(payload: unknown) {
   return `W/"${hash}"`;
 }
 
-export function isEtagMatch(request: Request, etag: string) {
-  const requestEtag = request.headers.get("if-none-match");
+export function isEtagMatch(
+  request: RequestWithHeaders,
+  etag: string,
+): boolean {
+  const ifNoneMatchHeader = request.headers["if-none-match"];
+  const requestEtag = Array.isArray(ifNoneMatchHeader)
+    ? ifNoneMatchHeader[0]
+    : ifNoneMatchHeader;
+
   if (!requestEtag) {
     return false;
   }
@@ -65,6 +82,6 @@ export function isEtagMatch(request: Request, etag: string) {
   });
 }
 
-function normalizeEtag(value: string) {
+function normalizeEtag(value: string): string {
   return value.replace(/^W\//, "").replace(/^"/, "").replace(/"$/, "");
 }
