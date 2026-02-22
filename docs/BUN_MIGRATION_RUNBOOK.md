@@ -30,8 +30,8 @@ bun run dev
 2. Runtime topology:
 
 - Next runs on `http://localhost:3000`
-- Bun API runs on `http://localhost:4000`
-- `/api/v1/*` is always proxied by Next to Bun API through `API_ORIGIN`
+- `/api/v1/*` is handled inside this same Next app via `app/api/v1/[...all]/route.js`
+- Optional dual-process mode: set `API_ORIGIN=http://localhost:4000` and run Bun API separately
 
 ## Bun API only
 
@@ -41,7 +41,9 @@ bun run api:dev
 
 ## Environment
 
-- `API_ORIGIN` sets Bun API base URL for rewrites.
+- `API_ORIGIN` is optional.
+- When set, `/api/v1/*` is rewritten to that external Bun API origin (dual/split deploy mode).
+- When unset, API requests are served internally in the same Vercel/Next deployment (mono deploy mode).
 - `API_PORT` sets Bun API listen port.
 - `SESSION_SECRET` signs/verifies the `cargo_session` cookie in both Next SSR guards and Bun API.
 
@@ -52,17 +54,18 @@ Rollback must use deployment rollback to a previous release/branch.
 
 ## Production topology
 
-- Deploy Next app on Vercel (root project).
-- Deploy Bun API on Vercel as a separate project rooted at `apps/api` (Bun Function mode).
+- Deploy only the root Next app on Vercel (single project / mono deploy).
+- API routes are served by the same deployment at `/api/v1/*`.
 - Configure Vercel env:
-  - `API_ORIGIN=https://<bun-api-project-domain>`
+  - `NEXT_PUBLIC_APP_URL=https://<next-app-domain>`
   - `SESSION_SECRET=<strong-random-secret>`
-  - same DB/auth/webhook envs used by Bun API
+  - same DB/auth/webhook envs used by API handlers
+  - leave `API_ORIGIN` unset for mono deploy
 
 ## Vercel constraints
 
 - `Bun.serve` is not supported in Vercel Functions.
-- `apps/api` uses `api/[...all].ts` exporting an Elysia app for function-based Bun runtime.
+- Mono deploy uses Next route handlers (`app/api/v1/[...all]/route.js`) that invoke the Elysia app.
 - Local Bun server mode still uses `apps/api/src/index.ts`.
 
 ## Migrations
