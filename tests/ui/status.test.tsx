@@ -1,13 +1,21 @@
 import { beforeEach, describe, expect, it, jest } from "bun:test";
-import "tests/ui.setup.js";
+import "tests/ui.setup";
 /** @jest-environment jsdom */
+import type { ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
 import Status from "pages/status";
 import { fetchStatus } from "lib/api";
 import { renderWithFreshSWR } from "./test-helpers";
+import { asMock } from "tests/test-utils";
 
 jest.mock("next/link", () => {
-  const MockLink = ({ children, href }) => <a href={href}>{children}</a>;
+  const MockLink = ({
+    children,
+    href,
+  }: {
+    children: ReactNode;
+    href: string;
+  }) => <a href={href}>{children}</a>;
   MockLink.displayName = "MockLink";
   return MockLink;
 });
@@ -21,13 +29,15 @@ jest.mock("lib/api", () => ({
 }));
 
 describe("Status page", () => {
+  const fetchStatusMock = asMock(fetchStatus);
+
   beforeEach(() => {
-    fetchStatus.mockReset();
+    fetchStatusMock.mockReset();
   });
 
   describe("status cards", () => {
     it("renders database status", async () => {
-      fetchStatus.mockResolvedValue({
+      fetchStatusMock.mockResolvedValue({
         updated_at: "2026-02-17T10:00:00Z",
         dependencies: {
           database: {
@@ -47,7 +57,7 @@ describe("Status page", () => {
 
   describe("refresh feedback", () => {
     it("shows success feedback when refresh succeeds", async () => {
-      fetchStatus.mockResolvedValue({
+      fetchStatusMock.mockResolvedValue({
         updated_at: "2026-02-17T10:00:00Z",
         dependencies: {
           database: {
@@ -69,18 +79,17 @@ describe("Status page", () => {
     });
 
     it("shows error feedback when refresh fails", async () => {
-      fetchStatus
-        .mockResolvedValueOnce({
-          updated_at: "2026-02-17T10:00:00Z",
-          dependencies: {
-            database: {
-              version: "16.1",
-              max_connections: 100,
-              opened_connections: 2,
-            },
+      fetchStatusMock.mockResolvedValueOnce({
+        updated_at: "2026-02-17T10:00:00Z",
+        dependencies: {
+          database: {
+            version: "16.1",
+            max_connections: 100,
+            opened_connections: 2,
           },
-        })
-        .mockRejectedValueOnce(new Error("API down"));
+        },
+      });
+      fetchStatusMock.mockRejectedValueOnce(new Error("API down"));
 
       const view = renderWithFreshSWR(<Status />);
 

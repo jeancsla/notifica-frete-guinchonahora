@@ -1,21 +1,19 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-  test,
-} from "bun:test";
-import orchestrator from "tests/orchestrator.bun.js";
+import { beforeAll, describe, expect, test } from "bun:test";
+import orchestrator from "tests/orchestrator.bun";
+
+const integrationReady = Boolean(
+  globalThis.__POSTGRES_READY__ && globalThis.__WEB_SERVER_READY__,
+);
+const describeIfIntegration = integrationReady ? describe : describe.skip;
 
 beforeAll(async () => {
+  if (!integrationReady) {
+    return;
+  }
   await orchestrator.waitForAllServices();
 });
 
-describe("POST /api/v1/cargas/check", () => {
+describeIfIntegration("POST /api/v1/cargas/check", () => {
   describe("Authentication", () => {
     test("should return 401 when API key is missing", async () => {
       const response = await fetch(

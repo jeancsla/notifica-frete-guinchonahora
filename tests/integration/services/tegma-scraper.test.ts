@@ -1,37 +1,30 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-  test,
-} from "bun:test";
-import tegmaScraper from "services/tegma-scraper.js";
+import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
+import tegmaScraper from "services/tegma-scraper";
+import { asMock } from "tests/test-utils";
 
-// Mock fetch globally
-global.fetch = jest.fn();
+const fetchMock = asMock(jest.fn() as unknown as typeof fetch);
+global.fetch = fetchMock as unknown as typeof fetch;
 
 describe("Tegma Scraper", () => {
   beforeEach(() => {
-    fetch.mockClear();
+    fetchMock.mockClear();
     // Set environment variables for tests
-    process.env.TEGMA_BASE_URL = "https://test.example.com";
-    process.env.TEGMA_USERNAME = "testuser";
-    process.env.TEGMA_PASSWORD = "testpass";
+    const env = process.env as Record<string, string | undefined>;
+    env.TEGMA_BASE_URL = "https://test.example.com";
+    env.TEGMA_USERNAME = "testuser";
+    env.TEGMA_PASSWORD = "testpass";
   });
 
   afterEach(() => {
-    delete process.env.TEGMA_BASE_URL;
-    delete process.env.TEGMA_USERNAME;
-    delete process.env.TEGMA_PASSWORD;
+    const env = process.env as Record<string, string | undefined>;
+    delete env.TEGMA_BASE_URL;
+    delete env.TEGMA_USERNAME;
+    delete env.TEGMA_PASSWORD;
   });
 
   describe("getCookie", () => {
     test("should return cookie from set-cookie header", async () => {
-      fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         headers: new Map([
           ["set-cookie", "ASP.NET_SessionId=abc123; path=/; HttpOnly"],
         ]),
@@ -51,13 +44,13 @@ describe("Tegma Scraper", () => {
     });
 
     test("should throw error when request fails", async () => {
-      fetch.mockRejectedValueOnce(new Error("Network error"));
+      fetchMock.mockRejectedValueOnce(new Error("Network error"));
 
       await expect(tegmaScraper.getCookie()).rejects.toThrow("Network error");
     });
 
     test("should throw error when no set-cookie header", async () => {
-      fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         headers: new Map(),
         status: 200,
       });
@@ -68,7 +61,7 @@ describe("Tegma Scraper", () => {
 
   describe("login", () => {
     test("should authenticate with credentials and return updated cookie on redirect", async () => {
-      fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         status: 302,
         headers: new Map([
           ["location", "https://test.example.com/Painel/Transportadora"],
@@ -89,14 +82,15 @@ describe("Tegma Scraper", () => {
         }),
       );
 
-      const callArgs = fetch.mock.calls[0];
-      const body = callArgs[1].body;
+      type FetchInit = Parameters<typeof fetch>[1];
+      const callArgs = fetchMock.mock.calls[0] as [string, FetchInit];
+      const body = callArgs[1]?.body as URLSearchParams;
       expect(body.get("Usuario")).toBe("testuser");
       expect(body.get("Senha")).toBe("testpass");
     });
 
     test("should return new cookie when server sets one during login", async () => {
-      fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         status: 302,
         headers: new Map([
           ["location", "https://test.example.com/Painel/Transportadora"],
@@ -111,7 +105,7 @@ describe("Tegma Scraper", () => {
     });
 
     test("should throw error when login returns non-redirect status", async () => {
-      fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         status: 200,
         headers: new Map(),
       });
@@ -122,7 +116,7 @@ describe("Tegma Scraper", () => {
     });
 
     test("should throw error when login redirect is not to expected location", async () => {
-      fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         status: 302,
         headers: new Map([
           ["location", "https://test.example.com/Login?error=invalid"],
@@ -135,7 +129,7 @@ describe("Tegma Scraper", () => {
     });
 
     test("should throw error when fetch fails", async () => {
-      fetch.mockRejectedValueOnce(new Error("Network error"));
+      fetchMock.mockRejectedValueOnce(new Error("Network error"));
 
       await expect(tegmaScraper.login("cookie")).rejects.toThrow(
         "Network error",
@@ -146,7 +140,7 @@ describe("Tegma Scraper", () => {
   describe("fetchCargasPage", () => {
     test("should fetch cargas page with correct headers", async () => {
       const html = "<html><body>Test</body></html>";
-      fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
         text: async () => html,
@@ -168,7 +162,7 @@ describe("Tegma Scraper", () => {
     });
 
     test("should throw error when fetch fails", async () => {
-      fetch.mockRejectedValueOnce(new Error("Fetch failed"));
+      fetchMock.mockRejectedValueOnce(new Error("Fetch failed"));
 
       await expect(tegmaScraper.fetchCargasPage("cookie")).rejects.toThrow(
         "Fetch failed",
@@ -317,7 +311,7 @@ describe("Tegma Scraper", () => {
       `;
 
       // Mock getCookie
-      fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         headers: new Map([
           ["set-cookie", "ASP.NET_SessionId=abc123; path=/; HttpOnly"],
         ]),
@@ -325,7 +319,7 @@ describe("Tegma Scraper", () => {
       });
 
       // Mock login - returns 302 redirect on success
-      fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         status: 302,
         headers: new Map([
           ["location", "https://test.example.com/Painel/Transportadora"],
@@ -333,7 +327,7 @@ describe("Tegma Scraper", () => {
       });
 
       // Mock fetchCargasPage
-      fetch.mockResolvedValueOnce({
+      fetchMock.mockResolvedValueOnce({
         ok: true,
         status: 200,
         text: async () => html,

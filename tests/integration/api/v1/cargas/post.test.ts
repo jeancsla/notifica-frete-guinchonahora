@@ -1,31 +1,42 @@
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
   expect,
-  it,
-  jest,
   test,
 } from "bun:test";
-import orchestrator from "tests/orchestrator.bun.js";
-import database from "infra/database.js";
+import orchestrator from "tests/orchestrator.bun";
+import database from "infra/database";
+
+const integrationReady = Boolean(
+  globalThis.__POSTGRES_READY__ && globalThis.__WEB_SERVER_READY__,
+);
+const describeIfIntegration = integrationReady ? describe : describe.skip;
 
 beforeAll(async () => {
+  if (!integrationReady) {
+    return;
+  }
   await orchestrator.waitForAllServices();
 });
 
 beforeEach(async () => {
+  if (!integrationReady) {
+    return;
+  }
   await database.query("DELETE FROM cargas;");
   process.env.ADMIN_API_KEY = "test-admin-key";
 });
 
 afterAll(async () => {
+  if (!integrationReady) {
+    return;
+  }
   await database.query("DELETE FROM cargas;");
 });
 
-describe("POST /api/v1/cargas/check", () => {
+describeIfIntegration("POST /api/v1/cargas/check", () => {
   test("should trigger cargo check and return results", async () => {
     const mockedResult = {
       processed: 2,

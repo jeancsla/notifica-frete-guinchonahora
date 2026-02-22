@@ -1,15 +1,5 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-  test,
-} from "bun:test";
-import Carga from "models/carga.js";
+import { describe, expect, test } from "bun:test";
+import Carga from "@notifica/shared/models/Carga";
 
 describe("Carga Model", () => {
   describe("constructor", () => {
@@ -79,6 +69,7 @@ describe("Carga Model", () => {
 
     test("should return false when id_viagem is undefined", () => {
       const carga = new Carga({
+        id_viagem: undefined as unknown as string,
         origem: "Sao Paulo - SP",
       });
 
@@ -87,7 +78,7 @@ describe("Carga Model", () => {
 
     test("should return false when id_viagem is null", () => {
       const carga = new Carga({
-        id_viagem: null,
+        id_viagem: null as unknown as string,
         origem: "Sao Paulo - SP",
       });
 

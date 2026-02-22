@@ -1,29 +1,28 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-  test,
-} from "bun:test";
-import cargasRepository from "repositories/cargas-repository.js";
-import database from "infra/database.js";
-import Carga from "models/carga.js";
+import { afterEach, beforeAll, describe, expect, test } from "bun:test";
+import cargasRepository from "repositories/cargas-repository";
+import database from "infra/database";
+import Carga from "@notifica/shared/models/Carga";
+
+const postgresReady = Boolean(globalThis.__POSTGRES_READY__);
+const describeIfPostgres = postgresReady ? describe : describe.skip;
 
 beforeAll(async () => {
+  if (!postgresReady) {
+    return;
+  }
   // Clean table before tests
   await database.query("DELETE FROM cargas;");
 });
 
 afterEach(async () => {
+  if (!postgresReady) {
+    return;
+  }
   // Clean table after each test
   await database.query("DELETE FROM cargas;");
 });
 
-describe("Cargas Repository", () => {
+describeIfPostgres("Cargas Repository", () => {
   describe("save", () => {
     test("should save a carga to the database", async () => {
       const carga = new Carga({

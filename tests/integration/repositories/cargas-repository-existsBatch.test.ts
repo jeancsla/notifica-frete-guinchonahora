@@ -1,37 +1,36 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-  test,
-} from "bun:test";
-import orchestrator from "tests/orchestrator.bun.js";
-import database from "infra/database.js";
+import { afterEach, beforeAll, describe, expect, test } from "bun:test";
+import orchestrator from "tests/orchestrator.bun";
+import database from "infra/database";
+
+const postgresReady = Boolean(globalThis.__POSTGRES_READY__);
+const describeIfPostgres = postgresReady ? describe : describe.skip;
 
 beforeAll(async () => {
+  if (!postgresReady) {
+    return;
+  }
   await orchestrator.waitForAllServices();
   await database.query({ text: "DELETE FROM cargas;" });
 });
 
 afterEach(async () => {
+  if (!postgresReady) {
+    return;
+  }
   await database.query({ text: "DELETE FROM cargas;" });
 });
 
-describe("cargasRepository.existsBatch()", () => {
+describeIfPostgres("cargasRepository.existsBatch()", () => {
   test("should return empty set when no ids provided", async () => {
     const { default: cargasRepository } =
-      await import("repositories/cargas-repository.js");
+      await import("repositories/cargas-repository");
     const result = await cargasRepository.existsBatch([]);
     expect(result.size).toBe(0);
   });
 
   test("should return existing ids from the list", async () => {
     const { default: cargasRepository } =
-      await import("repositories/cargas-repository.js");
+      await import("repositories/cargas-repository");
 
     // Insert test cargas
     await database.query({

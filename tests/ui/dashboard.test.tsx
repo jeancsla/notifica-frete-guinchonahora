@@ -1,14 +1,22 @@
 import { beforeEach, describe, expect, it, jest } from "bun:test";
-import "tests/ui.setup.js";
+import "tests/ui.setup";
 /** @jest-environment jsdom */
+import type { ReactNode } from "react";
 import { waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import Dashboard from "pages/dashboard";
 import { fetchCargas } from "lib/api";
 import { renderWithFreshSWR } from "./test-helpers";
+import { asMock } from "tests/test-utils";
 
 jest.mock("next/link", () => {
-  const MockLink = ({ children, href }) => <a href={href}>{children}</a>;
+  const MockLink = ({
+    children,
+    href,
+  }: {
+    children: ReactNode;
+    href: string;
+  }) => <a href={href}>{children}</a>;
   MockLink.displayName = "MockLink";
   return MockLink;
 });
@@ -22,42 +30,42 @@ jest.mock("lib/api", () => ({
 }));
 
 describe("Dashboard page", () => {
-  const renderDashboard = (props) =>
-    renderWithFreshSWR(<Dashboard {...props} />);
+  const fetchCargasMock = asMock(fetchCargas);
+  const renderDashboard = (props: { allowMigrations: boolean }) =>
+    renderWithFreshSWR(<Dashboard user={{ username: "test" }} {...props} />);
 
   beforeEach(() => {
-    fetchCargas.mockReset();
+    fetchCargasMock.mockReset();
   });
 
   describe("refresh and fetch lifecycle", () => {
     it("loads cargas and updates on refresh", async () => {
-      fetchCargas
-        .mockResolvedValueOnce({
-          cargas: [
-            {
-              id_viagem: "123",
-              origem: "SP",
-              destino: "RJ",
-              produto: "Cimento",
-              prev_coleta: "2026-02-17",
-              created_at: "2026-02-16T14:30:00Z",
-            },
-          ],
-          pagination: { total: 1, limit: 10, offset: 0 },
-        })
-        .mockResolvedValueOnce({
-          cargas: [
-            {
-              id_viagem: "456",
-              origem: "BH",
-              destino: "RJ",
-              produto: "Areia",
-              prev_coleta: "2026-02-18",
-              created_at: "2026-02-17T10:15:00Z",
-            },
-          ],
-          pagination: { total: 1, limit: 10, offset: 0 },
-        });
+      fetchCargasMock.mockResolvedValueOnce({
+        cargas: [
+          {
+            id_viagem: "123",
+            origem: "SP",
+            destino: "RJ",
+            produto: "Cimento",
+            prev_coleta: "2026-02-17",
+            created_at: "2026-02-16T14:30:00Z",
+          },
+        ],
+        pagination: { total: 1, limit: 10, offset: 0 },
+      });
+      fetchCargasMock.mockResolvedValueOnce({
+        cargas: [
+          {
+            id_viagem: "456",
+            origem: "BH",
+            destino: "RJ",
+            produto: "Areia",
+            prev_coleta: "2026-02-18",
+            created_at: "2026-02-17T10:15:00Z",
+          },
+        ],
+        pagination: { total: 1, limit: 10, offset: 0 },
+      });
 
       const view = renderDashboard({ allowMigrations: false });
 
@@ -70,7 +78,7 @@ describe("Dashboard page", () => {
       const refresh = view.getByRole("button", { name: "Atualizar" });
       await userEvent.click(refresh);
 
-      await waitFor(() => expect(fetchCargas).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(fetchCargasMock).toHaveBeenCalledTimes(2));
       const secondId = await view.findAllByText("456");
       expect(secondId.length).toBeGreaterThan(0);
       expect(
@@ -82,7 +90,7 @@ describe("Dashboard page", () => {
 
   describe("table rendering", () => {
     it("displays table with correct columns", async () => {
-      fetchCargas.mockResolvedValue({
+      fetchCargasMock.mockResolvedValue({
         cargas: [
           {
             id_viagem: "789",
@@ -113,7 +121,7 @@ describe("Dashboard page", () => {
     });
 
     it("renders fallback for invalid previsao date", async () => {
-      fetchCargas.mockResolvedValue({
+      fetchCargasMock.mockResolvedValue({
         cargas: [
           {
             id_viagem: "999",
@@ -138,24 +146,23 @@ describe("Dashboard page", () => {
 
   describe("conditional sections", () => {
     it("shows recent fretes when there are no pending fretes", async () => {
-      fetchCargas
-        .mockResolvedValueOnce({
-          cargas: [],
-          pagination: { total: 0, limit: 10, offset: 0 },
-        })
-        .mockResolvedValueOnce({
-          cargas: [
-            {
-              id_viagem: "105712",
-              origem: "TAUBATE-SP",
-              destino: "TAUBATE-SP",
-              produto: "PLATAFORMA AEREA",
-              prev_coleta: "02/10/2025",
-              created_at: "2025-10-04T23:35:06.005Z",
-            },
-          ],
-          pagination: { total: 1, limit: 10, offset: 0 },
-        });
+      fetchCargasMock.mockResolvedValueOnce({
+        cargas: [],
+        pagination: { total: 0, limit: 10, offset: 0 },
+      });
+      fetchCargasMock.mockResolvedValueOnce({
+        cargas: [
+          {
+            id_viagem: "105712",
+            origem: "TAUBATE-SP",
+            destino: "TAUBATE-SP",
+            produto: "PLATAFORMA AEREA",
+            prev_coleta: "02/10/2025",
+            created_at: "2025-10-04T23:35:06.005Z",
+          },
+        ],
+        pagination: { total: 1, limit: 10, offset: 0 },
+      });
 
       const view = renderDashboard({ allowMigrations: false });
 
@@ -167,11 +174,11 @@ describe("Dashboard page", () => {
         ),
       ).toBeInTheDocument();
       expect(view.getByText("0")).toBeInTheDocument();
-      expect(fetchCargas).toHaveBeenCalledTimes(2);
+      expect(fetchCargasMock).toHaveBeenCalledTimes(2);
     });
 
     it("shows migrations button when allowMigrations is true", async () => {
-      fetchCargas.mockResolvedValue({
+      fetchCargasMock.mockResolvedValue({
         cargas: [
           {
             id_viagem: "001",
@@ -195,7 +202,7 @@ describe("Dashboard page", () => {
     });
 
     it("hides migrations button when allowMigrations is false", async () => {
-      fetchCargas.mockResolvedValue({
+      fetchCargasMock.mockResolvedValue({
         cargas: [
           {
             id_viagem: "002",

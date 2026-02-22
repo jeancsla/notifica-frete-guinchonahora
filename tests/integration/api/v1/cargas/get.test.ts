@@ -1,33 +1,44 @@
 import {
   afterAll,
-  afterEach,
   beforeAll,
   beforeEach,
   describe,
   expect,
-  it,
-  jest,
   test,
 } from "bun:test";
-import orchestrator from "tests/orchestrator.bun.js";
-import database from "infra/database.js";
-import Carga from "models/carga.js";
-import cargasRepository from "repositories/cargas-repository.js";
+import orchestrator from "tests/orchestrator.bun";
+import database from "infra/database";
+import Carga from "@notifica/shared/models/Carga";
+import cargasRepository from "repositories/cargas-repository";
+
+const integrationReady = Boolean(
+  globalThis.__POSTGRES_READY__ && globalThis.__WEB_SERVER_READY__,
+);
+const describeIfIntegration = integrationReady ? describe : describe.skip;
 
 beforeAll(async () => {
+  if (!integrationReady) {
+    return;
+  }
   await orchestrator.waitForAllServices();
 });
 
 beforeEach(async () => {
+  if (!integrationReady) {
+    return;
+  }
   await database.query("DELETE FROM cargas;");
 });
 
 afterAll(async () => {
+  if (!integrationReady) {
+    return;
+  }
   await database.query("DELETE FROM cargas;");
 });
 
-describe("GET /api/v1/cargas", () => {
-  let authCookie;
+describeIfIntegration("GET /api/v1/cargas", () => {
+  let authCookie: string;
 
   beforeAll(async () => {
     authCookie = await orchestrator.getAuthCookie();

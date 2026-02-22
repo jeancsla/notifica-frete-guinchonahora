@@ -1,22 +1,22 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-  test,
-} from "bun:test";
-import orchestrator from "tests/orchestrator.bun.js";
+import { beforeAll, describe, expect, test } from "bun:test";
+import orchestrator from "tests/orchestrator.bun";
+
+const integrationReady = Boolean(
+  globalThis.__POSTGRES_READY__ && globalThis.__WEB_SERVER_READY__,
+);
+const describeIfIntegration = integrationReady ? describe : describe.skip;
 
 beforeAll(async () => {
+  if (!integrationReady) {
+    return;
+  }
   await orchestrator.waitForAllServices();
   process.env.CRON_WEBHOOK_SECRET = "test-secret";
 });
 
-describe("POST /api/v1/cargas/webhook", () => {
+const webhookSecret = process.env.CRON_WEBHOOK_SECRET ?? "";
+
+describeIfIntegration("POST /api/v1/cargas/webhook", () => {
   describe("Authentication", () => {
     test("should return 401 when webhook secret header is missing", async () => {
       const response = await fetch(
@@ -56,7 +56,7 @@ describe("POST /api/v1/cargas/webhook", () => {
         {
           method: "GET",
           headers: {
-            "x-cron-secret": process.env.CRON_WEBHOOK_SECRET,
+            "x-cron-secret": webhookSecret,
           },
         },
       );
@@ -82,7 +82,7 @@ describe("POST /api/v1/cargas/webhook", () => {
         {
           method: "POST",
           headers: {
-            "x-cron-secret": process.env.CRON_WEBHOOK_SECRET,
+            "x-cron-secret": webhookSecret,
             "x-cron-source": "n8n",
             "x-test-processor-result": JSON.stringify(mockedResult),
           },
@@ -104,7 +104,7 @@ describe("POST /api/v1/cargas/webhook", () => {
       };
 
       const response = await fetch(
-        `http://localhost:3000/api/v1/cargas/webhook?secret=${process.env.CRON_WEBHOOK_SECRET}`,
+        `http://localhost:3000/api/v1/cargas/webhook?secret=${webhookSecret}`,
         {
           method: "POST",
           headers: {
@@ -129,7 +129,7 @@ describe("POST /api/v1/cargas/webhook", () => {
         {
           method: "POST",
           headers: {
-            "x-cron-secret": process.env.CRON_WEBHOOK_SECRET,
+            "x-cron-secret": webhookSecret,
             "x-test-processor-error": "Scraper connection failed",
           },
         },

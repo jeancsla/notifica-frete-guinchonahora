@@ -1,13 +1,21 @@
 import { beforeEach, describe, expect, it, jest } from "bun:test";
-import "tests/ui.setup.js";
+import "tests/ui.setup";
 /** @jest-environment jsdom */
+import type { ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
 import TableView from "pages/table";
 import { fetchCargas } from "lib/api";
 import { renderWithFreshSWR } from "./test-helpers";
+import { asMock } from "tests/test-utils";
 
 jest.mock("next/link", () => {
-  const MockLink = ({ children, href }) => <a href={href}>{children}</a>;
+  const MockLink = ({
+    children,
+    href,
+  }: {
+    children: ReactNode;
+    href: string;
+  }) => <a href={href}>{children}</a>;
   MockLink.displayName = "MockLink";
   return MockLink;
 });
@@ -21,13 +29,15 @@ jest.mock("lib/api", () => ({
 }));
 
 describe("Table view", () => {
+  const fetchCargasMock = asMock(fetchCargas);
+
   beforeEach(() => {
-    fetchCargas.mockReset();
+    fetchCargasMock.mockReset();
   });
 
   describe("data and refresh", () => {
     it("renders rows from the API", async () => {
-      fetchCargas.mockResolvedValue({
+      fetchCargasMock.mockResolvedValue({
         cargas: [
           {
             id_viagem: "789",

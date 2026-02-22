@@ -1,13 +1,21 @@
 import { beforeEach, describe, expect, it, jest } from "bun:test";
-import "tests/ui.setup.js";
+import "tests/ui.setup";
 /** @jest-environment jsdom */
+import type { ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
 import Activity from "pages/activity";
 import { fetchCargas, fetchStatus } from "lib/api";
 import { renderWithFreshSWR } from "./test-helpers";
+import { asMock } from "tests/test-utils";
 
 jest.mock("next/link", () => {
-  const MockLink = ({ children, href }) => <a href={href}>{children}</a>;
+  const MockLink = ({
+    children,
+    href,
+  }: {
+    children: ReactNode;
+    href: string;
+  }) => <a href={href}>{children}</a>;
   MockLink.displayName = "MockLink";
   return MockLink;
 });
@@ -22,19 +30,23 @@ jest.mock("lib/api", () => ({
 }));
 
 describe("Activity page", () => {
+  const fetchCargasMock = asMock(fetchCargas);
+  const fetchStatusMock = asMock(fetchStatus);
+
   beforeEach(() => {
-    fetchCargas.mockReset();
-    fetchStatus.mockReset();
+    fetchCargasMock.mockReset();
+    fetchStatusMock.mockReset();
   });
 
   describe("timeline", () => {
     it("renders timeline events", async () => {
-      fetchCargas.mockResolvedValue({
+      fetchCargasMock.mockResolvedValue({
         cargas: [{ id_viagem: "123", created_at: "2026-02-17T10:00:00Z" }],
         pagination: { total: 1, limit: 10, offset: 0 },
       });
-      fetchStatus.mockResolvedValue({
+      fetchStatusMock.mockResolvedValue({
         updated_at: "2026-02-17T10:05:00Z",
+        dependencies: { database: {} },
       });
 
       const view = renderWithFreshSWR(<Activity />);
@@ -44,12 +56,15 @@ describe("Activity page", () => {
     });
 
     it("shows 'Sem data' when event timestamp is missing", async () => {
-      fetchCargas.mockResolvedValue({
-        cargas: [{ id_viagem: "123", created_at: null, prev_coleta: null }],
+      fetchCargasMock.mockResolvedValue({
+        cargas: [
+          { id_viagem: "123", created_at: undefined, prev_coleta: undefined },
+        ],
         pagination: { total: 1, limit: 10, offset: 0 },
       });
-      fetchStatus.mockResolvedValue({
-        updated_at: null,
+      fetchStatusMock.mockResolvedValue({
+        updated_at: "",
+        dependencies: { database: {} },
       });
 
       const view = renderWithFreshSWR(<Activity />);
@@ -60,12 +75,13 @@ describe("Activity page", () => {
 
   describe("refresh feedback", () => {
     it("shows success feedback after update", async () => {
-      fetchCargas.mockResolvedValue({
+      fetchCargasMock.mockResolvedValue({
         cargas: [{ id_viagem: "123", created_at: "2026-02-17T10:00:00Z" }],
         pagination: { total: 1, limit: 10, offset: 0 },
       });
-      fetchStatus.mockResolvedValue({
+      fetchStatusMock.mockResolvedValue({
         updated_at: "2026-02-17T10:05:00Z",
+        dependencies: { database: {} },
       });
 
       const view = renderWithFreshSWR(<Activity />);

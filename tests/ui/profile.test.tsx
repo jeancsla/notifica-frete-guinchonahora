@@ -1,26 +1,33 @@
 import { describe, expect, it, jest } from "bun:test";
-import "tests/ui.setup.js";
+import "tests/ui.setup";
 /** @jest-environment jsdom */
+import type { ReactNode } from "react";
 import userEvent from "@testing-library/user-event";
-import Settings from "pages/settings";
+import Profile from "pages/profile";
 import { renderWithFreshSWR } from "./test-helpers";
 
 jest.mock("next/link", () => {
-  const MockLink = ({ children, href }) => <a href={href}>{children}</a>;
+  const MockLink = ({
+    children,
+    href,
+  }: {
+    children: ReactNode;
+    href: string;
+  }) => <a href={href}>{children}</a>;
   MockLink.displayName = "MockLink";
   return MockLink;
 });
 
 jest.mock("next/router", () => ({
-  useRouter: () => ({ pathname: "/settings" }),
+  useRouter: () => ({ pathname: "/profile" }),
 }));
 
-describe("Settings page", () => {
+describe("Profile page", () => {
   describe("content and refresh", () => {
-    it("renders settings content", async () => {
-      const view = renderWithFreshSWR(<Settings />);
-      expect(view.getByText("Notificações")).toBeInTheDocument();
-      expect(view.getByText("WhatsApp")).toBeInTheDocument();
+    it("renders profile details", async () => {
+      const view = renderWithFreshSWR(<Profile />);
+      expect(view.getByText("Operador principal")).toBeInTheDocument();
+      expect(view.getByText("Equipe Guincho Na Hora")).toBeInTheDocument();
 
       const refresh = view.getByRole("button", { name: "Atualizar" });
       await userEvent.click(refresh);
