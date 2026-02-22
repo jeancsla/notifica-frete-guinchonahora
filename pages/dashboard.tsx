@@ -112,7 +112,7 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
   return (
     <Layout
       title="Dashboard"
-      subtitle="Fretes pendentes de notificacao"
+      subtitle="Fretes pendentes de notificação"
       actions={
         <>
           <LoadingButton
@@ -162,7 +162,7 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
               <p style={{ fontSize: "32px", fontWeight: 700 }}>
                 {pendingTotal}
               </p>
-              <p className="muted">Fretes aguardando notificacao</p>
+              <p className="muted">Fretes aguardando notificação</p>
             </div>
             <div className="card">
               <h3>Status</h3>
@@ -266,14 +266,14 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
                     }))
                   }
                 >
-                  Proxima
-                </button>
+                Próxima
+              </button>
               </div>
             </>
           )}
         </div>
         <div className="card">
-          <h3>Detalhe rapido</h3>
+          <h3>Detalhe rápido</h3>
           {isLoading ? (
             <div className="detail-list">
               <SkeletonBlock height={14} width="100%" />

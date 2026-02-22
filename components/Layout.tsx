@@ -4,14 +4,14 @@ import { useRouter } from "next/router";
 import { useCallback, useRef } from "react";
 
 const navItems = [
-  { href: "/", label: "Overview" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/table", label: "Table View" },
-  { href: "/details", label: "Details" },
+  { href: "/", label: "Visão geral" },
+  { href: "/dashboard", label: "Painel" },
+  { href: "/table", label: "Tabela" },
+  { href: "/details", label: "Detalhes" },
   { href: "/status", label: "Status" },
-  { href: "/settings", label: "Settings" },
-  { href: "/profile", label: "Profile" },
-  { href: "/activity", label: "Activity" },
+  { href: "/settings", label: "Configurações" },
+  { href: "/profile", label: "Perfil" },
+  { href: "/activity", label: "Atividade" },
 ];
 
 type LayoutProps = {
@@ -46,7 +46,7 @@ export default function Layout({
           <strong>Guincho Na Hora</strong>
           <span>Fretes & cargas em tempo real</span>
         </div>
-        <nav className="nav" aria-label="Main navigation">
+        <nav className="nav" aria-label="Navegação principal">
           {navItems.map((item) => (
             <Link
               key={item.href}
