@@ -8,8 +8,9 @@ global.fetch = fetchMock as unknown as typeof fetch;
 describe("Tegma Scraper", () => {
   beforeEach(() => {
     fetchMock.mockClear();
-    // Set environment variables for tests
+    // Set environment variables for tests and force no-retry mode.
     const env = process.env as Record<string, string | undefined>;
+    env.NODE_ENV = "test";
     env.TEGMA_BASE_URL = "https://test.example.com";
     env.TEGMA_USERNAME = "testuser";
     env.TEGMA_PASSWORD = "testpass";
@@ -17,6 +18,7 @@ describe("Tegma Scraper", () => {
 
   afterEach(() => {
     const env = process.env as Record<string, string | undefined>;
+    delete env.NODE_ENV;
     delete env.TEGMA_BASE_URL;
     delete env.TEGMA_USERNAME;
     delete env.TEGMA_PASSWORD;
