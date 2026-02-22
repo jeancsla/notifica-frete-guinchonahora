@@ -266,8 +266,8 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
                     }))
                   }
                 >
-                Próxima
-              </button>
+                  Próxima
+                </button>
               </div>
             </>
           )}
