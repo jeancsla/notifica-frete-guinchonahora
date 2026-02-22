@@ -9,8 +9,8 @@ export default function Profile() {
 
   return (
     <Layout
-      title="Profile"
-      subtitle="Informacoes operacionais do responsavel pelo turno."
+      title="Perfil"
+      subtitle="Informações operacionais do responsável pelo turno."
       actions={
         <>
           <LoadingButton
@@ -88,14 +88,14 @@ export default function Profile() {
       >
         <div className="card">
           <h3>Escala</h3>
-          <p className="muted">Rodizio automatico via API de turnos.</p>
+          <p className="muted">Rodízio automático via API de turnos.</p>
         </div>
         <div className="card">
-          <h3>Permissoes</h3>
+          <h3>Permissões</h3>
           <p className="muted">Dashboard de leitura total.</p>
         </div>
         <div className="card">
-          <h3>Ultima atualizacao</h3>
+          <h3>Última atualização</h3>
           <p className="muted">Sincronizado automaticamente.</p>
         </div>
       </section>

@@ -62,7 +62,7 @@ export default function Details() {
 
   return (
     <Layout
-      title="Details"
+      title="Detalhes"
       subtitle="Detalhamento profundo de uma carga selecionada."
       actions={
         <>
@@ -118,7 +118,7 @@ export default function Details() {
           </div>
         </div>
         <div className="card">
-          <h3>Informacoes da carga</h3>
+          <h3>Informações da carga</h3>
           {isLoading ? (
             <div className="detail-list">
               <SkeletonBlock height={14} width="100%" />

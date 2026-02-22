@@ -69,8 +69,8 @@ export default function Activity() {
 
   return (
     <Layout
-      title="Activity"
-      subtitle="Linha do tempo das operacoes e eventos recentes."
+      title="Atividade"
+      subtitle="Linha do tempo das operações e eventos recentes."
       actions={
         <>
           <LoadingButton
@@ -100,7 +100,7 @@ export default function Activity() {
         className={`grid cols-2${isValidating && !isLoading ? " soft-loading" : ""}`}
       >
         <div className="card">
-          <h3>Timeline</h3>
+          <h3>Linha do tempo</h3>
           <div className="detail-list">
             {isLoading
               ? Array.from({ length: 6 }).map((_, idx) => (

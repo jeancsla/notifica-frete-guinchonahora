@@ -57,7 +57,7 @@ export function buildActivityEvents(
         {
           id: `status-${statusTimestamp || "sem-data"}`,
           title: "Status checado",
-          description: "Banco de dados online e estavel.",
+          description: "Banco de dados online e estável.",
           time: statusTimestamp
             ? formatDateTimeBR(status.updated_at)
             : "Sem data",

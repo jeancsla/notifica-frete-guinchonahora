@@ -47,7 +47,7 @@ export default function Status() {
   return (
     <Layout
       title="Status"
-      subtitle="Saude do backend e conexoes criticas."
+      subtitle="Saúde do backend e conexões críticas."
       actions={
         <>
           <LoadingButton
@@ -82,29 +82,29 @@ export default function Status() {
         ) : (
           <>
             <div className="card">
-              <h3>Atualizacao</h3>
+              <h3>Atualização</h3>
               <p style={{ fontSize: "18px", fontWeight: 600 }}>
                 {formatDateTimeBR(status?.updated_at)}
               </p>
-              <p className="muted">Ultima verificacao do status.</p>
+              <p className="muted">Última verificação do status.</p>
             </div>
             <div className="card">
               <h3>Banco de dados</h3>
               <div className="detail-list">
                 <div className="detail-item">
-                  <span>Versao</span>
+                  <span>Versão</span>
                   <strong>
                     {status?.dependencies?.database?.version || "-"}
                   </strong>
                 </div>
                 <div className="detail-item">
-                  <span>Max. conexoes</span>
+                  <span>Máx. conexões</span>
                   <strong>
                     {status?.dependencies?.database?.max_connections ?? "-"}
                   </strong>
                 </div>
                 <div className="detail-item">
-                  <span>Conexoes abertas</span>
+                  <span>Conexões abertas</span>
                   <strong>
                     {status?.dependencies?.database?.opened_connections ?? "-"}
                   </strong>
@@ -119,17 +119,17 @@ export default function Status() {
         className={`grid cols-3${isValidating && !isLoading ? " soft-loading" : ""}`}
       >
         <div className="card">
-          <h3>Integracao</h3>
+          <h3>Integração</h3>
           <p className="muted">API online e operando.</p>
           <div className="status-dot">Operacional</div>
         </div>
         <div className="card">
-          <h3>Fila de notificacoes</h3>
-          <p className="muted">Pendencias avaliadas via dashboard.</p>
+          <h3>Fila de notificações</h3>
+          <p className="muted">Pendências avaliadas via dashboard.</p>
         </div>
         <div className="card">
           <h3>Logs</h3>
-          <p className="muted">Eventos recentes estao sendo registrados.</p>
+          <p className="muted">Eventos recentes estão sendo registrados.</p>
           {isValidating ? (
             <SkeletonBlock
               height={12}

@@ -46,23 +46,23 @@ const Overview: NextPage<PageProps> = () => {
     >
       <section className="grid cols-3">
         <div className="card">
-          <h3>Visao Geral</h3>
+          <h3>Visão geral</h3>
           <p className="muted">
-            Consolide cargas, status da integracao e fila de notificacoes em
+            Consolide cargas, status da integração e fila de notificações em
             tempo real. Todo o fluxo vem da API.
           </p>
         </div>
         <div className="card">
           <h3>Prioridades</h3>
           <p className="muted">
-            Destaque cargas criticas, previsao de coleta e rotas de maior
-            urgencia.
+            Destaque cargas críticas, previsão de coleta e rotas de maior
+            urgência.
           </p>
         </div>
         <div className="card">
-          <h3>Atualizacao Manual</h3>
+          <h3>Atualização manual</h3>
           <p className="muted">
-            Botao de refresh em cada tela para trazer dados novos sem input
+            Botão de atualização em cada tela para trazer dados novos sem input
             manual.
           </p>
         </div>
@@ -86,10 +86,10 @@ const Overview: NextPage<PageProps> = () => {
           </div>
         </div>
         <div className="card">
-          <h3>Proximos passos</h3>
+          <h3>Próximos passos</h3>
           <p className="muted">
             Ajuste filtros, marque prioridades no backend e acompanhe a
-            performance das notificacoes.
+            performance das notificações.
           </p>
         </div>
       </section>

@@ -50,7 +50,7 @@ describe("Activity page", () => {
       });
 
       const view = renderWithFreshSWR(<Activity />);
-      expect(await view.findByText("Timeline")).toBeInTheDocument();
+      expect(await view.findByText("Linha do tempo")).toBeInTheDocument();
       expect(await view.findByText("Carga capturada")).toBeInTheDocument();
       expect(view.queryByText("2026-02-17T10:00:00Z")).not.toBeInTheDocument();
     });
