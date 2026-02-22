@@ -28,7 +28,7 @@ export async function loginHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number; headers: Record<string, string> };
+  set: { status?: number | string; headers: Record<string, string | number> };
 }) {
   if (request.method !== "POST") {
     set.status = 405;
@@ -87,7 +87,7 @@ export async function logoutHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number; headers: Record<string, string> };
+  set: { status?: number | string; headers: Record<string, string | number> };
 }) {
   if (request.method !== "POST") {
     set.status = 405;

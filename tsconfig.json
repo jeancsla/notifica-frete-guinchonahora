@@ -1,0 +1,46 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowJs": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "types": ["node", "bun-types", "@testing-library/jest-dom"],
+    "baseUrl": ".",
+    "paths": {
+      "@notifica/shared/*": ["packages/shared/src/*"],
+      "lib/*": ["lib/*"]
+    },
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "next-dev.d.ts",
+    "app/**/*",
+    "apps/api/src/**/*",
+    "components/**/*",
+    "infra/**/*",
+    "lib/**/*",
+    "models/**/*",
+    "packages/shared/src/**/*",
+    "pages/**/*",
+    "repositories/**/*",
+    "scripts/**/*",
+    "services/**/*",
+    "tests/**/*",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["node_modules", ".next"]
+}

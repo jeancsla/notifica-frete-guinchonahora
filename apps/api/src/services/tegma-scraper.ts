@@ -1,5 +1,6 @@
 import { load } from "cheerio";
 import retry from "async-retry";
+import type { ScrapedCargaInput } from "@notifica/shared/models/Carga";
 
 function isTest() {
   return process.env.NODE_ENV === "test";
@@ -23,7 +24,7 @@ async function withRetry<T>(fn: () => Promise<T>, operationName: string) {
     factor: 2,
     minTimeout: 5000,
     maxTimeout: 30000,
-    onRetry: (error, attempt) => {
+    onRetry: (error: Error, attempt: number) => {
       console.log(
         `[TegmaScraper] Retry ${attempt} for ${operationName}: ${error.message}`,
       );
@@ -134,9 +135,9 @@ export const tegmaScraper = {
 
   parseCargas(html: string) {
     const $ = load(html);
-    const cargas: Array<Record<string, string>> = [];
+    const cargas: ScrapedCargaInput[] = [];
 
-    const colunas = [
+    const colunas: Array<keyof ScrapedCargaInput> = [
       "viagem",
       "tipoTransporte",
       "origem",
@@ -150,14 +151,16 @@ export const tegmaScraper = {
     ];
 
     $("#tblGridViagem tbody tr").each((_, element) => {
-      const carga: Record<string, string> = {};
+      const carga: Partial<ScrapedCargaInput> = {};
       const celulas = $(element).find("td");
 
       colunas.forEach((nomeColuna, i) => {
         carga[nomeColuna] = $(celulas).eq(i).text().trim();
       });
 
-      cargas.push(carga);
+      if (carga.viagem) {
+        cargas.push(carga as ScrapedCargaInput);
+      }
     });
 
     return cargas;

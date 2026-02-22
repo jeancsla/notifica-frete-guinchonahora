@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 
 export function setCacheControl(
-  headers: Record<string, string>,
+  headers: Record<string, string | number>,
   {
     visibility = "private",
     maxAge = 0,
@@ -37,7 +37,7 @@ export function buildWeakEtag(payload: unknown) {
     .update(payloadString)
     .digest("base64url")
     .slice(0, 20);
-  return `W/\"${hash}\"`;
+  return `W/"${hash}"`;
 }
 
 export function isEtagMatch(request: Request, etag: string) {
@@ -66,5 +66,5 @@ export function isEtagMatch(request: Request, etag: string) {
 }
 
 function normalizeEtag(value: string) {
-  return value.replace(/^W\//, "").replace(/^\"/, "").replace(/\"$/, "");
+  return value.replace(/^W\//, "").replace(/^"/, "").replace(/"$/, "");
 }

@@ -39,7 +39,7 @@ export async function cargasIndexHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number; headers: Record<string, string> };
+  set: { status?: number | string; headers: Record<string, string | number> };
 }) {
   if (!getSessionUser(request)) {
     set.status = 401;
@@ -223,7 +223,7 @@ export async function cargasCheckHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number };
+  set: { status?: number | string };
 }) {
   if (!isVercelCron(request) && !hasAdminApiKey(request)) {
     set.status = 401;
@@ -280,7 +280,7 @@ export async function cargasWebhookHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number };
+  set: { status?: number | string };
 }) {
   if (request.method !== "POST") {
     set.status = 405;
@@ -350,7 +350,7 @@ export async function cargasHealthHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number };
+  set: { status?: number | string };
 }) {
   if (request.method !== "GET") {
     set.status = 405;

@@ -13,6 +13,7 @@
     "elysia": "^1.1.27",
     "node-cron": "^3.0.3",
     "node-pg-migrate": "^6.2.2",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "@notifica/shared": "workspace:*"
   }
 }

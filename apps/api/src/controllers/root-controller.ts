@@ -3,7 +3,7 @@ export async function rootHandler({
   set,
 }: {
   request: Request;
-  set: { status?: number };
+  set: { status?: number | string };
 }) {
   if (request.method !== "GET") {
     set.status = 405;

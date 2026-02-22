@@ -1,5 +1,5 @@
 import { query } from "../infra/database";
-import type { CargaRecord } from "../types";
+import type { CargaRecord } from "@notifica/shared/types";
 
 const ALL_COLUMNS = [
   "id",

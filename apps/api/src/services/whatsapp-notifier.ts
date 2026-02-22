@@ -1,5 +1,5 @@
 import retry from "async-retry";
-import type { Carga } from "../models/carga";
+import type { Carga } from "@notifica/shared/models/Carga";
 
 function isTest() {
   return process.env.NODE_ENV === "test";
@@ -19,7 +19,7 @@ async function withRetry<T>(fn: () => Promise<T>, operationName: string) {
     factor: 2,
     minTimeout: 5000,
     maxTimeout: 30000,
-    onRetry: (error, attempt) => {
+    onRetry: (error: Error, attempt: number) => {
       console.log(
         `[WhatsAppNotifier] Retry ${attempt} for ${operationName}: ${error.message}`,
       );
