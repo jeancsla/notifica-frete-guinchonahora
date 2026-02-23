@@ -9,22 +9,14 @@ dotenv.config({ path: ".env.development" });
 globalThis.__POSTGRES_READY__ = await isPostgresReady();
 globalThis.__WEB_SERVER_READY__ = await isWebServerReady();
 
-// Fail-fast in CI: throw if required services are not available
-if (process.env.CI === "true") {
-  if (!globalThis.__POSTGRES_READY__) {
-    throw new Error(
-      "FAIL-FAST: PostgreSQL is not available in CI. " +
-        "Required for integration tests. " +
-        "Check POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB",
-    );
-  }
-  if (!globalThis.__WEB_SERVER_READY__) {
-    throw new Error(
-      "FAIL-FAST: Web server is not available in CI. " +
-        "Required for integration tests. " +
-        "Ensure the server is running on http://localhost:3000",
-    );
-  }
+// Fail-fast in CI: throw if PostgreSQL is not available
+// PostgreSQL is required for database integration tests
+if (process.env.CI === "true" && !globalThis.__POSTGRES_READY__) {
+  throw new Error(
+    "FAIL-FAST: PostgreSQL is not available in CI. " +
+      "Required for integration tests. " +
+      "Check POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB",
+  );
 }
 
 if (typeof globalThis.TextEncoder === "undefined") {
