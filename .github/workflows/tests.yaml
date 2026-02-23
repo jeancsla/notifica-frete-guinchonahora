@@ -50,4 +50,3 @@ jobs:
           POSTGRES_USER: local_user
           POSTGRES_PASSWORD: localpassword
           POSTGRES_DB: local_db
-          DATABASE_URL: postgres://local_user:localpassword@localhost:5432/local_db
