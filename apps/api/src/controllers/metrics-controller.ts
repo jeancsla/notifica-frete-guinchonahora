@@ -6,7 +6,7 @@ import { getMetrics, getMetricsContentType } from "../lib/metrics";
 export async function metricsHandler({
   set,
 }: {
-  set: { status?: number | string; headers?: Record<string, string> };
+  set: { status?: number | string; headers: Record<string, string | number> };
 }) {
   try {
     const metrics = await getMetrics();
