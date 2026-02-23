@@ -1,43 +1,52 @@
-import { query } from "../infra/database";
+import { sql } from "kysely";
 import type { CargaRecord } from "@notifica/shared/types";
+import { query } from "../infra/database";
+import { getKyselyDb } from "../infra/kysely-db";
+import {
+  ALL_COLUMNS,
+  SORTABLE_COLUMNS,
+  SORT_ORDERS,
+  PREV_COLETA_ORDER_EXPR,
+  type ColumnName,
+  type SortableColumn,
+  type SortOrder,
+} from "../infra/db-types";
 
-const ALL_COLUMNS = [
-  "id",
-  "id_viagem",
-  "tipo_transporte",
-  "origem",
-  "destino",
-  "produto",
-  "equipamento",
-  "prev_coleta",
-  "qtd_entregas",
-  "vr_frete",
-  "termino",
-  "notificado_em",
-  "created_at",
-];
-
-const SORTABLE_COLUMNS = [
-  "created_at",
-  "prev_coleta",
-  "id_viagem",
-  "origem",
-  "destino",
-  "produto",
-];
-const SORT_ORDERS = ["ASC", "DESC"];
-
-function getSelectedColumns(fields?: string[]) {
+/**
+ * Validate and sanitize field selection to only allow valid column names.
+ * Returns validated columns or all columns if none provided.
+ */
+function getSelectedColumns(fields?: string[]): ColumnName[] {
   if (!fields || fields.length === 0) {
-    return ALL_COLUMNS.join(", ");
+    return [...ALL_COLUMNS];
   }
 
-  const sanitized = fields.filter((field) => ALL_COLUMNS.includes(field));
-  if (sanitized.length === 0) {
-    return ALL_COLUMNS.join(", ");
-  }
+  const validFields = fields.filter((field): field is ColumnName =>
+    ALL_COLUMNS.includes(field as ColumnName)
+  );
 
-  return sanitized.join(", ");
+  return validFields.length > 0 ? validFields : [...ALL_COLUMNS];
+}
+
+/**
+ * Validate sort column to prevent SQL injection.
+ */
+function getValidSortColumn(sortBy?: string): SortableColumn {
+  if (!sortBy) return "created_at";
+  return SORTABLE_COLUMNS.includes(sortBy as SortableColumn)
+    ? (sortBy as SortableColumn)
+    : "created_at";
+}
+
+/**
+ * Validate sort order to prevent SQL injection.
+ */
+function getValidSortOrder(sortOrder?: string): SortOrder {
+  if (!sortOrder) return "DESC";
+  const upper = sortOrder.toUpperCase();
+  return SORT_ORDERS.includes(upper as SortOrder)
+    ? (upper as SortOrder)
+    : "DESC";
 }
 
 export const cargasRepository = {
@@ -47,7 +56,7 @@ export const cargasRepository = {
       values: [id_viagem],
     });
 
-    return result.rows[0]?.exists as boolean;
+    return Boolean(result.rows[0]?.exists);
   },
 
   async existsBatch(idViagemList: string[]) {
@@ -60,7 +69,7 @@ export const cargasRepository = {
       values: [idViagemList],
     });
 
-    return new Set<string>(result.rows.map((row) => row.id_viagem as string));
+    return new Set<string>(result.rows.map((row) => String(row.id_viagem)));
   },
 
   async save(carga: CargaRecord & { toDatabase?: () => CargaRecord }) {
@@ -113,37 +122,27 @@ export const cargasRepository = {
     fields?: string[];
   } = {}) {
     const selectedColumns = getSelectedColumns(fields);
-    const orderColumn = SORTABLE_COLUMNS.includes(sortBy)
-      ? sortBy
-      : "created_at";
-    const orderDirection = SORT_ORDERS.includes(sortOrder.toUpperCase())
-      ? sortOrder.toUpperCase()
-      : "DESC";
+    const orderColumn = getValidSortColumn(sortBy);
+    const orderDirection = getValidSortOrder(sortOrder);
 
-    const prevColetaOrderExpr = `
-      CASE
-        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{4}$' THEN to_date(prev_coleta, 'DD/MM/YYYY')
-        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{2}$' THEN to_date(prev_coleta, 'DD/MM/YY')
-        ELSE NULL
-      END
-    `;
+    const db = getKyselyDb();
 
-    const orderByClause =
-      orderColumn === "prev_coleta"
-        ? `${prevColetaOrderExpr} ${orderDirection} NULLS LAST`
-        : `${orderColumn} ${orderDirection}`;
+    // Build query with Kysely for type safety
+    let qb = db.selectFrom("cargas").select(selectedColumns);
 
-    const result = await query({
-      text: `
-        SELECT ${selectedColumns}
-        FROM cargas
-        ORDER BY ${orderByClause}
-        LIMIT $1 OFFSET $2;
-      `,
-      values: [limit, offset],
-    });
+    // Handle special ordering for prev_coleta column
+    if (orderColumn === "prev_coleta") {
+      // Use raw SQL for the date parsing expression
+      qb = qb.orderBy(
+        sql.raw(`${PREV_COLETA_ORDER_EXPR} ${orderDirection} NULLS LAST`)
+      );
+    } else {
+      qb = qb.orderBy(orderColumn, orderDirection);
+    }
 
-    return result.rows as CargaRecord[];
+    const result = await qb.limit(limit).offset(offset).execute();
+
+    return result as unknown as CargaRecord[];
   },
 
   async findNotNotified({
@@ -160,38 +159,29 @@ export const cargasRepository = {
     fields?: string[];
   } = {}) {
     const selectedColumns = getSelectedColumns(fields);
-    const orderColumn = SORTABLE_COLUMNS.includes(sortBy)
-      ? sortBy
-      : "created_at";
-    const orderDirection = SORT_ORDERS.includes(sortOrder.toUpperCase())
-      ? sortOrder.toUpperCase()
-      : "DESC";
+    const orderColumn = getValidSortColumn(sortBy);
+    const orderDirection = getValidSortOrder(sortOrder);
 
-    const prevColetaOrderExpr = `
-      CASE
-        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{4}$' THEN to_date(prev_coleta, 'DD/MM/YYYY')
-        WHEN prev_coleta ~ '^\\d{2}/\\d{2}/\\d{2}$' THEN to_date(prev_coleta, 'DD/MM/YY')
-        ELSE NULL
-      END
-    `;
+    const db = getKyselyDb();
 
-    const orderByClause =
-      orderColumn === "prev_coleta"
-        ? `${prevColetaOrderExpr} ${orderDirection} NULLS LAST`
-        : `${orderColumn} ${orderDirection}`;
+    // Build query with Kysely for type safety
+    let qb = db
+      .selectFrom("cargas")
+      .select(selectedColumns)
+      .where("notificado_em", "is", null);
 
-    const result = await query({
-      text: `
-        SELECT ${selectedColumns}
-        FROM cargas
-        WHERE notificado_em IS NULL
-        ORDER BY ${orderByClause}
-        LIMIT $1 OFFSET $2;
-      `,
-      values: [limit, offset],
-    });
+    // Handle special ordering for prev_coleta column
+    if (orderColumn === "prev_coleta") {
+      qb = qb.orderBy(
+        sql.raw(`${PREV_COLETA_ORDER_EXPR} ${orderDirection} NULLS LAST`)
+      );
+    } else {
+      qb = qb.orderBy(orderColumn, orderDirection);
+    }
 
-    return result.rows as CargaRecord[];
+    const result = await qb.limit(limit).offset(offset).execute();
+
+    return result as unknown as CargaRecord[];
   },
 
   async countNotNotified() {

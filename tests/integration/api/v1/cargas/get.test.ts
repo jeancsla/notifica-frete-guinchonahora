@@ -7,9 +7,9 @@ import {
   test,
 } from "bun:test";
 import orchestrator from "tests/orchestrator.bun";
-import database from "infra/database";
+import { query as databaseQuery } from "apps/api/src/infra/database";
 import Carga from "@notifica/shared/models/Carga";
-import cargasRepository from "repositories/cargas-repository";
+import { cargasRepository } from "apps/api/src/repositories/cargas-repository";
 
 const integrationReady = Boolean(
   globalThis.__POSTGRES_READY__ && globalThis.__WEB_SERVER_READY__,
@@ -27,14 +27,14 @@ beforeEach(async () => {
   if (!integrationReady) {
     return;
   }
-  await database.query("DELETE FROM cargas;");
+  await databaseQuery("DELETE FROM cargas;");
 });
 
 afterAll(async () => {
   if (!integrationReady) {
     return;
   }
-  await database.query("DELETE FROM cargas;");
+  await databaseQuery("DELETE FROM cargas;");
 });
 
 describeIfIntegration("GET /api/v1/cargas", () => {

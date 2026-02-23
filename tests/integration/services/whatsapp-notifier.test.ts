@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
-import whatsappNotifier from "services/whatsapp-notifier";
+import { whatsappNotifier } from "apps/api/src/services/whatsapp-notifier";
 import Carga from "@notifica/shared/models/Carga";
 import { asMock } from "tests/test-utils";
 

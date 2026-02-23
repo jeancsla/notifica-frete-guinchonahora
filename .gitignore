@@ -2,11 +2,11 @@
 node_modules
 .vscode
 LICENSE
-AGENT.MD
+AGENTS.md
+CLAUDE.md
 .agent
 .claude
 skills
-CLAUDE.md
 IMPLEMENTATION_SUMMARY.md
 .env
 .env.development

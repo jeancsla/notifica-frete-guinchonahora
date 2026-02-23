@@ -89,7 +89,7 @@ export async function loginHandler({
   }
 
   const clientKey = getClientIdentifier(request, body.username);
-  const rateLimit = getAuthRateLimitState(clientKey);
+  const rateLimit = await getAuthRateLimitState(clientKey);
   if (rateLimit.blocked) {
     set.status = 429;
     if (rateLimit.retryAfterSeconds > 0) {
@@ -115,15 +115,15 @@ export async function loginHandler({
     timingSafeEqualString(body.username, validUser) &&
     timingSafeEqualString(body.password, validPassword)
   ) {
-    clearAuthFailures(clientKey);
+    await clearAuthFailures(clientKey);
     set.headers["set-cookie"] = buildSessionCookie(body.username);
     log.info("auth.login.success", { username: body.username });
     return { ok: true };
   }
 
-  recordAuthFailure(clientKey);
+  await recordAuthFailure(clientKey);
 
-  const updatedRateLimit = getAuthRateLimitState(clientKey);
+  const updatedRateLimit = await getAuthRateLimitState(clientKey);
   if (updatedRateLimit.blocked) {
     set.status = 429;
     if (updatedRateLimit.retryAfterSeconds > 0) {

@@ -3,6 +3,10 @@ import { logger } from "../lib/logger";
 import { cargasRepository } from "../repositories/cargas-repository";
 import { tegmaScraper } from "./tegma-scraper";
 import { whatsappNotifier } from "./whatsapp-notifier";
+import {
+  recordCargaProcessed,
+  recordNotification,
+} from "../lib/metrics";
 
 const log = logger.child({ component: "cargo_processor" });
 
@@ -23,6 +27,12 @@ export const cargoProcessor = {
       (scrapedCarga) => !existingIds.has(scrapedCarga.viagem),
     );
 
+    // Record duplicates
+    const duplicateCount = scrapedCargas.length - newCargas.length;
+    for (let i = 0; i < duplicateCount; i++) {
+      recordCargaProcessed("duplicate");
+    }
+
     const processedCargas: Array<{
       id_viagem: string;
       origem?: string;
@@ -38,6 +48,7 @@ export const cargoProcessor = {
       const carga = Carga.fromScrapedData(scrapedCarga);
 
       if (!carga.isValid()) {
+        recordCargaProcessed("failed");
         failedCargas.push({
           id_viagem: scrapedCarga.viagem,
           error: "Invalid carga data",
@@ -48,16 +59,19 @@ export const cargoProcessor = {
       try {
         await cargasRepository.save(carga.toDatabase());
 
-        const notificationErrors: Array<{ recipient: string; error: string }> =
-          [];
+        const notificationErrors: Array<{ recipient: string; error: string }> = [];
+        let notificationSuccessCount = 0;
 
         try {
           await whatsappNotifier.notifyJean(carga);
+          notificationSuccessCount++;
+          recordNotification("jean", "success");
         } catch (error) {
           notificationErrors.push({
             recipient: "jean",
             error: (error as Error).message,
           });
+          recordNotification("jean", "failed");
           log.warn("cargo_processor.notify_failed", {
             recipient: "jean",
             id_viagem: carga.id_viagem,
@@ -67,11 +81,14 @@ export const cargoProcessor = {
 
         try {
           await whatsappNotifier.notifyJefferson(carga);
+          notificationSuccessCount++;
+          recordNotification("jefferson", "success");
         } catch (error) {
           notificationErrors.push({
             recipient: "jefferson",
             error: (error as Error).message,
           });
+          recordNotification("jefferson", "failed");
           log.warn("cargo_processor.notify_failed", {
             recipient: "jefferson",
             id_viagem: carga.id_viagem,
@@ -79,8 +96,16 @@ export const cargoProcessor = {
           });
         }
 
-        await cargasRepository.markAsNotified(carga.id_viagem);
+        // Only mark as notified if at least one notification succeeded
+        if (notificationSuccessCount > 0) {
+          await cargasRepository.markAsNotified(carga.id_viagem);
+        } else {
+          log.warn("cargo_processor.no_notifications_sent", {
+            id_viagem: carga.id_viagem,
+          });
+        }
 
+        recordCargaProcessed("success");
         processedCargas.push({
           id_viagem: carga.id_viagem,
           origem: carga.origem,
@@ -92,6 +117,7 @@ export const cargoProcessor = {
             notificationErrors.length > 0 ? notificationErrors : undefined,
         });
       } catch (error) {
+        recordCargaProcessed("failed");
         failedCargas.push({
           id_viagem: scrapedCarga.viagem,
           error: (error as Error).message,

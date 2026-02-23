@@ -47,3 +47,8 @@ export type DashboardData = {
   cargas: CargaRecord[];
   total: number;
 };
+
+export type NotificationRecipient = {
+  name: string;
+  phone: string;
+};

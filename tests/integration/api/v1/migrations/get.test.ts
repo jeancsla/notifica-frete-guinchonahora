@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, expect, test } from "bun:test";
-import database from "infra/database";
+import { query as databaseQuery } from "apps/api/src/infra/database";
 import orchestrator from "tests/orchestrator.bun";
 
 const integrationReady = Boolean(
@@ -12,8 +12,8 @@ beforeAll(async () => {
     return;
   }
   await orchestrator.waitForAllServices();
-  await database.query("DROP SCHEMA public CASCADE;");
-  await database.query("CREATE SCHEMA public;");
+  await databaseQuery("DROP SCHEMA public CASCADE;");
+  await databaseQuery("CREATE SCHEMA public;");
 });
 
 beforeEach(() => {

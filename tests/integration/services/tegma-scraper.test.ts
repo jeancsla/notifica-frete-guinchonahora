@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
-import tegmaScraper from "services/tegma-scraper";
+import { tegmaScraper } from "apps/api/src/services/tegma-scraper";
 import { asMock } from "tests/test-utils";
 
 const fetchMock = asMock(jest.fn() as unknown as typeof fetch);

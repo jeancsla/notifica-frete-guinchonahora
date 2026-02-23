@@ -8,12 +8,13 @@ import {
 import {
   cargasCheckHandler,
   cargasHealthHandler,
-  cargasIndexHandler,
+  cargasListHandler,
   cargasWebhookHandler,
-} from "./controllers/cargas-controller";
+} from "./controllers/cargas";
 import { migrationsHandler } from "./controllers/migrations-controller";
 import { rootHandler } from "./controllers/root-controller";
 import { statusHandler } from "./controllers/status-controller";
+import { metricsHandler } from "./controllers/metrics-controller";
 
 export function createApp() {
   return new Elysia()
@@ -24,12 +25,13 @@ export function createApp() {
     }))
     .all(API_ROUTES.root, rootHandler)
     .all(API_ROUTES.status, statusHandler)
-    .all(API_ROUTES.cargas, cargasIndexHandler)
+    .all(API_ROUTES.cargas, cargasListHandler)
     .all(API_ROUTES.cargasCheck, cargasCheckHandler)
     .all(API_ROUTES.cargasWebhook, cargasWebhookHandler)
     .all(API_ROUTES.cargasHealth, cargasHealthHandler)
     .all(API_ROUTES.migrations, migrationsHandler)
     .all(API_ROUTES.authLogin, loginHandler)
     .all(API_ROUTES.authLogout, logoutHandler)
-    .all(API_ROUTES.authUser, userHandler);
+    .all(API_ROUTES.authUser, userHandler)
+    .get(API_ROUTES.metrics, metricsHandler);
 }

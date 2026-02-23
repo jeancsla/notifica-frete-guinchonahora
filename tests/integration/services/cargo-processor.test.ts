@@ -7,10 +7,10 @@ import {
   jest,
   test,
 } from "bun:test";
-import cargoProcessor from "services/cargo-processor";
-import tegmaScraper from "services/tegma-scraper";
-import whatsappNotifier from "services/whatsapp-notifier";
-import cargasRepository from "repositories/cargas-repository";
+import { cargoProcessor } from "apps/api/src/services/cargo-processor";
+import { tegmaScraper } from "apps/api/src/services/tegma-scraper";
+import { whatsappNotifier } from "apps/api/src/services/whatsapp-notifier";
+import { cargasRepository } from "apps/api/src/repositories/cargas-repository";
 import Carga from "@notifica/shared/models/Carga";
 import { asMock } from "tests/test-utils";
 
@@ -244,11 +244,12 @@ describe("Cargo Processor", () => {
 
       await cargoProcessor.process();
 
-      const savedCarga = saveMock.mock.calls[0]?.[0] as Carga | undefined;
+      const savedCarga = saveMock.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
       expect(savedCarga).toBeDefined();
-      expect(savedCarga).toBeInstanceOf(Carga);
+      // The saved carga is the result of carga.toDatabase() - a plain object with snake_case keys
       expect(savedCarga?.id_viagem).toBe("12345");
       expect(savedCarga?.origem).toBe("Sao Paulo - SP");
+      expect(savedCarga?.tipo_transporte).toBe("Rodoviario");
     });
 
     test("should process multiple cargas in order", async () => {

@@ -1,30 +1,135 @@
-import { Client, type QueryResult } from "pg";
+import { Pool, type QueryResult, type PoolClient } from "pg";
 import { logger } from "../lib/logger";
+import { recordDbQuery } from "../lib/metrics";
 
+const log = logger.child({ component: "database" });
+
+// Lazy initialization - pool is created on first use
+let pool: Pool | null = null;
+
+export function getPool(): Pool {
+  if (!pool) {
+    pool = createPool();
+  }
+  return pool;
+}
+
+function createPool(): Pool {
+  const config = getDatabaseConfig();
+  const newPool = new Pool({
+    ...config,
+    // Pool configuration
+    max: Number(process.env.POSTGRES_POOL_MAX ?? "20"),
+    min: Number(process.env.POSTGRES_POOL_MIN ?? "2"),
+    idleTimeoutMillis: Number(process.env.POSTGRES_IDLE_TIMEOUT_MS ?? "30000"),
+    connectionTimeoutMillis: Number(
+      process.env.POSTGRES_CONNECTION_TIMEOUT_MS ?? "10000",
+    ),
+  });
+
+  // Log pool events for observability
+  newPool.on("connect", () => {
+    log.debug("database.pool_client_connected");
+  });
+
+  newPool.on("acquire", () => {
+    log.debug("database.pool_client_acquired");
+  });
+
+  newPool.on("remove", () => {
+    log.debug("database.pool_client_removed");
+  });
+
+  newPool.on("error", (err) => {
+    log.error("database.pool_error", { error: err });
+  });
+
+  log.info("database.pool_created", {
+    max: newPool.options.max,
+    min: newPool.options.min,
+  });
+
+  return newPool;
+}
+
+/**
+ * Execute a query using a pooled connection.
+ * The connection is automatically released back to the pool.
+ */
 export async function query(
   queryObject: string | { text: string; values?: unknown[] },
-) {
-  let client: Client | undefined;
+  operation: string = "query",
+): Promise<QueryResult> {
+  const poolInstance = getPool();
+  const start = performance.now();
   try {
-    client = await getNewClient();
-    const result = await client.query(queryObject as never);
-    return result as QueryResult;
+    const result = await poolInstance.query(queryObject);
+    recordDbQuery(operation, (performance.now() - start) / 1000);
+    return result;
   } catch (error) {
-    logger.child({ component: "database" }).error("database.query_failed", {
-      error,
-    });
+    recordDbQuery(operation, (performance.now() - start) / 1000);
+    log.error("database.query_failed", { error });
     throw error;
-  } finally {
-    if (client) {
-      await client.end();
-    }
   }
 }
 
-export async function getNewClient() {
-  const client = new Client(getDatabaseConfig());
-  await client.connect();
-  return client;
+/**
+ * Get a client from the pool for transactions.
+ * Caller MUST call client.release() when done.
+ */
+export async function getPooledClient(): Promise<PoolClient> {
+  const poolInstance = getPool();
+  try {
+    const client = await poolInstance.connect();
+    return client;
+  } catch (error) {
+    log.error("database.get_client_failed", { error });
+    throw error;
+  }
+}
+
+/**
+ * Execute a function within a transaction.
+ * Automatically handles BEGIN/COMMIT/ROLLBACK.
+ */
+export async function withTransaction<T>(
+  fn: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  const client = await getPooledClient();
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {
+      // Ignore rollback errors, log for debugging
+      log.warn("database.rollback_failed", { error });
+    });
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * @deprecated Use getPooledClient() for transactions or query() for simple queries.
+ * Kept for backward compatibility during migration.
+ */
+export async function getNewClient(): Promise<PoolClient> {
+  return getPooledClient();
+}
+
+/**
+ * Gracefully close the pool.
+ * Call this on application shutdown.
+ */
+export async function closePool(): Promise<void> {
+  if (pool) {
+    await pool.end();
+    log.info("database.pool_closed");
+    pool = null;
+  }
 }
 
 function getDatabaseConfig() {
