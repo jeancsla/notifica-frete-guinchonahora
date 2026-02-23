@@ -2,11 +2,59 @@ import { load } from "cheerio";
 import retry from "async-retry";
 import type { ScrapedCargaInput } from "@notifica/shared/models/Carga";
 import { logger } from "../lib/logger";
+import {
+  getCircuitBreaker,
+  CircuitBreakerOpenError,
+} from "../lib/circuit-breaker";
+import { tegmaScrapeDuration } from "../lib/metrics";
 
 const log = logger.child({ component: "tegma_scraper" });
 
+// Circuit breaker for Tegma external API
+const circuitBreaker = getCircuitBreaker("tegma_api", {
+  failureThreshold: 3, // Open after 3 failures
+  resetTimeoutMs: 60000, // Try again after 1 minute
+  halfOpenMaxCalls: 2,
+});
+
 function isTest() {
   return process.env.NODE_ENV === "test";
+}
+
+function getFetchTimeoutMs() {
+  return Math.max(
+    5000,
+    parseInt(process.env.TEGMA_FETCH_TIMEOUT_MS || "30000", 10),
+  );
+}
+
+/**
+ * Fetch with timeout using AbortController
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: globalThis.RequestInit = {},
+  timeoutMs = getFetchTimeoutMs(),
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error(`Request timeout after ${timeoutMs}ms: ${url}`, {
+        cause: error,
+      });
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 function getRequiredEnvVar(name: string) {
@@ -42,7 +90,7 @@ export const tegmaScraper = {
     const baseUrl = getRequiredEnvVar("TEGMA_BASE_URL");
 
     return withRetry(async () => {
-      const response = await fetch(`${baseUrl}/Login`, {
+      const response = await fetchWithTimeout(`${baseUrl}/Login`, {
         method: "GET",
         redirect: "manual",
       });
@@ -67,7 +115,7 @@ export const tegmaScraper = {
       formData.append("Senha", password);
       formData.append("Lembrar", "true");
 
-      const response = await fetch(`${baseUrl}/Login`, {
+      const response = await fetchWithTimeout(`${baseUrl}/Login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -111,7 +159,7 @@ export const tegmaScraper = {
     const password = getRequiredEnvVar("TEGMA_PASSWORD");
 
     return withRetry(async () => {
-      const response = await fetch(
+      const response = await fetchWithTimeout(
         `${baseUrl}/Monitoramento/CargasDisponiveis?tpoeqp=0`,
         {
           method: "GET",
@@ -173,11 +221,39 @@ export const tegmaScraper = {
 
   async fetchCargas() {
     log.info("tegma_scraper.fetch.start");
-    let cookie = await this.getCookie();
-    cookie = await this.login(cookie);
-    const html = await this.fetchCargasPage(cookie);
-    const cargas = this.parseCargas(html);
-    log.info("tegma_scraper.fetch.completed", { count: cargas.length });
-    return cargas;
+    const start = performance.now();
+
+    try {
+      const cargas = await circuitBreaker.execute(async () => {
+        let cookie = await this.getCookie();
+        cookie = await this.login(cookie);
+        const html = await this.fetchCargasPage(cookie);
+        return this.parseCargas(html);
+      });
+
+      const durationSeconds = (performance.now() - start) / 1000;
+      tegmaScrapeDuration.observe(durationSeconds);
+      log.info("tegma_scraper.fetch.completed", {
+        count: cargas.length,
+        duration_seconds: durationSeconds,
+      });
+      return cargas;
+    } catch (error) {
+      const durationSeconds = (performance.now() - start) / 1000;
+      tegmaScrapeDuration.observe(durationSeconds);
+      if (error instanceof CircuitBreakerOpenError) {
+        log.warn("tegma_scraper.circuit_breaker_open", {
+          state: circuitBreaker.getState(),
+        });
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Get circuit breaker metrics for monitoring
+   */
+  getCircuitBreakerMetrics() {
+    return circuitBreaker.getMetrics();
   },
 };

@@ -7,7 +7,7 @@ import {
   test,
 } from "bun:test";
 import orchestrator from "tests/orchestrator.bun";
-import database from "infra/database";
+import { query as databaseQuery } from "apps/api/src/infra/database";
 
 const integrationReady = Boolean(
   globalThis.__POSTGRES_READY__ && globalThis.__WEB_SERVER_READY__,
@@ -25,7 +25,7 @@ beforeEach(async () => {
   if (!integrationReady) {
     return;
   }
-  await database.query("DELETE FROM cargas;");
+  await databaseQuery("DELETE FROM cargas;");
   process.env.ADMIN_API_KEY = "test-admin-key";
 });
 
@@ -33,7 +33,7 @@ afterAll(async () => {
   if (!integrationReady) {
     return;
   }
-  await database.query("DELETE FROM cargas;");
+  await databaseQuery("DELETE FROM cargas;");
 });
 
 describeIfIntegration("POST /api/v1/cargas/check", () => {

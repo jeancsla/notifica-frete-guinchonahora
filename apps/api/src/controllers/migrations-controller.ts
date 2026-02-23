@@ -90,7 +90,7 @@ export async function migrationsHandler({
     };
   } finally {
     if (dbClient) {
-      await dbClient.end();
+      dbClient.release();
     }
   }
 }

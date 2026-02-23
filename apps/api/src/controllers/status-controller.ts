@@ -62,7 +62,7 @@ export async function statusHandler({
       process.env.API_CACHE_TTL_STATUS || "10",
       10,
     );
-    const cachedPayload = getServerCache<{
+    const cachedPayload = await getServerCache<{
       updated_at: string;
       dependencies: unknown;
     }>(cacheKey);
@@ -136,7 +136,7 @@ export async function statusHandler({
     };
 
     const etag = buildWeakEtag(payload.dependencies);
-    setServerCache(cacheKey, payload, {
+    await setServerCache(cacheKey, payload, {
       ttlSeconds: cacheTtlSeconds,
       tags: ["status"],
     });

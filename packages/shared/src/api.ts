@@ -11,4 +11,5 @@ export const API_ROUTES = {
   authLogin: `${API_V1_PREFIX}/auth/login`,
   authLogout: `${API_V1_PREFIX}/auth/logout`,
   authUser: `${API_V1_PREFIX}/auth/user`,
+  metrics: `${API_V1_PREFIX}/metrics`,
 } as const;

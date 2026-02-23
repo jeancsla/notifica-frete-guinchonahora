@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, test } from "bun:test";
 import orchestrator from "tests/orchestrator.bun";
-import database from "infra/database";
+import { query as databaseQuery } from "apps/api/src/infra/database";
 
 const postgresReady = Boolean(globalThis.__POSTGRES_READY__);
 const describeIfPostgres = postgresReady ? describe : describe.skip;
@@ -10,30 +10,30 @@ beforeAll(async () => {
     return;
   }
   await orchestrator.waitForAllServices();
-  await database.query({ text: "DELETE FROM cargas;" });
+  await databaseQuery({ text: "DELETE FROM cargas;" });
 });
 
 afterEach(async () => {
   if (!postgresReady) {
     return;
   }
-  await database.query({ text: "DELETE FROM cargas;" });
+  await databaseQuery({ text: "DELETE FROM cargas;" });
 });
 
 describeIfPostgres("cargasRepository.existsBatch()", () => {
   test("should return empty set when no ids provided", async () => {
-    const { default: cargasRepository } =
-      await import("repositories/cargas-repository");
+    const { cargasRepository } =
+      await import("apps/api/src/repositories/cargas-repository");
     const result = await cargasRepository.existsBatch([]);
     expect(result.size).toBe(0);
   });
 
   test("should return existing ids from the list", async () => {
-    const { default: cargasRepository } =
-      await import("repositories/cargas-repository");
+    const { cargasRepository } =
+      await import("apps/api/src/repositories/cargas-repository");
 
     // Insert test cargas
-    await database.query({
+    await databaseQuery({
       text: `
         INSERT INTO cargas (id_viagem, origem, destino, produto)
         VALUES ($1, $2, $3, $4), ($5, $6, $7, $8)

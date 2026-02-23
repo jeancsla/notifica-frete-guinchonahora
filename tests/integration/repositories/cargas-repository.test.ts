@@ -1,6 +1,6 @@
 import { afterEach, beforeAll, describe, expect, test } from "bun:test";
-import cargasRepository from "repositories/cargas-repository";
-import database from "infra/database";
+import { cargasRepository } from "apps/api/src/repositories/cargas-repository";
+import { query as databaseQuery } from "apps/api/src/infra/database";
 import Carga from "@notifica/shared/models/Carga";
 
 const postgresReady = Boolean(globalThis.__POSTGRES_READY__);
@@ -11,7 +11,7 @@ beforeAll(async () => {
     return;
   }
   // Clean table before tests
-  await database.query("DELETE FROM cargas;");
+  await databaseQuery("DELETE FROM cargas;");
 });
 
 afterEach(async () => {
@@ -19,7 +19,7 @@ afterEach(async () => {
     return;
   }
   // Clean table after each test
-  await database.query("DELETE FROM cargas;");
+  await databaseQuery("DELETE FROM cargas;");
 });
 
 describeIfPostgres("Cargas Repository", () => {
@@ -99,7 +99,7 @@ describeIfPostgres("Cargas Repository", () => {
 
       await cargasRepository.markAsNotified("12345");
 
-      const result = await database.query({
+      const result = await databaseQuery({
         text: "SELECT notificado_em FROM cargas WHERE id_viagem = $1;",
         values: ["12345"],
       });
