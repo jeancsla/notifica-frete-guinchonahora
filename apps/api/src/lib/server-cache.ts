@@ -90,11 +90,7 @@ export async function setServerCache(
   if (isRedisEnabled()) {
     try {
       const client = await getRedisClient();
-      await client.set(
-        getCacheKey(key),
-        JSON.stringify(value),
-        ttlSeconds,
-      );
+      await client.set(getCacheKey(key), JSON.stringify(value), ttlSeconds);
       // Store tags in a separate key for Redis
       if (tags.length > 0) {
         await client.set(

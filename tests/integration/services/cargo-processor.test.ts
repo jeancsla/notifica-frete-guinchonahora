@@ -11,7 +11,6 @@ import { cargoProcessor } from "apps/api/src/services/cargo-processor";
 import { tegmaScraper } from "apps/api/src/services/tegma-scraper";
 import { whatsappNotifier } from "apps/api/src/services/whatsapp-notifier";
 import { cargasRepository } from "apps/api/src/repositories/cargas-repository";
-import Carga from "@notifica/shared/models/Carga";
 import { asMock } from "tests/test-utils";
 
 const jestWithSpy = jest as unknown as {
@@ -244,7 +243,9 @@ describe("Cargo Processor", () => {
 
       await cargoProcessor.process();
 
-      const savedCarga = saveMock.mock.calls[0]?.[0] as Record<string, unknown> | undefined;
+      const savedCarga = saveMock.mock.calls[0]?.[0] as
+        | Record<string, unknown>
+        | undefined;
       expect(savedCarga).toBeDefined();
       // The saved carga is the result of carga.toDatabase() - a plain object with snake_case keys
       expect(savedCarga?.id_viagem).toBe("12345");

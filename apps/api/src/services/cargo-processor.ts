@@ -3,10 +3,7 @@ import { logger } from "../lib/logger";
 import { cargasRepository } from "../repositories/cargas-repository";
 import { tegmaScraper } from "./tegma-scraper";
 import { whatsappNotifier } from "./whatsapp-notifier";
-import {
-  recordCargaProcessed,
-  recordNotification,
-} from "../lib/metrics";
+import { recordCargaProcessed, recordNotification } from "../lib/metrics";
 
 const log = logger.child({ component: "cargo_processor" });
 
@@ -59,7 +56,8 @@ export const cargoProcessor = {
       try {
         await cargasRepository.save(carga.toDatabase());
 
-        const notificationErrors: Array<{ recipient: string; error: string }> = [];
+        const notificationErrors: Array<{ recipient: string; error: string }> =
+          [];
         let notificationSuccessCount = 0;
 
         try {

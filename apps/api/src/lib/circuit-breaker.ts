@@ -1,8 +1,5 @@
 import { logger } from "./logger";
-import {
-  setCircuitBreakerState,
-  recordCircuitBreakerResult,
-} from "./metrics";
+import { setCircuitBreakerState, recordCircuitBreakerResult } from "./metrics";
 
 const log = logger.child({ component: "circuit_breaker" });
 

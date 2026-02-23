@@ -2,14 +2,17 @@ import { load } from "cheerio";
 import retry from "async-retry";
 import type { ScrapedCargaInput } from "@notifica/shared/models/Carga";
 import { logger } from "../lib/logger";
-import { getCircuitBreaker, CircuitBreakerOpenError } from "../lib/circuit-breaker";
+import {
+  getCircuitBreaker,
+  CircuitBreakerOpenError,
+} from "../lib/circuit-breaker";
 import { tegmaScrapeDuration } from "../lib/metrics";
 
 const log = logger.child({ component: "tegma_scraper" });
 
 // Circuit breaker for Tegma external API
 const circuitBreaker = getCircuitBreaker("tegma_api", {
-  failureThreshold: 3,  // Open after 3 failures
+  failureThreshold: 3, // Open after 3 failures
   resetTimeoutMs: 60000, // Try again after 1 minute
   halfOpenMaxCalls: 2,
 });
@@ -30,7 +33,7 @@ function getFetchTimeoutMs() {
  */
 async function fetchWithTimeout(
   url: string,
-  options: RequestInit = {},
+  options: globalThis.RequestInit = {},
   timeoutMs = getFetchTimeoutMs(),
 ): Promise<Response> {
   const controller = new AbortController();
@@ -44,7 +47,9 @@ async function fetchWithTimeout(
     return response;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Request timeout after ${timeoutMs}ms: ${url}`);
+      throw new Error(`Request timeout after ${timeoutMs}ms: ${url}`, {
+        cause: error,
+      });
     }
     throw error;
   } finally {
@@ -228,7 +233,10 @@ export const tegmaScraper = {
 
       const durationSeconds = (performance.now() - start) / 1000;
       tegmaScrapeDuration.observe(durationSeconds);
-      log.info("tegma_scraper.fetch.completed", { count: cargas.length, duration_seconds: durationSeconds });
+      log.info("tegma_scraper.fetch.completed", {
+        count: cargas.length,
+        duration_seconds: durationSeconds,
+      });
       return cargas;
     } catch (error) {
       const durationSeconds = (performance.now() - start) / 1000;

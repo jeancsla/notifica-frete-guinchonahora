@@ -5,6 +5,7 @@
 This document provides a comprehensive analysis of the Notifica Frete Guincho na Hora codebase—a Next.js 16 + Elysia (Bun) monorepo for monitoring Tegma/Mills transportation cargo loads and sending WhatsApp notifications.
 
 **Key Findings:**
+
 - 114 source files with layered architecture (controllers → services → repositories)
 - 10 critical technical debt hotspots identified
 - 3-phase refactor plan with estimated timeline of 2-3 months
@@ -16,37 +17,37 @@ This document provides a comprehensive analysis of the Notifica Frete Guincho na
 
 ### 1.1 Core API Layer (`apps/api/src/`)
 
-| Module | Files | Responsibility |
-|--------|-------|----------------|
-| **Controllers** | `controllers/*-controller.ts` (5 files) | HTTP request handling, auth checks, caching headers, response formatting |
-| **Services** | `services/*` (3 files) | Business logic: scraping, notifications, orchestration |
-| **Repositories** | `repositories/cargas-repository.ts` | SQL queries, database access abstraction |
-| **Infrastructure** | `infra/database.ts` | PostgreSQL connection management |
-| **Libraries** | `lib/*` (8 files) | Cross-cutting concerns: logging, sessions, caching, rate limiting, security |
+| Module             | Files                                   | Responsibility                                                              |
+| ------------------ | --------------------------------------- | --------------------------------------------------------------------------- |
+| **Controllers**    | `controllers/*-controller.ts` (5 files) | HTTP request handling, auth checks, caching headers, response formatting    |
+| **Services**       | `services/*` (3 files)                  | Business logic: scraping, notifications, orchestration                      |
+| **Repositories**   | `repositories/cargas-repository.ts`     | SQL queries, database access abstraction                                    |
+| **Infrastructure** | `infra/database.ts`                     | PostgreSQL connection management                                            |
+| **Libraries**      | `lib/*` (8 files)                       | Cross-cutting concerns: logging, sessions, caching, rate limiting, security |
 
 ### 1.2 Frontend Layer (`pages/`, `components/`, `lib/`)
 
-| Module | Files | Responsibility |
-|--------|-------|----------------|
-| **Pages** | `pages/*.tsx` (11 files) | Next.js pages with SSR auth checks |
-| **Components** | `components/*.tsx` (5 files) | React components: Layout, LoadingUI, Toast |
-| **Frontend Lib** | `lib/*.ts` (8 files) | API client, session management, SWR config, date formatting |
+| Module           | Files                        | Responsibility                                              |
+| ---------------- | ---------------------------- | ----------------------------------------------------------- |
+| **Pages**        | `pages/*.tsx` (11 files)     | Next.js pages with SSR auth checks                          |
+| **Components**   | `components/*.tsx` (5 files) | React components: Layout, LoadingUI, Toast                  |
+| **Frontend Lib** | `lib/*.ts` (8 files)         | API client, session management, SWR config, date formatting |
 
 ### 1.3 Shared Package (`packages/shared/`)
 
-| Module | Files | Responsibility |
-|--------|-------|----------------|
-| **Models** | `models/Carga.ts` | Domain model with validation, WhatsApp formatting |
-| **Types** | `types/index.ts` | TypeScript interfaces |
-| **API Routes** | `api.ts` | Centralized route definitions |
+| Module         | Files             | Responsibility                                    |
+| -------------- | ----------------- | ------------------------------------------------- |
+| **Models**     | `models/Carga.ts` | Domain model with validation, WhatsApp formatting |
+| **Types**      | `types/index.ts`  | TypeScript interfaces                             |
+| **API Routes** | `api.ts`          | Centralized route definitions                     |
 
 ### 1.4 Legacy Code (Root Level)
 
-| Module | Files | Status |
-|--------|-------|--------|
-| `services/*` | 3 files | **Legacy duplicates** of `apps/api/src/services/` |
-| `repositories/*` | 1 file | **Legacy duplicate** |
-| `infra/*` | 3 files | **Legacy duplicates** |
+| Module           | Files   | Status                                            |
+| ---------------- | ------- | ------------------------------------------------- |
+| `services/*`     | 3 files | **Legacy duplicates** of `apps/api/src/services/` |
+| `repositories/*` | 1 file  | **Legacy duplicate**                              |
+| `infra/*`        | 3 files | **Legacy duplicates**                             |
 
 ---
 
@@ -88,6 +89,7 @@ This document provides a comprehensive analysis of the Notifica Frete Guincho na
 ```
 
 **Entry Points:**
+
 - Cron: `apps/api/src/cron-jobs.ts:9` - runs every 15 minutes, 7AM-6PM BRT
 - Manual: `POST /api/v1/cargas/check` - requires admin API key
 - Webhook: `POST /api/v1/cargas/webhook` - requires cron secret + timestamp validation
@@ -141,6 +143,7 @@ pages/login.tsx ──POST /api/v1/auth/login──▶ auth-controller.ts
 ```
 
 **Security Features:**
+
 - HMAC-SHA256 signed sessions (`apps/api/src/lib/session.ts:19-24`)
 - Rate limiting with exponential backoff (`apps/api/src/lib/rate-limit.ts`)
 - Timing-safe comparison for secrets (`apps/api/src/lib/security.ts`)
@@ -155,6 +158,7 @@ pages/login.tsx ──POST /api/v1/auth/login──▶ auth-controller.ts
 **Files:** `services/*.ts`, `repositories/*.ts`, `infra/*.ts` (root level)
 
 **Evidence:**
+
 - `services/cargo-processor.ts` (131 lines) duplicates `apps/api/src/services/cargo-processor.ts` (127 lines)
 - `infra/database.ts` (85 lines) duplicates `apps/api/src/infra/database.ts` (83 lines)
 - `infra/cron-jobs.ts` (38 lines) duplicates `apps/api/src/cron-jobs.ts` (33 lines)
@@ -168,11 +172,13 @@ pages/login.tsx ──POST /api/v1/auth/login──▶ auth-controller.ts
 ### #2: In-Memory State Won't Scale
 
 **Files:**
+
 - `apps/api/src/lib/server-cache.ts` (lines 1-80) - Map-based cache
 - `apps/api/src/lib/rate-limit.ts` (line 7) - `Map<string, RateLimitState>`
 - `apps/api/src/lib/replay-protection.ts` (line 1) - `Map<string, number>`
 
 **Evidence:**
+
 ```typescript
 const cacheStore = new Map<...>();  // server-cache.ts:1
 const authAttempts = new Map<...>(); // rate-limit.ts:7
@@ -189,6 +195,7 @@ const authAttempts = new Map<...>(); // rate-limit.ts:7
 **File:** `apps/api/src/repositories/cargas-repository.ts`
 
 **Evidence:** Lines 136-143, 183-190
+
 ```typescript
 const result = await query({
   text: `
@@ -212,6 +219,7 @@ const result = await query({
 **File:** `apps/api/src/repositories/cargas-repository.ts`
 
 **Evidence:** Lines 123-129 and 170-176 (identical 7-line SQL fragment duplicated)
+
 ```typescript
 const prevColetaOrderExpr = `
   CASE
@@ -233,6 +241,7 @@ const prevColetaOrderExpr = `
 **File:** `apps/api/src/infra/database.ts`
 
 **Evidence:** Lines 4-22
+
 ```typescript
 export async function query(...) {
   let client: Client | undefined;
@@ -259,6 +268,7 @@ export async function query(...) {
 **File:** `apps/api/src/services/cargo-processor.ts`
 
 **Evidence:** Lines 54-80
+
 ```typescript
 try {
   await whatsappNotifier.notifyJean(carga);
@@ -280,6 +290,7 @@ try {
 **Files:** Multiple
 
 **Evidence:**
+
 ```typescript
 // apps/api/src/repositories/cargas-repository.ts:50
 return result.rows[0]?.exists as boolean;
@@ -302,10 +313,11 @@ return JSON.parse(value) as { processed?: number; ... };
 **File:** `apps/api/src/services/cargo-processor.ts`
 
 **Evidence:** Lines 48-82
+
 ```typescript
-await cargasRepository.save(carga.toDatabase());     // Save
-await whatsappNotifier.notifyJean(carga);            // Notify (external)
-await whatsappNotifier.notifyJefferson(carga);       // Notify (external)
+await cargasRepository.save(carga.toDatabase()); // Save
+await whatsappNotifier.notifyJean(carga); // Notify (external)
+await whatsappNotifier.notifyJefferson(carga); // Notify (external)
 await cargasRepository.markAsNotified(carga.id_viagem); // Mark notified
 ```
 
@@ -320,6 +332,7 @@ await cargasRepository.markAsNotified(carga.id_viagem); // Mark notified
 **Files:** Multiple
 
 **Evidence:**
+
 ```typescript
 // apps/api/src/services/tegma-scraper.ts:8-10, 21-23
 function isTest() { return process.env.NODE_ENV === "test"; }
@@ -344,6 +357,7 @@ function isCacheEnabled() {
 **File:** `apps/api/src/services/tegma-scraper.ts`, `whatsapp-notifier.ts`
 
 **Evidence:** Retries exist (async-retry with 5 attempts) but no circuit breaker pattern
+
 ```typescript
 return retry(fn, {
   retries: 5,
@@ -362,14 +376,15 @@ return retry(fn, {
 
 ### Phase 1: Quick Wins (1-2 weeks)
 
-| Task | Files | Effort | Risk |
-|------|-------|--------|------|
-| **P1.1: Delete Legacy Code** | Root `services/`, `repositories/`, `infra/` | 2-3 days | Low - verify no imports first |
-| **P1.2: Extract SQL Fragment** | `cargas-repository.ts` | 2 hours | Low - pure refactor |
-| **P1.3: Add Connection Pool** | `apps/api/src/infra/database.ts` | 2-3 days | Medium - requires load testing |
-| **P1.4: Fix Type Assertions** | `repositories/cargas-repository.ts`, `cargo-processor.ts` | 1-2 days | Low |
+| Task                           | Files                                                     | Effort   | Risk                           |
+| ------------------------------ | --------------------------------------------------------- | -------- | ------------------------------ |
+| **P1.1: Delete Legacy Code**   | Root `services/`, `repositories/`, `infra/`               | 2-3 days | Low - verify no imports first  |
+| **P1.2: Extract SQL Fragment** | `cargas-repository.ts`                                    | 2 hours  | Low - pure refactor            |
+| **P1.3: Add Connection Pool**  | `apps/api/src/infra/database.ts`                          | 2-3 days | Medium - requires load testing |
+| **P1.4: Fix Type Assertions**  | `repositories/cargas-repository.ts`, `cargo-processor.ts` | 1-2 days | Low                            |
 
 **Validation:**
+
 - Run full test suite: `bun run test`
 - Load test: `autocannon -c 50 -d 30 http://localhost:3000/api/v1/status`
 - Verify no regressions in DB connection handling
@@ -378,12 +393,12 @@ return retry(fn, {
 
 ### Phase 2: Structural Improvements (1-2 sprints, 4-6 weeks)
 
-| Task | Files | Effort | Risk |
-|------|-------|--------|------|
-| **P2.1: Implement Repository Pattern with Query Builder** | `repositories/cargas-repository.ts` | 1 week | Medium - SQL changes need testing |
-| **P2.2: Abstract Recipient Configuration** | `services/cargo-processor.ts`, `services/whatsapp-notifier.ts` | 3-4 days | Medium - config change |
-| **P2.3: Add Transaction Support** | `infra/database.ts`, `services/cargo-processor.ts` | 1 week | High - critical path |
-| **P2.4: Extract In-Memory State** | `lib/server-cache.ts`, `lib/rate-limit.ts`, `lib/replay-protection.ts` | 1 week | Medium - Redis dependency |
+| Task                                                      | Files                                                                  | Effort   | Risk                              |
+| --------------------------------------------------------- | ---------------------------------------------------------------------- | -------- | --------------------------------- |
+| **P2.1: Implement Repository Pattern with Query Builder** | `repositories/cargas-repository.ts`                                    | 1 week   | Medium - SQL changes need testing |
+| **P2.2: Abstract Recipient Configuration**                | `services/cargo-processor.ts`, `services/whatsapp-notifier.ts`         | 3-4 days | Medium - config change            |
+| **P2.3: Add Transaction Support**                         | `infra/database.ts`, `services/cargo-processor.ts`                     | 1 week   | High - critical path              |
+| **P2.4: Extract In-Memory State**                         | `lib/server-cache.ts`, `lib/rate-limit.ts`, `lib/replay-protection.ts` | 1 week   | Medium - Redis dependency         |
 
 #### P2.1: Query Builder Implementation
 
@@ -392,12 +407,13 @@ Replace string-interpolated SQL with query builder (e.g., Kysely or pg-promise):
 ```typescript
 // Before (vulnerable)
 const result = await query({
-  text: `SELECT ${columns} FROM cargas ORDER BY ${orderBy}`
+  text: `SELECT ${columns} FROM cargas ORDER BY ${orderBy}`,
 });
 
 // After (safe)
-const query = db.selectFrom('cargas')
-  .select(columns)  // Type-safe column names
+const query = db
+  .selectFrom("cargas")
+  .select(columns) // Type-safe column names
   .orderBy(orderBy, direction);
 ```
 
@@ -405,21 +421,26 @@ const query = db.selectFrom('cargas')
 
 ```typescript
 // .env
-NOTIFICATION_RECIPIENTS=[{"name":"jean","phone":"5512..."},{"name":"jefferson","phone":"5512..."}]
+NOTIFICATION_RECIPIENTS = [
+  { name: "jean", phone: "5512..." },
+  { name: "jefferson", phone: "5512..." },
+];
 ```
 
 #### P2.3: Transaction Support
 
 ```typescript
-export async function withTransaction<T>(fn: (client: PoolClient) => Promise<T>) {
+export async function withTransaction<T>(
+  fn: (client: PoolClient) => Promise<T>,
+) {
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
     const result = await fn(client);
-    await client.query('COMMIT');
+    await client.query("COMMIT");
     return result;
   } catch (e) {
-    await client.query('ROLLBACK');
+    await client.query("ROLLBACK");
     throw e;
   } finally {
     client.release();
@@ -438,6 +459,7 @@ export async function getServerCache<T>(key: string): Promise<T | null> {
 ```
 
 **Validation:**
+
 - SQL injection tests: `sqlmap` or manual penetration testing
 - Transaction tests: Simulate failures at each step
 - Redis integration tests: `tests/integration/lib/cache.test.ts`
@@ -446,12 +468,12 @@ export async function getServerCache<T>(key: string): Promise<T | null> {
 
 ### Phase 3: Resilience & Observability (1-2 months)
 
-| Task | Files | Effort | Risk |
-|------|-------|--------|------|
-| **P3.1: Circuit Breaker for External APIs** | `services/tegma-scraper.ts`, `services/whatsapp-notifier.ts` | 1 week | Medium |
-| **P3.2: Structured Error Handling** | All services | 1 week | Low-Medium |
-| **P3.3: Metrics & Alerting** | New `lib/metrics.ts` | 1 week | Low |
-| **P3.4: Health Check Enhancement** | `controllers/status-controller.ts` | 3-4 days | Low |
+| Task                                        | Files                                                        | Effort   | Risk       |
+| ------------------------------------------- | ------------------------------------------------------------ | -------- | ---------- |
+| **P3.1: Circuit Breaker for External APIs** | `services/tegma-scraper.ts`, `services/whatsapp-notifier.ts` | 1 week   | Medium     |
+| **P3.2: Structured Error Handling**         | All services                                                 | 1 week   | Low-Medium |
+| **P3.3: Metrics & Alerting**                | New `lib/metrics.ts`                                         | 1 week   | Low        |
+| **P3.4: Health Check Enhancement**          | `controllers/status-controller.ts`                           | 3-4 days | Low        |
 
 #### P3.1: Circuit Breaker
 
@@ -461,7 +483,7 @@ Use `opossum` or custom circuit breaker:
 const scraperCircuit = new CircuitBreaker(tegmaScraper.fetchCargas, {
   timeout: 3000,
   errorThresholdPercentage: 50,
-  resetTimeout: 30000
+  resetTimeout: 30000,
 });
 ```
 
@@ -471,9 +493,11 @@ const scraperCircuit = new CircuitBreaker(tegmaScraper.fetchCargas, {
 class TegmaScraperError extends Error {
   constructor(
     message: string,
-    public code: 'AUTH_FAILED' | 'TIMEOUT' | 'PARSE_ERROR',
-    public retryable: boolean
-  ) { super(message); }
+    public code: "AUTH_FAILED" | "TIMEOUT" | "PARSE_ERROR",
+    public retryable: boolean,
+  ) {
+    super(message);
+  }
 }
 ```
 
@@ -482,13 +506,14 @@ class TegmaScraperError extends Error {
 ```typescript
 // lib/metrics.ts
 export const metrics = {
-  scraperDuration: new Histogram('tegma_scrape_duration_seconds'),
-  notificationFailures: new Counter('whatsapp_notification_failures_total'),
-  cacheHitRate: new Gauge('server_cache_hit_rate')
+  scraperDuration: new Histogram("tegma_scrape_duration_seconds"),
+  notificationFailures: new Counter("whatsapp_notification_failures_total"),
+  cacheHitRate: new Gauge("server_cache_hit_rate"),
 };
 ```
 
 **Validation:**
+
 - Chaos testing: Fail external APIs, verify circuit breaker opens
 - Metrics verification: `curl /metrics` returns Prometheus format
 - Dashboard review: All new metrics visible in Grafana
@@ -497,12 +522,12 @@ export const metrics = {
 
 ## 5. Risk Summary
 
-| Risk | Mitigation |
-|------|------------|
-| **Breaking changes** | Comprehensive test suite before each phase |
-| **Database performance** | Load testing with production-like data volume |
-| **Redis dependency** | Graceful degradation (fallback to in-memory with warnings) |
-| **External API failures** | Circuit breaker + structured error handling |
+| Risk                      | Mitigation                                                 |
+| ------------------------- | ---------------------------------------------------------- |
+| **Breaking changes**      | Comprehensive test suite before each phase                 |
+| **Database performance**  | Load testing with production-like data volume              |
+| **Redis dependency**      | Graceful degradation (fallback to in-memory with warnings) |
+| **External API failures** | Circuit breaker + structured error handling                |
 
 ---
 
@@ -518,6 +543,7 @@ export const metrics = {
 ## Appendix: File Reference Quick Links
 
 ### Critical Files
+
 - API entry: `apps/api/src/index.ts`
 - App factory: `apps/api/src/app.ts`
 - Cron jobs: `apps/api/src/cron-jobs.ts`
@@ -525,16 +551,19 @@ export const metrics = {
 - Logger: `apps/api/src/lib/logger.ts`
 
 ### Services
+
 - Cargo processor: `apps/api/src/services/cargo-processor.ts`
 - Tegma scraper: `apps/api/src/services/tegma-scraper.ts`
 - WhatsApp notifier: `apps/api/src/services/whatsapp-notifier.ts`
 
 ### Controllers
+
 - Cargas: `apps/api/src/controllers/cargas-controller.ts`
 - Auth: `apps/api/src/controllers/auth-controller.ts`
 - Status: `apps/api/src/controllers/status-controller.ts`
 
 ### Shared
+
 - Carga model: `packages/shared/src/models/Carga.ts`
 - Types: `packages/shared/src/types/index.ts`
 - API routes: `packages/shared/src/api.ts`

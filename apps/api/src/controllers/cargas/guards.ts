@@ -29,7 +29,9 @@ export function hasSessionOrAdminAccess(request: Request): boolean {
   return Boolean(getSessionUser(request)) || hasAdminApiKey(request);
 }
 
-export function requireSession(request: Request): { success: true } | { success: false; error: string } {
+export function requireSession(
+  request: Request,
+): { success: true } | { success: false; error: string } {
   if (!getSessionUser(request)) {
     return { success: false, error: "Unauthorized" };
   }

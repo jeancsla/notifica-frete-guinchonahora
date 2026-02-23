@@ -83,10 +83,7 @@ async function createIoRedisClient(): Promise<RedisClient> {
  * Provides the same interface but with Map-based storage.
  */
 function createMemoryRedisClient(): RedisClient {
-  const store = new Map<
-    string,
-    { value: string; expiresAt: number | null }
-  >();
+  const store = new Map<string, { value: string; expiresAt: number | null }>();
 
   // Periodic cleanup of expired entries
   const cleanup = () => {
@@ -141,7 +138,7 @@ function createMemoryRedisClient(): RedisClient {
 export async function closeRedis(): Promise<void> {
   if (redisClient && isRedisEnabled()) {
     // Only close if it's a real Redis connection
-    const { Redis } = await import("ioredis");
+    const { Redis: _Redis } = await import("ioredis");
     // Access the underlying client if possible
     // This is a simplified version - in production you'd track the actual client
     redisClient = null;

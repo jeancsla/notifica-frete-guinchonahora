@@ -4,7 +4,11 @@ import {
   getServerCache,
   setServerCache,
 } from "../../lib/server-cache";
-import { buildWeakEtag, isEtagMatch, setCacheControl } from "../../lib/http-cache";
+import {
+  buildWeakEtag,
+  isEtagMatch,
+  setCacheControl,
+} from "../../lib/http-cache";
 import { attachRequestIdHeader, createRequestLogger } from "../../lib/logger";
 import { parseListCargasParams } from "./validators";
 import { requireSession, isTestMode } from "./guards";
@@ -48,7 +52,8 @@ export async function cargasListHandler({
       return { error: error.message };
     }
 
-    const { limit, offset, notified, sortBy, sortOrder, includeTotal, fields } = params;
+    const { limit, offset, notified, sortBy, sortOrder, includeTotal, fields } =
+      params;
 
     const cacheTtlSeconds = parseInt(
       process.env.API_CACHE_TTL_CARGAS || "20",

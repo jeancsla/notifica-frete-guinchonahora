@@ -5,6 +5,7 @@ This document provides a comprehensive overview of all technical debt improvemen
 ## Overview
 
 This refactor addressed 14 technical debt hotspots across three phases:
+
 - **Phase 1 (Quick Wins)**: Code cleanup and safety improvements
 - **Phase 2 (Structural)**: Architecture improvements and type safety
 - **Phase 3 (Resilience/Observability)**: Circuit breakers, Redis, and monitoring
@@ -26,20 +27,21 @@ if (process.env.CI === "true") {
     throw new Error(
       "FAIL-FAST: PostgreSQL is not available in CI. " +
         "Required for integration tests. " +
-        "Check POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB"
+        "Check POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB",
     );
   }
   if (!globalThis.__WEB_SERVER_READY__) {
     throw new Error(
       "FAIL-FAST: Web server is not available in CI. " +
         "Required for integration tests. " +
-        "Ensure the server is running on http://localhost:3000"
+        "Ensure the server is running on http://localhost:3000",
     );
   }
 }
 ```
 
 **Files Changed**:
+
 - `tests/bun.setup.ts`
 
 ---
@@ -49,11 +51,13 @@ if (process.env.CI === "true") {
 **Problem**: Duplicate legacy code at root level (`services/`, `repositories/`, `infra/`) was maintained alongside the actual code in `apps/api/src/`.
 
 **Solution**:
+
 1. Deleted root-level legacy directories
 2. Updated all test imports to use production paths directly
 3. Created temporary wrapper files during migration (now removed)
 
 **Files Changed**:
+
 - Deleted: `services/`, `repositories/`, `infra/` at root level
 - Updated imports in all test files to use `apps/api/src/*` paths
 
@@ -92,10 +96,12 @@ async function fetchWithTimeout(
 ```
 
 **Configuration**:
+
 - `TEGMA_FETCH_TIMEOUT_MS` - Tegma timeout (default: 30000ms)
 - `EVOLUTION_API_TIMEOUT_MS` - WhatsApp API timeout (default: 30000ms)
 
 **Files Changed**:
+
 - `apps/api/src/services/tegma-scraper.ts`
 - `apps/api/src/services/whatsapp-notifier.ts`
 
@@ -121,11 +127,13 @@ apps/api/src/controllers/cargas/
 ```
 
 **Key Improvements**:
+
 - Each handler is now independently testable
 - Guards and validators are reusable
 - Clear separation of concerns
 
 **Files Changed**:
+
 - Created: `apps/api/src/controllers/cargas/` directory
 - Deleted: `apps/api/src/controllers/cargas-controller.ts`
 - Updated: `apps/api/src/app.ts`
@@ -139,10 +147,12 @@ apps/api/src/controllers/cargas/
 **Solution**: Integrated Kysely for type-safe SQL query building.
 
 **New Files**:
+
 - `apps/api/src/infra/db-types.ts` - Database schema types
 - `apps/api/src/infra/kysely-db.ts` - Kysely client configuration
 
 **Type-Safe Query Example**:
+
 ```typescript
 // Before (unsafe string interpolation):
 const result = await query({
@@ -161,7 +171,7 @@ let qb = db.selectFrom("cargas").select(selectedColumns);
 
 if (orderColumn === "prev_coleta") {
   qb = qb.orderBy(
-    sql.raw(`${PREV_COLETA_ORDER_EXPR} ${orderDirection} NULLS LAST`)
+    sql.raw(`${PREV_COLETA_ORDER_EXPR} ${orderDirection} NULLS LAST`),
   );
 } else {
   qb = qb.orderBy(orderColumn, orderDirection);
@@ -171,10 +181,12 @@ const result = await qb.limit(limit).offset(offset).execute();
 ```
 
 **Files Changed**:
+
 - `apps/api/src/repositories/cargas-repository.ts`
 - `apps/api/src/infra/database.ts` (exported `getPool()`)
 
 **Dependencies Added**:
+
 - `kysely@0.28.11`
 - `pg-cursor@2.17.0`
 
@@ -214,6 +226,7 @@ if (notificationSuccessCount > 0) {
 ```
 
 **Files Changed**:
+
 - `apps/api/src/services/cargo-processor.ts`
 
 ---
@@ -227,37 +240,40 @@ if (notificationSuccessCount > 0) {
 **Solution**: Implemented comprehensive Prometheus metrics using `prom-client`.
 
 **New Files**:
+
 - `apps/api/src/lib/metrics.ts` - All metric definitions and helpers
 - `apps/api/src/controllers/metrics-controller.ts` - Metrics endpoint
 
 **Metrics Available at `GET /api/v1/metrics`**:
 
-| Metric | Type | Description |
-|--------|------|-------------|
-| `http_requests_total` | Counter | HTTP requests by method/route/status |
-| `http_request_duration_seconds` | Histogram | Request latency |
-| `db_queries_total` | Counter | Database queries by operation |
-| `db_query_duration_seconds` | Histogram | Query latency |
-| `circuit_breaker_state` | Gauge | State (0=CLOSED, 1=OPEN, 2=HALF_OPEN) |
-| `circuit_breaker_failures_total` | Counter | Circuit breaker failures |
-| `circuit_breaker_successes_total` | Counter | Circuit breaker successes |
-| `cargas_processed_total` | Counter | By result: success/failed/duplicate |
-| `notifications_total` | Counter | By recipient/status |
-| `tegma_scrape_duration_seconds` | Histogram | Scrape latency |
-| `rate_limit_blocks_total` | Counter | Rate limit blocks by endpoint |
-| `cache_hits_total` | Counter | Cache hits by type |
-| `cache_misses_total` | Counter | Cache misses by type |
+| Metric                            | Type      | Description                           |
+| --------------------------------- | --------- | ------------------------------------- |
+| `http_requests_total`             | Counter   | HTTP requests by method/route/status  |
+| `http_request_duration_seconds`   | Histogram | Request latency                       |
+| `db_queries_total`                | Counter   | Database queries by operation         |
+| `db_query_duration_seconds`       | Histogram | Query latency                         |
+| `circuit_breaker_state`           | Gauge     | State (0=CLOSED, 1=OPEN, 2=HALF_OPEN) |
+| `circuit_breaker_failures_total`  | Counter   | Circuit breaker failures              |
+| `circuit_breaker_successes_total` | Counter   | Circuit breaker successes             |
+| `cargas_processed_total`          | Counter   | By result: success/failed/duplicate   |
+| `notifications_total`             | Counter   | By recipient/status                   |
+| `tegma_scrape_duration_seconds`   | Histogram | Scrape latency                        |
+| `rate_limit_blocks_total`         | Counter   | Rate limit blocks by endpoint         |
+| `cache_hits_total`                | Counter   | Cache hits by type                    |
+| `cache_misses_total`              | Counter   | Cache misses by type                  |
 
 **Instrumenting Code**:
+
 ```typescript
 import { recordCargaProcessed, recordNotification } from "../lib/metrics";
 
 // Record business metrics
-recordCargaProcessed("success");  // or "failed", "duplicate"
-recordNotification("jean", "success");  // or "failed"
+recordCargaProcessed("success"); // or "failed", "duplicate"
+recordNotification("jean", "success"); // or "failed"
 ```
 
 **Files Changed**:
+
 - `apps/api/src/lib/circuit-breaker.ts` (circuit breaker metrics)
 - `apps/api/src/services/cargo-processor.ts` (business metrics)
 - `apps/api/src/services/tegma-scraper.ts` (scrape duration)
@@ -266,6 +282,7 @@ recordNotification("jean", "success");  // or "failed"
 - `packages/shared/src/api.ts` (API_ROUTES.metrics)
 
 **Dependencies Added**:
+
 - `prom-client@15.1.3`
 
 ---
@@ -315,7 +332,9 @@ const pool = new Pool({
   max: Number(process.env.POSTGRES_POOL_MAX ?? "20"),
   min: Number(process.env.POSTGRES_POOL_MIN ?? "2"),
   idleTimeoutMillis: Number(process.env.POSTGRES_IDLE_TIMEOUT_MS ?? "30000"),
-  connectionTimeoutMillis: Number(process.env.POSTGRES_CONNECTION_TIMEOUT_MS ?? "10000"),
+  connectionTimeoutMillis: Number(
+    process.env.POSTGRES_CONNECTION_TIMEOUT_MS ?? "10000",
+  ),
 });
 ```
 
@@ -339,21 +358,21 @@ Ran 129 tests across 26 files
 
 ### Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `CI` | Enable fail-fast mode for tests | - |
-| `TEGMA_FETCH_TIMEOUT_MS` | Tegma scraper timeout | 30000 |
-| `EVOLUTION_API_TIMEOUT_MS` | WhatsApp API timeout | 30000 |
-| `POSTGRES_POOL_MAX` | DB pool max connections | 20 |
-| `POSTGRES_POOL_MIN` | DB pool min connections | 2 |
-| `POSTGRES_IDLE_TIMEOUT_MS` | DB pool idle timeout | 30000 |
-| `REDIS_URL` | Redis connection URL | - |
+| Variable                   | Description                     | Default |
+| -------------------------- | ------------------------------- | ------- |
+| `CI`                       | Enable fail-fast mode for tests | -       |
+| `TEGMA_FETCH_TIMEOUT_MS`   | Tegma scraper timeout           | 30000   |
+| `EVOLUTION_API_TIMEOUT_MS` | WhatsApp API timeout            | 30000   |
+| `POSTGRES_POOL_MAX`        | DB pool max connections         | 20      |
+| `POSTGRES_POOL_MIN`        | DB pool min connections         | 2       |
+| `POSTGRES_IDLE_TIMEOUT_MS` | DB pool idle timeout            | 30000   |
+| `REDIS_URL`                | Redis connection URL            | -       |
 
 ### New API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/metrics` | GET | Prometheus metrics export |
+| Endpoint          | Method | Description               |
+| ----------------- | ------ | ------------------------- |
+| `/api/v1/metrics` | GET    | Prometheus metrics export |
 
 ---
 
@@ -362,6 +381,7 @@ Ran 129 tests across 26 files
 ### For Developers
 
 1. **Install new dependencies**:
+
    ```bash
    bun install
    ```
@@ -378,6 +398,7 @@ Ran 129 tests across 26 files
 ### For CI/CD
 
 1. **Enable fail-fast**:
+
    ```bash
    export CI=true
    ```
@@ -395,6 +416,7 @@ Ran 129 tests across 26 files
 ## Summary of Files Changed
 
 ### New Files
+
 - `apps/api/src/lib/metrics.ts`
 - `apps/api/src/lib/redis-client.ts`
 - `apps/api/src/lib/circuit-breaker.ts`
@@ -410,6 +432,7 @@ Ran 129 tests across 26 files
 - `apps/api/src/controllers/metrics-controller.ts`
 
 ### Modified Files
+
 - `apps/api/src/infra/database.ts`
 - `apps/api/src/services/tegma-scraper.ts`
 - `apps/api/src/services/whatsapp-notifier.ts`
@@ -420,6 +443,7 @@ Ran 129 tests across 26 files
 - `tests/bun.setup.ts`
 
 ### Deleted Files
+
 - `apps/api/src/controllers/cargas-controller.ts`
 - Root-level `services/`, `repositories/`, `infra/` directories
 
@@ -442,4 +466,4 @@ curl http://localhost:4000/api/v1/metrics
 
 ---
 
-*Implementation completed: 2026-02-23*
+_Implementation completed: 2026-02-23_

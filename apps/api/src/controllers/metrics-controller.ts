@@ -14,7 +14,7 @@ export async function metricsHandler({
       "Content-Type": getMetricsContentType(),
     };
     return metrics;
-  } catch (error) {
+  } catch {
     set.status = 500;
     return {
       error: "Failed to collect metrics",

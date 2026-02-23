@@ -15,14 +15,14 @@ if (process.env.CI === "true") {
     throw new Error(
       "FAIL-FAST: PostgreSQL is not available in CI. " +
         "Required for integration tests. " +
-        "Check POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB"
+        "Check POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB",
     );
   }
   if (!globalThis.__WEB_SERVER_READY__) {
     throw new Error(
       "FAIL-FAST: Web server is not available in CI. " +
         "Required for integration tests. " +
-        "Ensure the server is running on http://localhost:3000"
+        "Ensure the server is running on http://localhost:3000",
     );
   }
 }

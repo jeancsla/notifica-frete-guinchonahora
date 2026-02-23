@@ -110,7 +110,7 @@ export function recordHttpRequest(
   method: string,
   route: string,
   status: number,
-  durationSeconds: number
+  durationSeconds: number,
 ): void {
   httpRequestsTotal.inc({ method, route, status: String(status) });
   httpRequestDuration.observe({ method, route }, durationSeconds);
@@ -119,7 +119,10 @@ export function recordHttpRequest(
 /**
  * Record database query metrics
  */
-export function recordDbQuery(operation: string, durationSeconds: number): void {
+export function recordDbQuery(
+  operation: string,
+  durationSeconds: number,
+): void {
   dbQueriesTotal.inc({ operation });
   dbQueryDuration.observe({ operation }, durationSeconds);
 }
@@ -127,7 +130,10 @@ export function recordDbQuery(operation: string, durationSeconds: number): void 
 /**
  * Update circuit breaker state gauge
  */
-export function setCircuitBreakerState(name: string, state: "CLOSED" | "OPEN" | "HALF_OPEN"): void {
+export function setCircuitBreakerState(
+  name: string,
+  state: "CLOSED" | "OPEN" | "HALF_OPEN",
+): void {
   const stateValue = state === "CLOSED" ? 0 : state === "OPEN" ? 1 : 2;
   circuitBreakerState.set({ name }, stateValue);
 }
@@ -135,7 +141,10 @@ export function setCircuitBreakerState(name: string, state: "CLOSED" | "OPEN" | 
 /**
  * Record circuit breaker result
  */
-export function recordCircuitBreakerResult(name: string, success: boolean): void {
+export function recordCircuitBreakerResult(
+  name: string,
+  success: boolean,
+): void {
   if (success) {
     circuitBreakerSuccesses.inc({ name });
   } else {
@@ -146,14 +155,19 @@ export function recordCircuitBreakerResult(name: string, success: boolean): void
 /**
  * Record carga processing
  */
-export function recordCargaProcessed(result: "success" | "failed" | "duplicate"): void {
+export function recordCargaProcessed(
+  result: "success" | "failed" | "duplicate",
+): void {
   cargasProcessedTotal.inc({ result });
 }
 
 /**
  * Record notification
  */
-export function recordNotification(recipient: string, status: "success" | "failed"): void {
+export function recordNotification(
+  recipient: string,
+  status: "success" | "failed",
+): void {
   notificationsTotal.inc({ recipient, status });
 }
 

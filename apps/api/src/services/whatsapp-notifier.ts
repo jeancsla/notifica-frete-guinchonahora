@@ -2,7 +2,10 @@ import retry from "async-retry";
 import type { Carga } from "@notifica/shared/models/Carga";
 import type { NotificationRecipient } from "@notifica/shared/types";
 import { logger } from "../lib/logger";
-import { getCircuitBreaker, CircuitBreakerOpenError } from "../lib/circuit-breaker";
+import {
+  getCircuitBreaker,
+  CircuitBreakerOpenError,
+} from "../lib/circuit-breaker";
 
 const log = logger.child({ component: "whatsapp_notifier" });
 
@@ -33,7 +36,7 @@ function getFetchTimeoutMs() {
  */
 async function fetchWithTimeout(
   url: string,
-  options: RequestInit = {},
+  options: globalThis.RequestInit = {},
   timeoutMs = getFetchTimeoutMs(),
 ): Promise<Response> {
   const controller = new AbortController();
@@ -47,7 +50,9 @@ async function fetchWithTimeout(
     return response;
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`Request timeout after ${timeoutMs}ms: ${url}`);
+      throw new Error(`Request timeout after ${timeoutMs}ms: ${url}`, {
+        cause: error,
+      });
     }
     throw error;
   } finally {
@@ -130,45 +135,47 @@ export const whatsappNotifier = {
     const apiKey = getEnvVar("EVOLUTION_API_KEY");
 
     // Circuit breaker wrapper around the retry logic
-    return circuitBreaker.execute(() =>
-      withRetry(async () => {
-        const url = `${apiBaseUrl}/message/sendText/${apiInstance}`;
+    return circuitBreaker
+      .execute(() =>
+        withRetry(async () => {
+          const url = `${apiBaseUrl}/message/sendText/${apiInstance}`;
 
-        const response = await fetchWithTimeout(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: apiKey,
-          },
-          body: JSON.stringify({
-            number: phone,
-            text: carga.toWhatsAppMessage(),
-            options: {
-              delay: 1200,
+          const response = await fetchWithTimeout(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: apiKey,
             },
-          }),
-        });
+            body: JSON.stringify({
+              number: phone,
+              text: carga.toWhatsAppMessage(),
+              options: {
+                delay: 1200,
+              },
+            }),
+          });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(
-            `Failed to send WhatsApp message: ${response.status} ${errorText}`,
-          );
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(
+              `Failed to send WhatsApp message: ${response.status} ${errorText}`,
+            );
+          }
+
+          const result = await response.json();
+          log.info("whatsapp_notifier.sent", { recipient });
+          return result;
+        }, `sendNotification-${recipient}`),
+      )
+      .catch((error) => {
+        if (error instanceof CircuitBreakerOpenError) {
+          log.warn("whatsapp_notifier.circuit_breaker_open", {
+            recipient,
+            state: circuitBreaker.getState(),
+          });
         }
-
-        const result = await response.json();
-        log.info("whatsapp_notifier.sent", { recipient });
-        return result;
-      }, `sendNotification-${recipient}`),
-    ).catch((error) => {
-      if (error instanceof CircuitBreakerOpenError) {
-        log.warn("whatsapp_notifier.circuit_breaker_open", {
-          recipient,
-          state: circuitBreaker.getState(),
-        });
-      }
-      throw error;
-    });
+        throw error;
+      });
   },
 
   /**
@@ -182,9 +189,10 @@ export const whatsappNotifier = {
    * Send notification to all configured recipients.
    * Returns array of results and any errors.
    */
-  async notifyAll(
-    carga: Carga,
-  ): Promise<{ success: string[]; errors: { recipient: string; error: string }[] }> {
+  async notifyAll(carga: Carga): Promise<{
+    success: string[];
+    errors: { recipient: string; error: string }[];
+  }> {
     const recipients = parseRecipients();
     const success: string[] = [];
     const errors: { recipient: string; error: string }[] = [];

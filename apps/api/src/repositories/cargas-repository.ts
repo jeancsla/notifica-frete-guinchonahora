@@ -22,7 +22,7 @@ function getSelectedColumns(fields?: string[]): ColumnName[] {
   }
 
   const validFields = fields.filter((field): field is ColumnName =>
-    ALL_COLUMNS.includes(field as ColumnName)
+    ALL_COLUMNS.includes(field as ColumnName),
   );
 
   return validFields.length > 0 ? validFields : [...ALL_COLUMNS];
@@ -134,7 +134,7 @@ export const cargasRepository = {
     if (orderColumn === "prev_coleta") {
       // Use raw SQL for the date parsing expression
       qb = qb.orderBy(
-        sql.raw(`${PREV_COLETA_ORDER_EXPR} ${orderDirection} NULLS LAST`)
+        sql.raw(`${PREV_COLETA_ORDER_EXPR} ${orderDirection} NULLS LAST`),
       );
     } else {
       qb = qb.orderBy(orderColumn, orderDirection);
@@ -173,7 +173,7 @@ export const cargasRepository = {
     // Handle special ordering for prev_coleta column
     if (orderColumn === "prev_coleta") {
       qb = qb.orderBy(
-        sql.raw(`${PREV_COLETA_ORDER_EXPR} ${orderDirection} NULLS LAST`)
+        sql.raw(`${PREV_COLETA_ORDER_EXPR} ${orderDirection} NULLS LAST`),
       );
     } else {
       qb = qb.orderBy(orderColumn, orderDirection);

@@ -88,10 +88,7 @@ function cleanupExpired(nowMs: number) {
   }
 }
 
-export async function getAuthRateLimitState(
-  key: string,
-  nowMs = Date.now(),
-) {
+export async function getAuthRateLimitState(key: string, nowMs = Date.now()) {
   cleanupExpired(nowMs);
 
   // Try Redis first
@@ -152,11 +149,15 @@ export async function recordAuthFailure(key: string, nowMs = Date.now()) {
     const attempts = existing.attempts + 1;
     const blockedUntilMs = attempts >= maxAttempts ? nowMs + blockMs : 0;
 
-    await setStateInRedis(key, {
-      attempts,
-      windowStartMs: existing.windowStartMs,
-      blockedUntilMs,
-    }, Math.ceil((blockedUntilMs > nowMs ? blockMs : windowMs) / 1000));
+    await setStateInRedis(
+      key,
+      {
+        attempts,
+        windowStartMs: existing.windowStartMs,
+        blockedUntilMs,
+      },
+      Math.ceil((blockedUntilMs > nowMs ? blockMs : windowMs) / 1000),
+    );
     return;
   }
 

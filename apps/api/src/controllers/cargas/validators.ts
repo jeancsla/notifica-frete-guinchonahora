@@ -6,7 +6,9 @@ export function isValidCronEventId(value: string): boolean {
   return /^[a-zA-Z0-9._:-]{1,128}$/.test(value);
 }
 
-export function parseMockedResult(value: string): { processed?: number; new_cargas?: unknown[] } | null {
+export function parseMockedResult(
+  value: string,
+): { processed?: number; new_cargas?: unknown[] } | null {
   try {
     return JSON.parse(value) as { processed?: number; new_cargas?: unknown[] };
   } catch {
@@ -34,7 +36,10 @@ export interface ListCargasParams {
   fields: string[] | undefined;
 }
 
-export function parseListCargasParams(url: URL): { params: ListCargasParams; error?: { status: number; message: string } } {
+export function parseListCargasParams(url: URL): {
+  params: ListCargasParams;
+  error?: { status: number; message: string };
+} {
   const limitParam = url.searchParams.get("limit");
   const offsetParam = url.searchParams.get("offset");
   const notified = url.searchParams.get("notified");
@@ -54,7 +59,10 @@ export function parseListCargasParams(url: URL): { params: ListCargasParams; err
   if (isNaN(limit) || limit < 1 || limit > 100) {
     return {
       params: {} as ListCargasParams,
-      error: { status: 400, message: "Invalid limit parameter. Must be between 1 and 100." },
+      error: {
+        status: 400,
+        message: "Invalid limit parameter. Must be between 1 and 100.",
+      },
     };
   }
 
@@ -62,13 +70,24 @@ export function parseListCargasParams(url: URL): { params: ListCargasParams; err
   if (isNaN(offset) || offset < 0) {
     return {
       params: {} as ListCargasParams,
-      error: { status: 400, message: "Invalid offset parameter. Must be non-negative." },
+      error: {
+        status: 400,
+        message: "Invalid offset parameter. Must be non-negative.",
+      },
     };
   }
 
   const includeTotal = includeTotalParam !== "false";
 
   return {
-    params: { limit, offset, notified, sortBy, sortOrder, includeTotal, fields },
+    params: {
+      limit,
+      offset,
+      notified,
+      sortBy,
+      sortOrder,
+      includeTotal,
+      fields,
+    },
   };
 }
