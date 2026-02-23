@@ -137,7 +137,10 @@ export const cargasRepository = {
         sql.raw(`${PREV_COLETA_ORDER_EXPR} ${orderDirection} NULLS LAST`),
       );
     } else {
-      qb = qb.orderBy(orderColumn, orderDirection.toLowerCase() as "asc" | "desc");
+      qb = qb.orderBy(
+        orderColumn,
+        orderDirection.toLowerCase() as "asc" | "desc",
+      );
     }
 
     const result = await qb.limit(limit).offset(offset).execute();
@@ -176,7 +179,10 @@ export const cargasRepository = {
         sql.raw(`${PREV_COLETA_ORDER_EXPR} ${orderDirection} NULLS LAST`),
       );
     } else {
-      qb = qb.orderBy(orderColumn, orderDirection.toLowerCase() as "asc" | "desc");
+      qb = qb.orderBy(
+        orderColumn,
+        orderDirection.toLowerCase() as "asc" | "desc",
+      );
     }
 
     const result = await qb.limit(limit).offset(offset).execute();
