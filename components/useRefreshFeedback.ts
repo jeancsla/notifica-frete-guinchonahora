@@ -22,7 +22,7 @@ export type RefreshFeedback = {
   wrapRefresh: (
     fn: () => Promise<unknown>,
     options?: WrapRefreshOptions,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   showToast: (message: string, type: ToastType) => void;
   markUpdated: () => void;
 };
@@ -77,6 +77,7 @@ export default function useRefreshFeedback(): RefreshFeedback {
         if (!silentSuccess) {
           showToast(successMessage, "success");
         }
+        return true;
       } catch (error) {
         const message =
           error instanceof Error && error.message
@@ -84,6 +85,7 @@ export default function useRefreshFeedback(): RefreshFeedback {
             : errorMessage;
         setRefreshError(message);
         showToast(errorMessage, "error");
+        return false;
       } finally {
         setIsRefreshing(false);
       }

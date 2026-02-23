@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { GetServerSideProps } from "next";
 import useSWR from "swr";
+import { motion } from "framer-motion";
 import type {
   CargaRecord,
   DashboardData,
@@ -22,6 +23,29 @@ import { getSession } from "lib/session";
 
 const EMPTY_ARRAY: CargaRecord[] = [];
 
+type PriorityLevel = "critical" | "high" | "normal" | "low";
+
+const getPriorityLevel = (
+  dateStr: string | null | undefined,
+): PriorityLevel => {
+  if (!dateStr) return "low";
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diffHours = (d.getTime() - now.getTime()) / (1000 * 60 * 60);
+  if (diffHours <= 0) return "critical";
+  if (diffHours <= 6) return "critical";
+  if (diffHours <= 24) return "high";
+  if (diffHours <= 72) return "normal";
+  return "low";
+};
+
+const getPriorityLabel = (level: PriorityLevel) => {
+  if (level === "critical") return "Critica";
+  if (level === "high") return "Alta";
+  if (level === "normal") return "Media";
+  return "Baixa";
+};
+
 type DashboardProps = {
   allowMigrations: boolean;
   user: SessionUser;
@@ -33,7 +57,13 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
     offset: 0,
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [isMigrating, setIsMigrating] = useState(false);
+  const [actionFeedback, setActionFeedback] = useState<{
+    type: "success" | "error";
+    message: string;
+    at: Date;
+  } | null>(null);
   const {
     isRefreshing,
     lastUpdatedAt,
@@ -67,10 +97,24 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
     }
   }, [dashboard, selectedId]);
 
+  useEffect(() => {
+    if (!detailOpen || typeof window === "undefined") return;
+    if (window.matchMedia("(min-width: 1025px)").matches) return;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [detailOpen]);
+
   async function handleRefresh() {
-    await wrapRefresh(() =>
+    const ok = await wrapRefresh(() =>
       mutate(undefined, { revalidate: true, throwOnError: true }),
     );
+    setActionFeedback({
+      type: ok ? "success" : "error",
+      message: ok ? "Dados sincronizados" : "Falha ao sincronizar dados",
+      at: new Date(),
+    });
   }
 
   async function handleMigrations() {
@@ -84,10 +128,20 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
         throw new Error(payload?.message || "Falha ao executar migrations");
       }
       showToast("Migrations executadas", "success");
+      setActionFeedback({
+        type: "success",
+        message: "Migrations aplicadas com sucesso",
+        at: new Date(),
+      });
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Falha ao executar migrations";
       showToast(message, "error");
+      setActionFeedback({
+        type: "error",
+        message,
+        at: new Date(),
+      });
     } finally {
       setIsMigrating(false);
     }
@@ -140,6 +194,16 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
             error={refreshError || error?.message}
             lastUpdatedAt={lastUpdatedAt}
           />
+          {actionFeedback ? (
+            <div
+              className={`action-feedback ${actionFeedback.type}`}
+              role="status"
+              aria-live="polite"
+            >
+              <span>{actionFeedback.message}</span>
+              <small>{formatDateTimeBR(actionFeedback.at.toISOString())}</small>
+            </div>
+          ) : null}
         </>
       }
     >
@@ -149,7 +213,12 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
         visible={toast.visible}
       />
       {error ? <div className="card">Erro: {error.message}</div> : null}
-      <section className="grid cols-2">
+      <motion.section
+        className="grid cols-2"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
+      >
         {isLoading ? (
           <>
             <StatCardSkeleton />
@@ -171,10 +240,13 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
             </div>
           </>
         )}
-      </section>
-      <section
+      </motion.section>
+      <motion.section
         style={{ marginTop: "24px" }}
         className={`grid cols-2${isValidating && !isLoading ? " soft-loading" : ""}`}
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.28, ease: "easeOut", delay: 0.08 }}
       >
         <div className="card">
           <div
@@ -207,35 +279,50 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
                       <th>Origem</th>
                       <th>Destino</th>
                       <th className="cell-wrap">Produto</th>
+                      <th className="cell-num">Prioridade</th>
                       <th className="cell-num">Previsão</th>
                       <th className="cell-num">Criado em</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {data.map((item) => (
-                      <tr
-                        key={item.id_viagem}
-                        onClick={() => setSelectedId(item.id_viagem)}
-                        className="selectable"
-                        aria-selected={item.id_viagem === effectiveSelectedId}
-                      >
-                        <td className="cell-num">{item.id_viagem}</td>
-                        <td>{item.origem || "N/A"}</td>
-                        <td>{item.destino || "N/A"}</td>
-                        <td className="cell-wrap" title={item.produto || "N/A"}>
-                          {item.produto || "N/A"}
-                        </td>
-                        <td className="cell-num">
-                          {formatDateBR(item.prev_coleta)}
-                        </td>
-                        <td className="cell-num">
-                          {formatDateTimeBR(item.created_at)}
-                        </td>
-                      </tr>
-                    ))}
+                    {data.map((item) => {
+                      const priority = getPriorityLevel(item.prev_coleta);
+                      return (
+                        <tr
+                          key={item.id_viagem}
+                          onClick={() => {
+                            setSelectedId(item.id_viagem);
+                            setDetailOpen(true);
+                          }}
+                          className={`selectable priority-${priority}`}
+                          aria-selected={item.id_viagem === effectiveSelectedId}
+                        >
+                          <td className="cell-num">{item.id_viagem}</td>
+                          <td>{item.origem || "N/A"}</td>
+                          <td>{item.destino || "N/A"}</td>
+                          <td
+                            className="cell-wrap"
+                            title={item.produto || "N/A"}
+                          >
+                            {item.produto || "N/A"}
+                          </td>
+                          <td className="cell-num">
+                            <span className={`priority-pill ${priority}`}>
+                              {getPriorityLabel(priority)}
+                            </span>
+                          </td>
+                          <td className="cell-num">
+                            {formatDateBR(item.prev_coleta)}
+                          </td>
+                          <td className="cell-num">
+                            {formatDateTimeBR(item.created_at)}
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {data.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="table-empty">
+                        <td colSpan={7} className="table-empty">
                           Nenhum frete encontrado.
                         </td>
                       </tr>
@@ -272,8 +359,34 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
             </>
           )}
         </div>
-        <div className="card">
-          <h3>Detalhe rápido</h3>
+
+        <div
+          className={`detail-panel-backdrop ${detailOpen ? "open" : ""}`}
+          onClick={() => setDetailOpen(false)}
+        />
+        <motion.div
+          className={`card detail-panel ${detailOpen ? "open" : ""}`}
+          initial={{ y: 24, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "12px",
+            }}
+          >
+            <h3 style={{ margin: 0 }}>Detalhe rápido</h3>
+            <button
+              className="close-mobile-panel"
+              onClick={() => setDetailOpen(false)}
+              aria-label="Fechar detalhes"
+            >
+              ✕
+            </button>
+          </div>
           {isLoading ? (
             <div className="detail-list">
               <SkeletonBlock height={14} width="100%" />
@@ -283,6 +396,9 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
             </div>
           ) : selected ? (
             <div className="detail-list">
+              <div className="badge detail-badge">
+                Selecionado: {selected.id_viagem}
+              </div>
               <div className="detail-item">
                 <span>Viagem</span>
                 <strong>{selected.id_viagem}</strong>
@@ -315,8 +431,8 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
           ) : (
             <p className="muted">Selecione um frete para ver detalhes.</p>
           )}
-        </div>
-      </section>
+        </motion.div>
+      </motion.section>
     </Layout>
   );
 }
