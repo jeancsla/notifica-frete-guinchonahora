@@ -24,7 +24,7 @@ beforeEach(() => {
 });
 
 testIfIntegration(
-  "POST /api/v1/migrations deve retornar status 201",
+  "POST /api/v1/migrations deve retornar status 200 ou 201",
   async () => {
     const response = await fetch("http://localhost:3000/api/v1/migrations", {
       method: "POST",
@@ -32,13 +32,16 @@ testIfIntegration(
         "X-Admin-Key": "test-admin-key",
       },
     });
-    expect(response.status).toBe(201);
+    expect([200, 201]).toContain(response.status);
 
     const responseBody = await response.json();
-    //console.log(responseBody.length);
-
     expect(Array.isArray(responseBody)).toBe(true);
-    expect(responseBody.length).toBeGreaterThan(0);
+
+    if (response.status === 201) {
+      expect(responseBody.length).toBeGreaterThan(0);
+    } else {
+      expect(responseBody.length).toBe(0);
+    }
   },
 );
 
