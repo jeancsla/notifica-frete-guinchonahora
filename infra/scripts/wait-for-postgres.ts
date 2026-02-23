@@ -4,7 +4,9 @@ import { Client } from "pg";
 
 function parseArg(name: string, defaultValue: number): number {
   const prefix = `--${name}=`;
-  const value = process.argv.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
+  const value = process.argv
+    .find((arg) => arg.startsWith(prefix))
+    ?.slice(prefix.length);
   const parsed = value ? Number(value) : defaultValue;
   return Number.isFinite(parsed) && parsed > 0 ? parsed : defaultValue;
 }
@@ -21,7 +23,8 @@ async function canConnectOnce(): Promise<boolean> {
           host: process.env.DB_HOST ?? process.env.PGHOST ?? "127.0.0.1",
           port: Number(process.env.DB_PORT ?? process.env.PGPORT ?? "5432"),
           user: process.env.DB_USER ?? process.env.PGUSER ?? "postgres",
-          password: process.env.DB_PASSWORD ?? process.env.PGPASSWORD ?? "postgres",
+          password:
+            process.env.DB_PASSWORD ?? process.env.PGPASSWORD ?? "postgres",
           database: process.env.DB_NAME ?? process.env.PGDATABASE ?? "postgres",
         },
   );
@@ -44,17 +47,23 @@ async function main(): Promise<void> {
   for (let attempt = 1; attempt <= retries; attempt += 1) {
     const ok = await canConnectOnce();
     if (ok) {
-      console.log(`[wait-for-postgres] Ready after ${attempt}/${retries} attempt(s)`);
+      console.log(
+        `[wait-for-postgres] Ready after ${attempt}/${retries} attempt(s)`,
+      );
       process.exit(0);
     }
 
     if (attempt < retries) {
-      console.log(`[wait-for-postgres] Attempt ${attempt}/${retries} failed; retrying in ${intervalMs}ms`);
+      console.log(
+        `[wait-for-postgres] Attempt ${attempt}/${retries} failed; retrying in ${intervalMs}ms`,
+      );
       await sleep(intervalMs);
     }
   }
 
-  console.error(`[wait-for-postgres] Postgres not ready after ${retries} attempt(s)`);
+  console.error(
+    `[wait-for-postgres] Postgres not ready after ${retries} attempt(s)`,
+  );
   process.exit(1);
 }
 
