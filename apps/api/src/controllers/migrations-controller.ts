@@ -82,6 +82,14 @@ export async function migrationsHandler({
 
     return result;
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message.toLowerCase() : String(error);
+    if (message.includes("another migration is already running")) {
+      set.status = 200;
+      log.warn("migrations.already_running");
+      return [];
+    }
+
     log.error("migrations.failed", { error });
     set.status = 500;
     return {
