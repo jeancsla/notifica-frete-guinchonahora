@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useCallback, useRef } from "react";
@@ -27,6 +28,10 @@ export default function Layout({
   actions,
   children,
 }: LayoutProps) {
+  const pageTitle = `${title} | Notifica Frete`;
+  const pageDescription =
+    subtitle ||
+    "Painel operacional para monitoramento de cargas e notificacoes em tempo real.";
   const router = useRouter();
   const prefetchedRoutes = useRef<Set<string>>(new Set());
 
@@ -41,6 +46,13 @@ export default function Layout({
 
   return (
     <div className="app-shell">
+      <Head>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+      </Head>
+      <a className="skip-link" href="#main-content">
+        Pular para conteudo principal
+      </a>
       <aside className="sidebar">
         <div className="brand">
           <strong>Guincho Na Hora</strong>
@@ -62,16 +74,16 @@ export default function Layout({
           ))}
         </nav>
       </aside>
-      <main className="main">
+      <main id="main-content" className="main">
         <div className="content">
-          <div className="topbar">
+          <header className="topbar">
             <div>
               <div className="chip">Operacional</div>
               <h1>{title}</h1>
               {subtitle ? <p className="muted">{subtitle}</p> : null}
             </div>
             <div className="topbar-actions">{actions}</div>
-          </div>
+          </header>
           {children}
         </div>
       </main>
