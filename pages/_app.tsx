@@ -4,7 +4,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { SWRConfig } from "swr";
 import RouteLoadingBar from "../components/RouteLoadingBar";
 import { swrDefaults } from "../lib/swr";
-import "../styles/global.css";
+import "../styles/globals.css";
 
 const fontSans = Inter({
   subsets: ["latin"],
