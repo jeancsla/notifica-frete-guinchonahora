@@ -13,6 +13,16 @@ import useRefreshFeedback from "../components/useRefreshFeedback";
 import { fetchStatus } from "../lib/api";
 import { formatDateTimeBR } from "../lib/date-format";
 
+// shadcn/ui components
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
 export default function Status() {
   const {
     isRefreshing,
@@ -51,7 +61,7 @@ export default function Status() {
       actions={
         <>
           <LoadingButton
-            className="button secondary"
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
             onClick={handleRefresh}
             loading={isRefreshing}
             loadingLabel="Atualizando..."
@@ -72,8 +82,10 @@ export default function Status() {
         type={toast.type}
         visible={toast.visible}
       />
-      {error ? <div className="card">Erro: {error.message}</div> : null}
-      <section className="grid cols-2">
+      {error ? (
+        <Card className="p-6 text-destructive">Erro: {error.message}</Card>
+      ) : null}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {isLoading ? (
           <>
             <StatCardSkeleton />
@@ -81,63 +93,99 @@ export default function Status() {
           </>
         ) : (
           <>
-            <div className="card">
-              <h3>Atualização</h3>
-              <p style={{ fontSize: "18px", fontWeight: 600 }}>
-                {formatDateTimeBR(status?.updated_at)}
-              </p>
-              <p className="muted">Última verificação do status.</p>
-            </div>
-            <div className="card">
-              <h3>Banco de dados</h3>
-              <div className="detail-list">
-                <div className="detail-item">
-                  <span>Versão</span>
-                  <strong>
-                    {status?.dependencies?.database?.version || "-"}
-                  </strong>
+            <Card>
+              <CardHeader>
+                <CardTitle>Atualização</CardTitle>
+                <CardDescription>Última verificação do status.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-lg font-semibold">
+                  {formatDateTimeBR(status?.updated_at)}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>Banco de dados</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">
+                      Versão
+                    </span>
+                    <span className="font-semibold">
+                      {status?.dependencies?.database?.version || "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">
+                      Máx. conexões
+                    </span>
+                    <span className="font-semibold">
+                      {status?.dependencies?.database?.max_connections ?? "-"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between py-2 border-b border-border">
+                    <span className="text-sm text-muted-foreground">
+                      Conexões abertas
+                    </span>
+                    <span className="font-semibold">
+                      {status?.dependencies?.database?.opened_connections ??
+                        "-"}
+                    </span>
+                  </div>
                 </div>
-                <div className="detail-item">
-                  <span>Máx. conexões</span>
-                  <strong>
-                    {status?.dependencies?.database?.max_connections ?? "-"}
-                  </strong>
-                </div>
-                <div className="detail-item">
-                  <span>Conexões abertas</span>
-                  <strong>
-                    {status?.dependencies?.database?.opened_connections ?? "-"}
-                  </strong>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </>
         )}
       </section>
       <section
-        style={{ marginTop: "24px" }}
-        className={`grid cols-3${isValidating && !isLoading ? " soft-loading" : ""}`}
+        className={`grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 ${
+          isValidating && !isLoading ? "opacity-75 transition-opacity" : ""
+        }`}
       >
-        <div className="card">
-          <h3>Integração</h3>
-          <p className="muted">API online e operando.</p>
-          <div className="status-dot">Operacional</div>
-        </div>
-        <div className="card">
-          <h3>Fila de notificações</h3>
-          <p className="muted">Pendências avaliadas via dashboard.</p>
-        </div>
-        <div className="card">
-          <h3>Logs</h3>
-          <p className="muted">Eventos recentes estão sendo registrados.</p>
-          {isValidating ? (
-            <SkeletonBlock
-              height={12}
-              width="60%"
-              className="skeleton-gap-sm"
-            />
-          ) : null}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Integração</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="mb-4">
+              API online e operando.
+            </CardDescription>
+            <Badge variant="default" className="flex items-center gap-2 w-fit">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-current"></span>
+              </span>
+              Operacional
+            </Badge>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Fila de notificações</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription>
+              Pendências avaliadas via dashboard.
+            </CardDescription>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Logs</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription>
+              Eventos recentes estão sendo registrados.
+            </CardDescription>
+            {isValidating ? (
+              <SkeletonBlock height={12} width="60%" className="mt-4" />
+            ) : null}
+          </CardContent>
+        </Card>
       </section>
     </Layout>
   );

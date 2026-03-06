@@ -3,6 +3,10 @@ import { InlineRefreshStatus, LoadingButton } from "../components/LoadingUI";
 import Toast from "../components/Toast";
 import useRefreshFeedback from "../components/useRefreshFeedback";
 
+// shadcn/ui components
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
 export default function Profile() {
   const { isRefreshing, lastUpdatedAt, refreshError, toast, wrapRefresh } =
     useRefreshFeedback();
@@ -14,7 +18,7 @@ export default function Profile() {
       actions={
         <>
           <LoadingButton
-            className="button secondary"
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
             onClick={() =>
               wrapRefresh(
                 () =>
@@ -43,61 +47,97 @@ export default function Profile() {
         visible={toast.visible}
       />
       <section
-        className={`grid cols-2${isRefreshing ? " soft-loading" : ""}`}
+        className={`grid grid-cols-1 lg:grid-cols-2 gap-4 ${
+          isRefreshing ? "opacity-75 transition-opacity" : ""
+        }`}
         aria-busy={isRefreshing ? "true" : "false"}
       >
-        <div className="card">
-          <h3>Operador principal</h3>
-          <div className="detail-list">
-            <div className="detail-item">
-              <span>Nome</span>
-              <strong>Equipe Guincho Na Hora</strong>
+        <Card>
+          <CardHeader>
+            <CardTitle>Operador principal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm text-muted-foreground">Nome</span>
+                <span className="font-semibold">Equipe Guincho Na Hora</span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm text-muted-foreground">Turno</span>
+                <span className="font-semibold">24/7</span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm text-muted-foreground">Status</span>
+                <Badge
+                  variant="default"
+                  className="bg-green-500/20 text-green-600 hover:bg-green-500/30"
+                >
+                  Online
+                </Badge>
+              </div>
             </div>
-            <div className="detail-item">
-              <span>Turno</span>
-              <strong>24/7</strong>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Contato interno</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm text-muted-foreground">Email</span>
+                <span className="font-semibold text-right">
+                  operacoes@guinchonahora.com
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm text-muted-foreground">Telefone</span>
+                <span className="font-semibold">+55 11 99999-9999</span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm text-muted-foreground">Canal</span>
+                <span className="font-semibold">WhatsApp / Slack</span>
+              </div>
             </div>
-            <div className="detail-item">
-              <span>Status</span>
-              <strong>Online</strong>
-            </div>
-          </div>
-        </div>
-        <div className="card">
-          <h3>Contato interno</h3>
-          <div className="detail-list">
-            <div className="detail-item">
-              <span>Email</span>
-              <strong>operacoes@guinchonahora.com</strong>
-            </div>
-            <div className="detail-item">
-              <span>Telefone</span>
-              <strong>+55 11 99999-9999</strong>
-            </div>
-            <div className="detail-item">
-              <span>Canal</span>
-              <strong>WhatsApp / Slack</strong>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </section>
       <section
-        style={{ marginTop: "24px" }}
-        className={`grid cols-3${isRefreshing ? " soft-loading" : ""}`}
+        className={`grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 ${
+          isRefreshing ? "opacity-75 transition-opacity" : ""
+        }`}
         aria-busy={isRefreshing ? "true" : "false"}
       >
-        <div className="card">
-          <h3>Escala</h3>
-          <p className="muted">Rodízio automático via API de turnos.</p>
-        </div>
-        <div className="card">
-          <h3>Permissões</h3>
-          <p className="muted">Dashboard de leitura total.</p>
-        </div>
-        <div className="card">
-          <h3>Última atualização</h3>
-          <p className="muted">Sincronizado automaticamente.</p>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Escala</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Rodízio automático via API de turnos.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Permissões</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Dashboard de leitura total.
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Última atualização</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Sincronizado automaticamente.
+            </p>
+          </CardContent>
+        </Card>
       </section>
     </Layout>
   );

@@ -16,6 +16,10 @@ import {
   countTodayEvents,
 } from "../lib/activity";
 
+// shadcn/ui components
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+
 type ActivityData = {
   cargas: CargaRecord[];
   status: StatusResponse;
@@ -74,7 +78,7 @@ export default function Activity() {
       actions={
         <>
           <LoadingButton
-            className="button secondary"
+            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2"
             onClick={handleRefresh}
             loading={isRefreshing}
             loadingLabel="Atualizando..."
@@ -95,49 +99,83 @@ export default function Activity() {
         type={toast.type}
         visible={toast.visible}
       />
-      {error ? <div className="card">Erro: {error.message}</div> : null}
+      {error ? (
+        <Card className="p-6 text-destructive">Erro: {error.message}</Card>
+      ) : null}
       <section
-        className={`grid cols-2${isValidating && !isLoading ? " soft-loading" : ""}`}
+        className={`grid grid-cols-1 lg:grid-cols-2 gap-4 ${
+          isValidating && !isLoading ? "opacity-75 transition-opacity" : ""
+        }`}
       >
-        <div className="card">
-          <h3>Linha do tempo</h3>
-          <div className="detail-list">
-            {isLoading
-              ? Array.from({ length: 6 }).map((_, idx) => (
-                  <SkeletonBlock
-                    key={`activity-skeleton-${idx}`}
-                    height={36}
-                    width="100%"
-                  />
-                ))
-              : events.map((event) => (
-                  <div key={event.id} className="detail-item">
-                    <div>
-                      <strong>{event.title}</strong>
-                      <div className="muted">{event.description}</div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Linha do tempo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {isLoading
+                ? Array.from({ length: 6 }).map((_, idx) => (
+                    <SkeletonBlock
+                      key={`activity-skeleton-${idx}`}
+                      height={36}
+                      width="100%"
+                    />
+                  ))
+                : events.map((event) => (
+                    <div
+                      key={event.id}
+                      className="flex items-start justify-between gap-4 py-2 border-b border-border last:border-0"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{event.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {event.description}
+                        </p>
+                      </div>
+                      <Badge variant="secondary" className="shrink-0">
+                        {event.time}
+                      </Badge>
                     </div>
-                    <span className="badge">{event.time}</span>
-                  </div>
-                ))}
-          </div>
-        </div>
-        <div className="card">
-          <h3>Resumo operacional</h3>
-          <div className="detail-list">
-            <div className="detail-item">
-              <span>Eventos hoje</span>
-              <strong>{isLoading ? "-" : eventsToday}</strong>
+                  ))}
+              {events.length === 0 && !isLoading && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nenhum evento encontrado.
+                </p>
+              )}
             </div>
-            <div className="detail-item">
-              <span>Alertas ativos</span>
-              <strong>{isLoading ? "-" : alerts}</strong>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Resumo operacional</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm text-muted-foreground">
+                  Eventos hoje
+                </span>
+                <span className="font-semibold">
+                  {isLoading ? "-" : eventsToday}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm text-muted-foreground">
+                  Alertas ativos
+                </span>
+                <span className="font-semibold">
+                  {isLoading ? "-" : alerts}
+                </span>
+              </div>
+              <div className="flex items-center justify-between py-2 border-b border-border">
+                <span className="text-sm text-muted-foreground">
+                  Operadores online
+                </span>
+                <span className="font-semibold">5</span>
+              </div>
             </div>
-            <div className="detail-item">
-              <span>Operadores online</span>
-              <strong>5</strong>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </section>
     </Layout>
   );
