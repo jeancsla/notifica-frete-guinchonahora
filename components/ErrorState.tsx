@@ -1,4 +1,12 @@
 import { AlertCircle, RefreshCw } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface ErrorStateProps {
   title?: string;
@@ -12,18 +20,26 @@ export function ErrorState({
   onRetry,
 }: ErrorStateProps) {
   return (
-    <div className="error-state" role="alert" aria-live="assertive">
-      <div className="error-state-icon">
-        <AlertCircle size={48} strokeWidth={1.5} />
-      </div>
-      <h3 className="error-state-title">{title}</h3>
-      <p className="error-state-message">{message}</p>
+    <Card
+      className="flex flex-col items-center justify-center p-8 text-center border-destructive/50"
+      role="alert"
+      aria-live="assertive"
+    >
+      <CardHeader className="items-center">
+        <div className="mb-4 rounded-full bg-destructive/10 p-4">
+          <AlertCircle className="h-8 w-8 text-destructive" strokeWidth={1.5} />
+        </div>
+        <CardTitle className="text-lg text-destructive">{title}</CardTitle>
+        <CardDescription>{message}</CardDescription>
+      </CardHeader>
       {onRetry && (
-        <button className="button" onClick={onRetry}>
-          <RefreshCw size={16} />
-          Tentar novamente
-        </button>
+        <CardContent className="pt-0">
+          <Button onClick={onRetry} variant="outline" className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Tentar novamente
+          </Button>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 }

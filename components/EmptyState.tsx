@@ -1,4 +1,12 @@
 import type { LucideIcon } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 interface EmptyStateProps {
   title?: string;
@@ -17,19 +25,23 @@ export function EmptyState({
   action,
 }: EmptyStateProps) {
   return (
-    <div className="empty-state">
-      {Icon && (
-        <div className="empty-state-icon">
-          <Icon size={48} strokeWidth={1.5} />
-        </div>
-      )}
-      <h3 className="empty-state-title">{title}</h3>
-      <p className="empty-state-description">{description}</p>
+    <Card className="flex flex-col items-center justify-center p-8 text-center border-dashed">
+      <CardHeader className="items-center">
+        {Icon && (
+          <div className="mb-4 rounded-full bg-muted p-4">
+            <Icon className="h-8 w-8 text-muted-foreground" strokeWidth={1.5} />
+          </div>
+        )}
+        <CardTitle className="text-lg">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
       {action && (
-        <button className="button" onClick={action.onClick}>
-          {action.label}
-        </button>
+        <CardContent className="pt-0">
+          <Button onClick={action.onClick} variant="outline">
+            {action.label}
+          </Button>
+        </CardContent>
       )}
-    </div>
+    </Card>
   );
 }

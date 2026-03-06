@@ -2,24 +2,30 @@ import { useState, useMemo, useCallback } from "react";
 import type { GetServerSideProps } from "next";
 import useSWR from "swr";
 import { motion } from "framer-motion";
-import {
-  Search,
-  Download,
-  Package,
-  AlertCircle,
-  RefreshCw,
-  Filter,
-} from "lucide-react";
+import { Search, Download, Package, Filter } from "lucide-react";
 import type { CargaRecord } from "@notifica/shared/types";
 import Layout from "../components/Layout";
 import Toast from "../components/Toast";
 import { EmptyState } from "../components/EmptyState";
 import { ErrorState } from "../components/ErrorState";
-import { StatCardSkeleton, TableSkeleton } from "../components/LoadingUI";
-import useRefreshFeedback from "../components/useRefreshFeedback";
-import { formatDateBR, formatDateTimeBR } from "../lib/date-format";
+import { TableSkeleton } from "../components/LoadingUI";
+import { formatDateBR } from "../lib/date-format";
 import { getSession } from "lib/session";
 import type { SessionUser } from "@notifica/shared/types";
+
+// shadcn components
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 // Priority utilities
 type PriorityLevel = "critical" | "high" | "normal" | "low";
@@ -45,16 +51,6 @@ function getPriorityLabel(level: PriorityLevel): string {
   return labels[level];
 }
 
-function getPriorityColor(level: PriorityLevel): { bg: string; color: string } {
-  const colors: Record<PriorityLevel, { bg: string; color: string }> = {
-    critical: { bg: "#dc2626", color: "#ffffff" },
-    high: { bg: "#ea580c", color: "#ffffff" },
-    normal: { bg: "#ca8a04", color: "#ffffff" },
-    low: { bg: "#16a34a", color: "#ffffff" },
-  };
-  return colors[level];
-}
-
 type CargasPageProps = {
   user: SessionUser;
 };
@@ -77,7 +73,7 @@ async function fetchCargas() {
   }
 }
 
-export default function CargasPage({ user }: CargasPageProps) {
+export default function CargasPage({ user: _user }: CargasPageProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [pagination, setPagination] = useState({ limit: 16, offset: 0 });
@@ -97,7 +93,7 @@ export default function CargasPage({ user }: CargasPageProps) {
   });
 
   const cargas = data?.cargas || [];
-  const total = data?.total || 0;
+  const _total = data?.total || 0;
 
   // Filter cargas based on search and priority
   const filteredCargas = useMemo(() => {
@@ -206,42 +202,49 @@ export default function CargasPage({ user }: CargasPageProps) {
 
       {/* Search and Filter Bar */}
       <motion.div
-        className="card search-bar"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.22 }}
       >
-        <div className="search-controls">
-          <div className="search-input-wrapper">
-            <Search size={18} className="search-icon" />
-            <input
-              type="text"
-              className="input search-input"
-              placeholder="Buscar por viagem, origem, destino, produto..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              {/* Search Input */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Buscar por viagem, origem, destino, produto..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
 
-          <div className="filter-buttons">
-            <Filter size={16} className="filter-icon" />
-            {priorities.map((p) => (
-              <button
-                key={p.value}
-                className={`filter-button ${priorityFilter === p.value ? "active" : ""}`}
-                onClick={() => setPriorityFilter(p.value)}
-                aria-pressed={priorityFilter === p.value}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
+              {/* Filter Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                {priorities.map((p) => (
+                  <Button
+                    key={p.value}
+                    variant={priorityFilter === p.value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setPriorityFilter(p.value)}
+                    aria-pressed={priorityFilter === p.value}
+                  >
+                    {p.label}
+                  </Button>
+                ))}
+              </div>
 
-          <button className="button export-button" onClick={handleExport}>
-            <Download size={16} />
-            Exportar CSV
-          </button>
-        </div>
+              {/* Export Button */}
+              <Button onClick={handleExport} className="gap-2">
+                <Download className="h-4 w-4" />
+                Exportar CSV
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </motion.div>
 
       {/* Error State */}
@@ -255,9 +258,11 @@ export default function CargasPage({ user }: CargasPageProps) {
 
       {/* Loading State */}
       {isLoading && !error && (
-        <div className="card">
-          <TableSkeleton rows={8} columns={6} />
-        </div>
+        <Card>
+          <CardContent className="p-6">
+            <TableSkeleton rows={8} columns={6} />
+          </CardContent>
+        </Card>
       )}
 
       {/* Empty State */}
@@ -276,93 +281,100 @@ export default function CargasPage({ user }: CargasPageProps) {
       {/* Table */}
       {!isLoading && !error && filteredCargas.length > 0 && (
         <motion.div
-          className="card"
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.28, delay: 0.08 }}
         >
-          <div className="table-header">
-            <h3>Cargas</h3>
-            <span className="muted">
-              Exibindo {showingStart}-{showingEnd} de {filteredCargas.length}
-            </span>
-          </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Cargas</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Exibindo {showingStart}-{showingEnd} de{" "}
+                  {filteredCargas.length}
+                </p>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Viagem</TableHead>
+                    <TableHead>Origem</TableHead>
+                    <TableHead>Destino</TableHead>
+                    <TableHead>Produto</TableHead>
+                    <TableHead>Equipamento</TableHead>
+                    <TableHead>Prioridade</TableHead>
+                    <TableHead>Previsão</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedCargas.map((carga: CargaRecord) => {
+                    const priority = getPriorityLevel(carga.prev_coleta);
+                    return (
+                      <TableRow key={carga.id_viagem}>
+                        <TableCell className="font-medium">
+                          {carga.id_viagem}
+                        </TableCell>
+                        <TableCell>{carga.origem || "N/A"}</TableCell>
+                        <TableCell>{carga.destino || "N/A"}</TableCell>
+                        <TableCell>{carga.produto || "N/A"}</TableCell>
+                        <TableCell>{carga.equipamento || "N/A"}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              priority === "critical"
+                                ? "destructive"
+                                : priority === "high"
+                                  ? "default"
+                                  : "secondary"
+                            }
+                          >
+                            {getPriorityLabel(priority)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{formatDateBR(carga.prev_coleta)}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
 
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Viagem</th>
-                  <th>Origem</th>
-                  <th>Destino</th>
-                  <th>Produto</th>
-                  <th>Equipamento</th>
-                  <th>Prioridade</th>
-                  <th>Previsão</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedCargas.map((carga: CargaRecord) => {
-                  const priority = getPriorityLevel(carga.prev_coleta);
-                  const colors = getPriorityColor(priority);
-                  return (
-                    <tr key={carga.id_viagem}>
-                      <td className="cell-num">{carga.id_viagem}</td>
-                      <td>{carga.origem || "N/A"}</td>
-                      <td>{carga.destino || "N/A"}</td>
-                      <td>{carga.produto || "N/A"}</td>
-                      <td>{carga.equipamento || "N/A"}</td>
-                      <td>
-                        <span
-                          className="priority-pill"
-                          style={{
-                            backgroundColor: colors.bg,
-                            color: colors.color,
-                          }}
-                        >
-                          {getPriorityLabel(priority)}
-                        </span>
-                      </td>
-                      <td className="cell-num">
-                        {formatDateBR(carga.prev_coleta)}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="pagination-controls">
-            <button
-              className="button secondary"
-              disabled={pagination.offset === 0}
-              onClick={() =>
-                setPagination((p) => ({
-                  ...p,
-                  offset: Math.max(0, p.offset - p.limit),
-                }))
-              }
-            >
-              Anterior
-            </button>
-            <span className="pagination-info">
-              Página {Math.floor(pagination.offset / pagination.limit) + 1} de{" "}
-              {Math.ceil(filteredCargas.length / pagination.limit)}
-            </span>
-            <button
-              className="button secondary"
-              disabled={
-                pagination.offset + pagination.limit >= filteredCargas.length
-              }
-              onClick={() =>
-                setPagination((p) => ({ ...p, offset: p.offset + p.limit }))
-              }
-            >
-              Próxima
-            </button>
-          </div>
+              {/* Pagination */}
+              <div className="flex items-center justify-between mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pagination.offset === 0}
+                  onClick={() =>
+                    setPagination((p) => ({
+                      ...p,
+                      offset: Math.max(0, p.offset - p.limit),
+                    }))
+                  }
+                >
+                  Anterior
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Página {Math.floor(pagination.offset / pagination.limit) + 1}{" "}
+                  de {Math.ceil(filteredCargas.length / pagination.limit)}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={
+                    pagination.offset + pagination.limit >=
+                    filteredCargas.length
+                  }
+                  onClick={() =>
+                    setPagination((p) => ({ ...p, offset: p.offset + p.limit }))
+                  }
+                >
+                  Próxima
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
       )}
     </Layout>
