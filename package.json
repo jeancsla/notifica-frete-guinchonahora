@@ -138,7 +138,7 @@
     "postcss": "^8.5.8",
     "prettier": "^3.7.4",
     "secretlint": "^11.3.1",
-    "tailwindcss": "^4.2.1",
+    "tailwindcss": "3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.9.3"
   },
