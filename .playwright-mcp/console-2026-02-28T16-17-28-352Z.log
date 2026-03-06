@@ -1,0 +1,17 @@
+[   58420ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=true&notified=false&sortBy=prev_coleta&sortOrder=DESC:0
+[   60439ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=true&notified=false&sortBy=prev_coleta&sortOrder=DESC:0
+[   66456ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=true&notified=false&sortBy=prev_coleta&sortOrder=DESC:0
+[  263780ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=16&offset=0&includeTotal=false:0
+[  267798ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=16&offset=0&includeTotal=false:0
+[  274361ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=20&offset=0&includeTotal=false:0
+[  278374ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=20&offset=0&includeTotal=false:0
+[  282387ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=20&offset=0&includeTotal=false:0
+[  285615ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/status:0
+[  287633ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/status:0
+[  291649ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/status:0
+[  328159ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=false:0
+[  328206ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/status:0
+[  330174ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=false:0
+[  330226ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/status:0
+[  337148ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=false:0
+[  337200ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/status:0
