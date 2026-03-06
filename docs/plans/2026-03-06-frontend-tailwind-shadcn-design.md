@@ -54,11 +54,9 @@ Complete frontend migration from custom CSS to Tailwind CSS + shadcn/ui with a c
 
 ```css
 /* Current to migrate */
---bg: #0d0f14 → background (light mode: white/zinc-50)
---bg-2: #151a23 → muted (zinc-100)
---ink: #f6f6f4 → foreground (zinc-900)
---accent: #ff7a00 → primary (custom orange)
---danger: #ff4d5a → destructive (red)
+--bg: #0d0f14 → background (light mode: white/zinc-50) --bg-2: #151a23 → muted
+  (zinc-100) --ink: #f6f6f4 → foreground (zinc-900) --accent: #ff7a00 → primary
+  (custom orange) --danger: #ff4d5a → destructive (red);
 ```
 
 ## Migration Strategy
@@ -73,6 +71,7 @@ Complete frontend migration from custom CSS to Tailwind CSS + shadcn/ui with a c
 ## Feature Preservation
 
 All features to be preserved:
+
 - Dashboard stats display
 - Cargas table with search/filter/sort
 - Pagination

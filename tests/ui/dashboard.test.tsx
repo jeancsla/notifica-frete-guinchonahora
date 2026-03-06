@@ -29,6 +29,121 @@ jest.mock("lib/api", () => ({
   fetchCargas: jest.fn(),
 }));
 
+jest.mock("@/lib/utils", () => ({
+  cn: (...inputs: (string | undefined | null | false)[]) =>
+    inputs.filter(Boolean).join(" "),
+}));
+
+// Mock shadcn/ui components to avoid path resolution issues
+jest.mock("@/components/ui/card", () => ({
+  Card: ({
+    children,
+    className,
+  }: {
+    children: ReactNode;
+    className?: string;
+  }) => <div className={className}>{children}</div>,
+  CardContent: ({
+    children,
+    className,
+  }: {
+    children: ReactNode;
+    className?: string;
+  }) => <div className={className}>{children}</div>,
+  CardHeader: ({
+    children,
+    className,
+  }: {
+    children: ReactNode;
+    className?: string;
+  }) => <div className={className}>{children}</div>,
+  CardTitle: ({
+    children,
+    className,
+  }: {
+    children: ReactNode;
+    className?: string;
+  }) => <div className={className}>{children}</div>,
+}));
+
+jest.mock("@/components/ui/table", () => ({
+  Table: ({ children }: { children: ReactNode }) => <table>{children}</table>,
+  TableBody: ({ children }: { children: ReactNode }) => (
+    <tbody>{children}</tbody>
+  ),
+  TableCell: ({
+    children,
+    className,
+  }: {
+    children: ReactNode;
+    className?: string;
+  }) => <td className={className}>{children}</td>,
+  TableHead: ({
+    children,
+    className,
+  }: {
+    children: ReactNode;
+    className?: string;
+  }) => <th className={className}>{children}</th>,
+  TableHeader: ({ children }: { children: ReactNode }) => (
+    <thead>{children}</thead>
+  ),
+  TableRow: ({
+    children,
+    className,
+    onClick,
+  }: {
+    children: ReactNode;
+    className?: string;
+    onClick?: () => void;
+  }) => (
+    <tr className={className} onClick={onClick}>
+      {children}
+    </tr>
+  ),
+}));
+
+jest.mock("@/components/ui/button", () => ({
+  Button: ({
+    children,
+    onClick,
+    disabled,
+    variant,
+    size,
+  }: {
+    children: ReactNode;
+    onClick?: () => void;
+    disabled?: boolean;
+    variant?: string;
+    size?: string;
+  }) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      data-variant={variant}
+      data-size={size}
+    >
+      {children}
+    </button>
+  ),
+}));
+
+jest.mock("@/components/ui/badge", () => ({
+  Badge: ({
+    children,
+    variant,
+    className,
+  }: {
+    children: ReactNode;
+    variant?: string;
+    className?: string;
+  }) => (
+    <span className={className} data-variant={variant}>
+      {children}
+    </span>
+  ),
+}));
+
 describe("Dashboard page", () => {
   const fetchCargasMock = asMock(fetchCargas);
   const renderDashboard = (props: { allowMigrations: boolean }) =>

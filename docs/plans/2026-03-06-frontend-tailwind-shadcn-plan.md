@@ -13,6 +13,7 @@
 ## Task 1: Install and Configure Tailwind CSS
 
 **Files:**
+
 - Modify: `package.json`
 - Create: `tailwind.config.ts`
 - Create: `postcss.config.mjs`
@@ -21,6 +22,7 @@
 **Step 1: Install Tailwind CSS dependencies**
 
 Run:
+
 ```bash
 bun add -D tailwindcss postcss autoprefixer
 bunx tailwindcss init -p
@@ -112,6 +114,7 @@ export default config;
 **Step 3: Install tailwindcss-animate**
 
 Run:
+
 ```bash
 bun add -D tailwindcss-animate
 ```
@@ -119,6 +122,7 @@ bun add -D tailwindcss-animate
 **Step 4: Replace global.css with Tailwind directives**
 
 Create new `styles/globals.css`:
+
 ```css
 @tailwind base;
 @tailwind components;
@@ -184,6 +188,7 @@ Create new `styles/globals.css`:
 **Step 5: Commit**
 
 Run:
+
 ```bash
 git add package.json tailwind.config.ts postcss.config.mjs styles/globals.css
 git commit -m "feat(ui): add Tailwind CSS configuration"
@@ -194,6 +199,7 @@ git commit -m "feat(ui): add Tailwind CSS configuration"
 ## Task 2: Initialize shadcn/ui
 
 **Files:**
+
 - Create: `components.json`
 - Create: `lib/utils.ts`
 - Create: `components/ui/` (multiple component files)
@@ -227,17 +233,18 @@ git commit -m "feat(ui): add Tailwind CSS configuration"
 **Step 2: Create lib/utils.ts**
 
 ```typescript
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 ```
 
 **Step 3: Install shadcn dependencies**
 
 Run:
+
 ```bash
 bun add clsx tailwind-merge class-variance-authority @radix-ui/react-slot @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-select @radix-ui/react-tabs @radix-ui/react-toast @radix-ui/react-label @radix-ui/react-checkbox @radix-ui/react-switch @radix-ui/react-scroll-area
 ```
@@ -245,6 +252,7 @@ bun add clsx tailwind-merge class-variance-authority @radix-ui/react-slot @radix
 **Step 4: Create base UI components**
 
 Create these files using shadcn/ui patterns:
+
 - `components/ui/button.tsx`
 - `components/ui/input.tsx`
 - `components/ui/card.tsx`
@@ -261,6 +269,7 @@ Create these files using shadcn/ui patterns:
 **Step 5: Commit**
 
 Run:
+
 ```bash
 git add components.json lib/utils.ts components/ui/
 git commit -m "feat(ui): initialize shadcn/ui components"
@@ -271,12 +280,14 @@ git commit -m "feat(ui): initialize shadcn/ui components"
 ## Task 3: Create App Layout with Tailwind
 
 **Files:**
+
 - Modify: `components/Layout.tsx`
 - Modify: `components/BottomNav.tsx`
 
 **Step 1: Update Layout.tsx with Tailwind classes**
 
 Replace existing styles with Tailwind utility classes. Keep the same structure but use:
+
 - `min-h-screen` for body
 - `container mx-auto px-4` for main content
 - `flex flex-col min-h-screen` for layout structure
@@ -291,6 +302,7 @@ Replace existing styles with Tailwind utility classes. Keep the same structure b
 **Step 3: Commit**
 
 Run:
+
 ```bash
 git add components/Layout.tsx components/BottomNav.tsx
 git commit -m "feat(ui): migrate Layout and BottomNav to Tailwind"
@@ -301,12 +313,14 @@ git commit -m "feat(ui): migrate Layout and BottomNav to Tailwind"
 ## Task 4: Migrate Dashboard Page
 
 **Files:**
+
 - Modify: `pages/dashboard.tsx`
 - Modify: `pages/_app.tsx` (update global styles import)
 
 **Step 1: Replace custom CSS with Tailwind in dashboard.tsx**
 
 Key changes:
+
 - Card components → use `Card`, `CardHeader`, `CardContent` from ui/
 - Stats display → use Tailwind grid `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4`
 - Table → use shadcn `Table`, `TableHeader`, `TableRow`, `TableCell`
@@ -320,6 +334,7 @@ Replace custom components with shadcn equivalents where applicable.
 **Step 3: Run tests**
 
 Run:
+
 ```bash
 bun run test:ui
 ```
@@ -329,6 +344,7 @@ Expected: All UI tests pass
 **Step 4: Commit**
 
 Run:
+
 ```bash
 git add pages/dashboard.tsx
 git commit -m "feat(ui): migrate Dashboard to Tailwind + shadcn"
@@ -339,6 +355,7 @@ git commit -m "feat(ui): migrate Dashboard to Tailwind + shadcn"
 ## Task 5: Migrate Cargas Page (Complex)
 
 **Files:**
+
 - Modify: `pages/cargas.tsx`
 - Modify: `components/EmptyState.tsx`
 - Modify: `components/ErrorState.tsx`
@@ -346,6 +363,7 @@ git commit -m "feat(ui): migrate Dashboard to Tailwind + shadcn"
 **Step 1: Update CargasPage with Tailwind**
 
 Key components:
+
 - Search input → use shadcn `Input` with icon
 - Filter buttons → use shadcn `Button` variants
 - Table → use shadcn `Table` components
@@ -359,6 +377,7 @@ Manual test in browser - verify search and filter work correctly.
 **Step 3: Commit**
 
 Run:
+
 ```bash
 git add pages/cargas.tsx components/EmptyState.tsx components/ErrorState.tsx
 git commit -m "feat(ui): migrate Cargas page to Tailwind + shadcn"
@@ -369,6 +388,7 @@ git commit -m "feat(ui): migrate Cargas page to Tailwind + shadcn"
 ## Task 6: Migrate Details Page
 
 **Files:**
+
 - Modify: `pages/details.tsx`
 
 **Step 1: Update DetailsPage with Tailwind**
@@ -385,6 +405,7 @@ Manual test - verify all carga details display correctly.
 **Step 3: Commit**
 
 Run:
+
 ```bash
 git add pages/details.tsx
 git commit -m "feat(ui): migrate Details page to Tailwind + shadcn"
@@ -395,6 +416,7 @@ git commit -m "feat(ui): migrate Details page to Tailwind + shadcn"
 ## Task 7: Migrate Remaining Pages
 
 **Files:**
+
 - Modify: `pages/activity.tsx`
 - Modify: `pages/table.tsx`
 - Modify: `pages/profile.tsx`
@@ -405,6 +427,7 @@ git commit -m "feat(ui): migrate Details page to Tailwind + shadcn"
 **Step 1: Migrate each page**
 
 Apply Tailwind + shadcn patterns to each page:
+
 - Activity: List items with Card, Badge for status
 - Table: Full-width Table component
 - Profile: Card-based form layout
@@ -419,6 +442,7 @@ Run app and navigate to each page to verify layout.
 **Step 3: Commit**
 
 Run:
+
 ```bash
 git add pages/activity.tsx pages/table.tsx pages/profile.tsx pages/settings.tsx pages/status.tsx pages/login.tsx
 git commit -m "feat(ui): migrate remaining pages to Tailwind + shadcn"
@@ -429,6 +453,7 @@ git commit -m "feat(ui): migrate remaining pages to Tailwind + shadcn"
 ## Task 8: Polish and Responsive Testing
 
 **Files:**
+
 - Modify: Any pages needing adjustments
 - Create: Custom Tailwind utilities if needed
 
@@ -448,6 +473,7 @@ git commit -m "feat(ui): migrate remaining pages to Tailwind + shadcn"
 **Step 3: Run all tests**
 
 Run:
+
 ```bash
 bun run test
 ```
@@ -457,6 +483,7 @@ Expected: All tests pass
 **Step 4: Commit**
 
 Run:
+
 ```bash
 git add .
 git commit -m "feat(ui): polish UI with responsive fixes and animations"
