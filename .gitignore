@@ -16,3 +16,4 @@ IMPLEMENTATION_SUMMARY.md
 *.local
 tsconfig.tsbuildinfo
 next-dev.d.ts
+.worktrees/

@@ -55,26 +55,34 @@ export default function Layout({
   );
 
   return (
-    <div className="app-shell">
+    <div className="grid min-h-screen grid-cols-[260px_1fr] max-lg:grid-cols-1 max-lg:pb-16">
       <Head>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
       </Head>
-      <a className="skip-link" href="#main-content">
+      <a
+        className="absolute left-3 top-[-48px] z-[500] rounded-xl bg-[#f6f3ea] px-3.5 py-2.5 text-sm font-bold text-[#0a0d13] transition-all hover:top-3 focus:top-3"
+        href="#main-content"
+      >
         Pular para conteudo principal
       </a>
-      <aside className="sidebar">
-        <div className="brand">
-          <strong>Guincho Na Hora</strong>
-          <span>Fretes & cargas em tempo real</span>
+      <aside className="flex min-w-0 flex-col gap-6 border-r border-white/[0.08] bg-[rgba(14,19,27,0.7)] p-6 backdrop-blur-[16px] max-lg:hidden">
+        <div className="flex flex-col gap-2">
+          <strong className="text-lg tracking-tight">Guincho Na Hora</strong>
+          <span className="text-xs text-[#a7afbe]">
+            Fretes & cargas em tempo real
+          </span>
         </div>
-        <nav className="nav" aria-label="Navegação principal">
+        <nav
+          className="flex min-w-0 flex-col gap-2.5"
+          aria-label="Navegação principal"
+        >
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               prefetch={false}
-              className={router.pathname === item.href ? "active" : ""}
+              className={`flex items-center justify-between rounded-xl border border-transparent px-3.5 py-2.5 font-medium text-[#a7afbe] transition-all duration-200 hover:bg-[#151a23] hover:text-[#f6f3ea] hover:shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-[#2b3445] ${router.pathname === item.href ? "bg-[#151a23] text-[#f6f3ea] border-[#2b3445] shadow-[0_10px_40px_rgba(0,0,0,0.35)]" : ""}`}
               onMouseEnter={() => prefetchRoute(item.href)}
               onFocus={() => prefetchRoute(item.href)}
             >
@@ -84,23 +92,31 @@ export default function Layout({
           ))}
         </nav>
       </aside>
-      <main id="main-content" className="main">
+      <main id="main-content" className="min-w-0 p-8 max-md:p-4">
         <AnimatePresence mode="wait">
           <motion.div
             key={router.asPath}
-            className="content page-transition"
+            className="mx-auto w-full max-w-[1200px]"
             initial={reducedMotion ? false : { opacity: 0, y: 8 }}
             animate={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
             exit={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
             transition={{ duration: 0.22, ease: "easeOut" }}
           >
-            <header className="topbar">
+            <header className="mb-7 flex items-center justify-between gap-4 max-md:mb-5 max-md:flex-col max-md:items-start">
               <div>
-                <div className="chip">Operacional</div>
-                <h1>{title}</h1>
-                {subtitle ? <p className="muted">{subtitle}</p> : null}
+                <div className="inline-flex items-center rounded-full bg-[rgba(255,122,0,0.15)] px-3 py-1.5 text-xs font-semibold uppercase tracking-wider text-[#ff7a00]">
+                  Operacional
+                </div>
+                <h1 className="text-3xl font-bold tracking-tight max-md:text-2xl">
+                  {title}
+                </h1>
+                {subtitle ? (
+                  <p className="mt-1 text-[#a7afbe]">{subtitle}</p>
+                ) : null}
               </div>
-              <div className="topbar-actions">{actions}</div>
+              <div className="flex flex-wrap justify-end gap-3 max-md:w-full max-md:justify-start">
+                {actions}
+              </div>
             </header>
             {children}
           </motion.div>

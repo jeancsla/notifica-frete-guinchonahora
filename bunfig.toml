@@ -1,3 +1,8 @@
 [test]
 preload = ["./tests/bun.setup.ts"]
 timeout = 60000
+
+# Path aliases for Bun module resolution - must list each exact import
+[import]
+# Map @/lib/utils to the actual file path (exact match required)
+"@/lib/utils" = "./lib/utils.ts"

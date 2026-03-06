@@ -863,3 +863,206 @@ a {
 .detail-badge {
   justify-self: flex-start;
 }
+
+/* Search and Filter Bar Styles */
+.search-bar {
+  margin-bottom: 24px;
+}
+
+.search-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.search-input-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.search-input {
+  padding-left: 40px;
+  width: 100%;
+}
+
+.filter-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-icon {
+  color: var(--muted);
+  margin-right: 4px;
+}
+
+.filter-button {
+  padding: 8px 16px;
+  border: 1px solid var(--stroke);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.filter-button.active {
+  background: rgba(255, 122, 0, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.export-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.table-header h3 {
+  margin: 0;
+}
+
+.pagination-info {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+/* Priority Pills */
+.priority-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .search-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-input-wrapper {
+    max-width: none;
+  }
+
+  .filter-buttons {
+    justify-content: flex-start;
+  }
+
+  .export-button {
+    margin-left: 0;
+    justify-content: center;
+  }
+}
+
+/* Mobile Card View for Cargas */
+@media (max-width: 768px) {
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .table th:nth-child(5),
+  .table td:nth-child(5) {
+    display: none; /* Hide equipment on mobile */
+  }
+}
+
+/* Empty State Styles */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  color: var(--muted);
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-state-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.empty-state-description {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  max-width: 300px;
+}
+
+/* Error State Styles */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+  background: rgba(255, 77, 90, 0.05);
+  border: 1px solid rgba(255, 77, 90, 0.2);
+  border-radius: 12px;
+}
+
+.error-state-icon {
+  color: var(--danger);
+  margin-bottom: 16px;
+}
+
+.error-state-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+
+.error-state-message {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  max-width: 300px;
+}
+
+.error-state .button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

@@ -1,0 +1,291 @@
+[     101ms] [ERROR] ./pages/cargas.tsx:16:1
+Module not found: Can't resolve '../components/EmptyState'
+  14 | import Layout from "../components/Layout";
+  15 | import Toast from "../components/Toast";
+> 16 | import { EmptyState } from "../components/EmptyState";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  17 | import { ErrorState } from "../components/ErrorState";
+  18 | import {
+  19 |   StatCardSkeleton,
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[     101ms] [ERROR] ./pages/cargas.tsx:17:1
+Module not found: Can't resolve '../components/ErrorState'
+  15 | import Toast from "../components/Toast";
+  16 | import { EmptyState } from "../components/EmptyState";
+> 17 | import { ErrorState } from "../components/ErrorState";
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  18 | import {
+  19 |   StatCardSkeleton,
+  20 |   TableSkeleton,
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[     101ms] [ERROR] ./pages/cargas.tsx:5:1
+Module not found: Can't resolve 'lucide-react'
+   3 | import useSWR from "swr";
+   4 | import { motion } from "framer-motion";
+>  5 | import {
+     | ^^^^^^^^
+>  6 |   Search,
+     | ^^^^^^^^^
+>  7 |   Download,
+     | ^^^^^^^^^
+>  8 |   Package,
+     | ^^^^^^^^^
+>  9 |   AlertCircle,
+     | ^^^^^^^^^
+> 10 |   RefreshCw,
+     | ^^^^^^^^^
+> 11 |   Filter,
+     | ^^^^^^^^^
+> 12 | } from "lucide-react";
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+  13 | import type { CargaRecord } from "@notifica/shared/types";
+  14 | import Layout from "../components/Layout";
+  15 | import Toast from "../components/Toast";
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[     196ms] [ERROR] ./components/ErrorState.tsx:1:1
+Module not found: Can't resolve 'lucide-react'
+> 1 | import { AlertCircle, RefreshCw } from "lucide-react";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | interface ErrorStateProps {
+  4 |   title?: string;
+
+Import traces:
+  Browser:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+  SSR:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[     197ms] [ERROR] ./pages/cargas.tsx:5:1
+Module not found: Can't resolve 'lucide-react'
+   3 | import useSWR from "swr";
+   4 | import { motion } from "framer-motion";
+>  5 | import {
+     | ^^^^^^^^
+>  6 |   Search,
+     | ^^^^^^^^^
+>  7 |   Download,
+     | ^^^^^^^^^
+>  8 |   Package,
+     | ^^^^^^^^^
+>  9 |   AlertCircle,
+     | ^^^^^^^^^
+> 10 |   RefreshCw,
+     | ^^^^^^^^^
+> 11 |   Filter,
+     | ^^^^^^^^^
+> 12 | } from "lucide-react";
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+  13 | import type { CargaRecord } from "@notifica/shared/types";
+  14 | import Layout from "../components/Layout";
+  15 | import Toast from "../components/Toast";
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[     307ms] [ERROR] ./components/ErrorState.tsx:1:1
+Module not found: Can't resolve 'lucide-react'
+> 1 | import { AlertCircle, RefreshCw } from "lucide-react";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | interface ErrorStateProps {
+  4 |   title?: string;
+
+Import traces:
+  Browser:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+  SSR:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[     307ms] [ERROR] ./pages/cargas.tsx:5:1
+Module not found: Can't resolve 'lucide-react'
+   3 | import useSWR from "swr";
+   4 | import { motion } from "framer-motion";
+>  5 | import {
+     | ^^^^^^^^
+>  6 |   Search,
+     | ^^^^^^^^^
+>  7 |   Download,
+     | ^^^^^^^^^
+>  8 |   Package,
+     | ^^^^^^^^^
+>  9 |   AlertCircle,
+     | ^^^^^^^^^
+> 10 |   RefreshCw,
+     | ^^^^^^^^^
+> 11 |   Filter,
+     | ^^^^^^^^^
+> 12 | } from "lucide-react";
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+  13 | import type { CargaRecord } from "@notifica/shared/types";
+  14 | import Layout from "../components/Layout";
+  15 | import Toast from "../components/Toast";
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[     316ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/cargas:0
+[    1607ms] Error: ./components/ErrorState.tsx:1:1
+Module not found: Can't resolve 'lucide-react'
+> 1 | import { AlertCircle, RefreshCw } from "lucide-react";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | interface ErrorStateProps {
+  4 |   title?: string;
+
+
+
+Import traces:
+  Browser:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+  SSR:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+    at getCompilationErrors (file:///home/jeancsla/notifica-frete-guinchonahora/node_modules/.bun/next@16.1.6+1defbf50baff6439/node_modules/next/dist/server/dev/hot-reloader-turbopack.js:1008:63)
+    at getCompilationError (file:///home/jeancsla/notifica-frete-guinchonahora/node_modules/.bun/next@16.1.6+1defbf50baff6439/node_modules/next/dist/server/lib/dev-bundler-service.js:44:55)
+    at getCompilationError (file:///home/jeancsla/notifica-frete-guinchonahora/node_modules/.bun/next@16.1.6+1defbf50baff6439/node_modules/next/dist/server/dev/next-dev-server.js:706:42)
+    at findPageComponents (file:///home/jeancsla/notifica-frete-guinchonahora/node_modules/.bun/next@16.1.6+1defbf50baff6439/node_modules/next/dist/server/dev/next-dev-server.js:676:43)
+    at async renderErrorToResponseImpl (file:///home/jeancsla/notifica-frete-guinchonahora/node_modules/.bun/next@16.1.6+1defbf50baff6439/node_modules/next/dist/server/base-server.js:1733:37)
+    at processTicksAndRejections (unknown:7:39)
+[    1782ms] [ERROR] ./components/ErrorState.tsx:1:1
+Module not found: Can't resolve 'lucide-react'
+> 1 | import { AlertCircle, RefreshCw } from "lucide-react";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | interface ErrorStateProps {
+  4 |   title?: string;
+
+Import traces:
+  Browser:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+  SSR:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[    1783ms] [ERROR] ./pages/cargas.tsx:5:1
+Module not found: Can't resolve 'lucide-react'
+   3 | import useSWR from "swr";
+   4 | import { motion } from "framer-motion";
+>  5 | import {
+     | ^^^^^^^^
+>  6 |   Search,
+     | ^^^^^^^^^
+>  7 |   Download,
+     | ^^^^^^^^^
+>  8 |   Package,
+     | ^^^^^^^^^
+>  9 |   AlertCircle,
+     | ^^^^^^^^^
+> 10 |   RefreshCw,
+     | ^^^^^^^^^
+> 11 |   Filter,
+     | ^^^^^^^^^
+> 12 | } from "lucide-react";
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+  13 | import type { CargaRecord } from "@notifica/shared/types";
+  14 | import Layout from "../components/Layout";
+  15 | import Toast from "../components/Toast";
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[    1819ms] [ERROR] ./components/ErrorState.tsx:1:1
+Module not found: Can't resolve 'lucide-react'
+> 1 | import { AlertCircle, RefreshCw } from "lucide-react";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | interface ErrorStateProps {
+  4 |   title?: string;
+
+Import traces:
+  Browser:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+  SSR:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[    1819ms] [ERROR] ./pages/cargas.tsx:5:1
+Module not found: Can't resolve 'lucide-react'
+   3 | import useSWR from "swr";
+   4 | import { motion } from "framer-motion";
+>  5 | import {
+     | ^^^^^^^^
+>  6 |   Search,
+     | ^^^^^^^^^
+>  7 |   Download,
+     | ^^^^^^^^^
+>  8 |   Package,
+     | ^^^^^^^^^
+>  9 |   AlertCircle,
+     | ^^^^^^^^^
+> 10 |   RefreshCw,
+     | ^^^^^^^^^
+> 11 |   Filter,
+     | ^^^^^^^^^
+> 12 | } from "lucide-react";
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+  13 | import type { CargaRecord } from "@notifica/shared/types";
+  14 | import Layout from "../components/Layout";
+  15 | import Toast from "../components/Toast";
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[    1827ms] [ERROR] ./components/ErrorState.tsx:1:1
+Module not found: Can't resolve 'lucide-react'
+> 1 | import { AlertCircle, RefreshCw } from "lucide-react";
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  2 |
+  3 | interface ErrorStateProps {
+  4 |   title?: string;
+
+Import traces:
+  Browser:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+  SSR:
+    ./components/ErrorState.tsx
+    ./pages/cargas.tsx
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074
+[    1828ms] [ERROR] ./pages/cargas.tsx:5:1
+Module not found: Can't resolve 'lucide-react'
+   3 | import useSWR from "swr";
+   4 | import { motion } from "framer-motion";
+>  5 | import {
+     | ^^^^^^^^
+>  6 |   Search,
+     | ^^^^^^^^^
+>  7 |   Download,
+     | ^^^^^^^^^
+>  8 |   Package,
+     | ^^^^^^^^^
+>  9 |   AlertCircle,
+     | ^^^^^^^^^
+> 10 |   RefreshCw,
+     | ^^^^^^^^^
+> 11 |   Filter,
+     | ^^^^^^^^^
+> 12 | } from "lucide-react";
+     | ^^^^^^^^^^^^^^^^^^^^^^^
+  13 | import type { CargaRecord } from "@notifica/shared/types";
+  14 | import Layout from "../components/Layout";
+  15 | import Toast from "../components/Toast";
+
+https://nextjs.org/docs/messages/module-not-found @ http://localhost:3000/_next/static/chunks/8283b_next_dist_507b7e7c._.js:2074

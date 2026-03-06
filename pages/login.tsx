@@ -4,6 +4,17 @@ import { useRouter } from "next/router";
 import Layout from "../components/Layout";
 import { LoadingButton, Spinner } from "../components/LoadingUI";
 
+// shadcn/ui components
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -38,66 +49,70 @@ export default function Login() {
 
   return (
     <Layout title="Login" subtitle="Autentique-se para gerenciar cargas.">
-      <div
-        className={`card login-card${loading ? " soft-loading" : ""}`}
-        style={{ maxWidth: "400px", margin: "40px auto" }}
-        aria-busy={loading ? "true" : "false"}
-      >
-        <form
-          onSubmit={handleSubmit}
-          className="flex-column"
-          style={{ gap: "16px" }}
+      <div className="max-w-md mx-auto mt-10">
+        <Card
+          className={loading ? "opacity-90 transition-opacity" : ""}
+          aria-busy={loading ? "true" : "false"}
         >
-          <fieldset
-            className="login-fields"
-            disabled={loading}
-            aria-disabled={loading ? "true" : "false"}
-          >
-            <div className="flex-column" style={{ gap: "8px" }}>
-              <label htmlFor="username">Usuário</label>
-              <input
-                id="username"
-                type="text"
-                className="input"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
-            <div className="flex-column" style={{ gap: "8px" }}>
-              <label htmlFor="password">Senha</label>
-              <input
-                id="password"
-                type="password"
-                className="input"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-          </fieldset>
-          {error && (
-            <div className="error-message" style={{ color: "var(--danger)" }}>
-              {error}
-            </div>
-          )}
-          {loading ? (
-            <div className="refresh-status" role="status" aria-live="polite">
-              <Spinner className="refresh-status-spinner" />
-              Verificando credenciais...
-            </div>
-          ) : null}
-          <LoadingButton
-            type="submit"
-            className="button"
-            loading={loading}
-            loadingLabel="Entrando..."
-            style={{ marginTop: "8px" }}
-          >
-            Entrar
-          </LoadingButton>
-        </form>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl text-center">Login</CardTitle>
+            <CardDescription className="text-center">
+              Entre com suas credenciais para acessar o sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <fieldset className="space-y-4" disabled={loading}>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Usuário</Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    autoFocus
+                    placeholder="Digite seu usuário"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Senha</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Digite sua senha"
+                  />
+                </div>
+              </fieldset>
+              {error && (
+                <div className="text-sm text-destructive font-medium">
+                  {error}
+                </div>
+              )}
+              {loading ? (
+                <div
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <Spinner className="w-4 h-4" />
+                  Verificando credenciais...
+                </div>
+              ) : null}
+              <LoadingButton
+                type="submit"
+                className="w-full inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
+                loading={loading}
+                loadingLabel="Entrando..."
+              >
+                Entrar
+              </LoadingButton>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );

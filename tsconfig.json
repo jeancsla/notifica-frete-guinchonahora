@@ -16,7 +16,11 @@
     "baseUrl": ".",
     "paths": {
       "@notifica/shared/*": ["packages/shared/src/*"],
-      "lib/*": ["lib/*"]
+      "lib/*": ["lib/*"],
+      "@/components/*": ["components/*"],
+      "@/components/ui/*": ["components/ui/*"],
+      "@/lib/utils": ["lib/utils"],
+      "@/lib/*": ["lib/*"]
     },
     "incremental": true,
     "plugins": [

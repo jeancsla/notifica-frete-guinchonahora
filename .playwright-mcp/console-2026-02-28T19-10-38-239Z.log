@@ -1,0 +1,16 @@
+[    1444ms] [WARNING] [HMR] Invalid message: {"type":"isrManifest","data":{"/dashboard":false,"/login":true}}
+TypeError: Cannot read properties of undefined (reading 'components')
+    at handleStaticIndicator (http://localhost:3000/_next/static/chunks/05a6e_next_dist_client_64f7de3c._.js:2715:46)
+    at processMessage (http://localhost:3000/_next/static/chunks/05a6e_next_dist_client_64f7de3c._.js:2729:17)
+    at http://localhost:3000/_next/static/chunks/05a6e_next_dist_client_64f7de3c._.js:2603:13
+    at WebSocket.handleMessage (http://localhost:3000/_next/static/chunks/05a6e_next_dist_client_64f7de3c._.js:2248:17) @ http://localhost:3000/_next/static/chunks/05a6e_next_dist_37be2ff1._.js:1360
+[    1657ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=true&notified=false&sortBy=prev_coleta&sortOrder=DESC:0
+[    3674ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=true&notified=false&sortBy=prev_coleta&sortOrder=DESC:0
+[   13689ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=true&notified=false&sortBy=prev_coleta&sortOrder=DESC:0
+[   48449ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=true&sortBy=prev_coleta&sortOrder=DESC:0
+[   51973ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/status:0
+[   54384ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=false:0
+[   54406ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/status:0
+[   56667ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=true&notified=false&sortBy=prev_coleta&sortOrder=DESC:0
+[   62277ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=true&notified=false&sortBy=prev_coleta&sortOrder=DESC:0
+[   72294ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/api/v1/cargas?limit=10&offset=0&includeTotal=true&notified=false&sortBy=prev_coleta&sortOrder=DESC:0
