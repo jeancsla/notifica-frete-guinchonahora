@@ -11,6 +11,7 @@ import {
 } from "../lib/rate-limit";
 import { timingSafeEqualString } from "../lib/security";
 import { LoginSchema, formatZodError } from "../lib/schemas";
+import { verifyPassword } from "../repositories/users-repository";
 
 function getAdminCredentials() {
   const username = process.env.ADMIN_USERNAME;
@@ -103,6 +104,16 @@ export async function loginHandler({
     return { message: "Too many login attempts. Try again later." };
   }
 
+  // Try to verify against database first (timing-safe password verification)
+  const dbUser = await verifyPassword(username, password);
+  if (dbUser) {
+    await clearAuthFailures(clientKey);
+    set.headers["set-cookie"] = buildSessionCookie(username);
+    log.info("auth.login.success", { username });
+    return { ok: true };
+  }
+
+  // Fallback to hardcoded admin credentials (EC-7: only in dev mode)
   let validUser = "";
   let validPassword = "";
   try {
