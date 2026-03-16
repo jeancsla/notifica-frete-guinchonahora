@@ -52,7 +52,7 @@ function getValidSortOrder(sortOrder?: string): SortOrder {
 export const cargasRepository = {
   async exists(id_viagem: string) {
     const result = await query({
-      text: "SELECT EXISTS (SELECT 1 FROM cargas WHERE id_viagem = $1);",
+      text: "SELECT EXISTS (SELECT 1 FROM notifica_frete_cargas WHERE id_viagem = $1);",
       values: [id_viagem],
     });
 
@@ -65,7 +65,7 @@ export const cargasRepository = {
     }
 
     const result = await query({
-      text: "SELECT id_viagem FROM cargas WHERE id_viagem = ANY($1);",
+      text: "SELECT id_viagem FROM notifica_frete_cargas WHERE id_viagem = ANY($1);",
       values: [idViagemList],
     });
 
@@ -77,7 +77,7 @@ export const cargasRepository = {
 
     const result = await query({
       text: `
-        INSERT INTO cargas (
+        INSERT INTO notifica_frete_cargas (
           id_viagem, tipo_transporte, origem, destino, produto,
           equipamento, prev_coleta, qtd_entregas, vr_frete, termino
         ) VALUES (
@@ -103,7 +103,7 @@ export const cargasRepository = {
 
   async markAsNotified(id_viagem: string) {
     await query({
-      text: "UPDATE cargas SET notificado_em = CURRENT_TIMESTAMP WHERE id_viagem = $1;",
+      text: "UPDATE notifica_frete_cargas SET notificado_em = CURRENT_TIMESTAMP WHERE id_viagem = $1;",
       values: [id_viagem],
     });
   },
@@ -128,7 +128,7 @@ export const cargasRepository = {
     const db = getKyselyDb();
 
     // Build query with Kysely for type safety
-    let qb = db.selectFrom("cargas").select(selectedColumns);
+    let qb = db.selectFrom("notifica_frete_cargas").select(selectedColumns);
 
     // Handle special ordering for prev_coleta column
     if (orderColumn === "prev_coleta") {
@@ -169,7 +169,7 @@ export const cargasRepository = {
 
     // Build query with Kysely for type safety
     let qb = db
-      .selectFrom("cargas")
+      .selectFrom("notifica_frete_cargas")
       .select(selectedColumns)
       .where("notificado_em", "is", null);
 
@@ -192,13 +192,13 @@ export const cargasRepository = {
 
   async countNotNotified() {
     const result = await query({
-      text: "SELECT COUNT(*) FROM cargas WHERE notificado_em IS NULL;",
+      text: "SELECT COUNT(*) FROM notifica_frete_cargas WHERE notificado_em IS NULL;",
     });
     return parseInt(String(result.rows[0]?.count ?? 0), 10);
   },
 
   async count() {
-    const result = await query("SELECT COUNT(*) FROM cargas;");
+    const result = await query("SELECT COUNT(*) FROM notifica_frete_cargas;");
     return parseInt(String(result.rows[0]?.count ?? 0), 10);
   },
 };

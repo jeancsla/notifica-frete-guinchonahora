@@ -1,7 +1,7 @@
 exports.shorthands = undefined;
 
 exports.up = (pgm) => {
-  pgm.createTable("cargas", {
+  pgm.createTable("notifica_frete_cargas", {
     id: {
       type: "serial",
       primaryKey: true,
@@ -49,5 +49,5 @@ exports.up = (pgm) => {
 };
 
 exports.down = (pgm) => {
-  pgm.dropTable("cargas");
+  pgm.dropTable("notifica_frete_cargas");
 };

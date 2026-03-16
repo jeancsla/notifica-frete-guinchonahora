@@ -167,7 +167,7 @@ E adicionar ao `env-validator.ts`.
 ```sql
 -- Adicionar trigger ou background job:
 DELETE FROM webhook_events WHERE created_at < NOW() - INTERVAL '1 hour';
-DELETE FROM audit_logs WHERE created_at < NOW() - INTERVAL '90 days';
+DELETE FROM notifica_frete_audit_logs WHERE created_at < NOW() - INTERVAL '90 days';
 ```
 Ou: particionar tabelas por mês com `pg_partman`.
 
@@ -331,12 +331,12 @@ password: z.string()
 
 ---
 
-#### 1.2.2 Criar Migration para Tabela `users` com `password_hash`
+#### 1.2.2 Criar Migration para Tabela `notifica_frete_users` com `password_hash`
 
 **Arquivo:** `infra/migrations/1772000001000_create_users_table.js`
 
 ```sql
-CREATE TABLE users (
+CREATE TABLE notifica_frete_users (
   id SERIAL PRIMARY KEY,
   username VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
@@ -344,15 +344,15 @@ CREATE TABLE users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_nf_users_username ON notifica_frete_users(username);
 ```
 
 **Tarefas:**
 - [ ] **1.2.2.1** Criar arquivo de migration
 - [ ] **1.2.2.2** Rodar migration: `bun run migration:up`
-- [ ] **1.2.2.3** Verificar tabela criada no psql: `\d users`
+- [ ] **1.2.2.3** Verificar tabela criada no psql: `\d notifica_frete_users`
 
-**Validação:** Tabela `users` existe no banco com `password_hash`
+**Validação:** Tabela `notifica_frete_users` existe no banco com `password_hash`
 
 ---
 
@@ -904,12 +904,12 @@ grep -n "Usuario=\|Senha=" apps/api/src/services/tegma-scraper.ts
 - `apps/api/src/lib/audit-logger.ts` (NOVO)
 - `infra/migrations/1772000003000_create_audit_logs_table.js` (NOVO)
 
-#### 6.1.1 Criar Migration para Tabela `audit_logs`
+#### 6.1.1 Criar Migration para Tabela `notifica_frete_audit_logs`
 
 **Arquivo:** `infra/migrations/1772000003000_create_audit_logs_table.js`
 
 ```sql
-CREATE TABLE audit_logs (
+CREATE TABLE notifica_frete_audit_logs (
   id SERIAL PRIMARY KEY,
   event VARCHAR(50) NOT NULL,
   username VARCHAR(255),
@@ -919,16 +919,16 @@ CREATE TABLE audit_logs (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
-CREATE INDEX idx_audit_logs_username ON audit_logs(username);
-CREATE INDEX idx_audit_logs_event ON audit_logs(event);
+CREATE INDEX idx_nf_audit_logs_created_at ON notifica_frete_audit_logs(created_at);
+CREATE INDEX idx_nf_audit_logs_username ON notifica_frete_audit_logs(username);
+CREATE INDEX idx_nf_audit_logs_event ON notifica_frete_audit_logs(event);
 ```
 
 **Tarefas:**
 - [ ] **6.1.1.1** Criar arquivo de migration
 - [ ] **6.1.1.2** Rodar migration: `bun run migration:up`
 
-**Validação:** Tabela `audit_logs` criada
+**Validação:** Tabela `notifica_frete_audit_logs` criada
 
 ---
 
@@ -1163,7 +1163,7 @@ bun run apps/api/src/scripts/create-admin.ts
   - [x] Bcrypt instalado
   - [x] Password hashing com salt implementado
   - [x] Validação de força de senha (12+, complexidade)
-  - [x] Tabela `users` criada
+  - [x] Tabela `notifica_frete_users` criada
   - [x] `.env.development` sem valores sensíveis
   - [x] `.env.example` com placeholders
   - [x] Secrets gerados com `openssl`
@@ -1194,7 +1194,7 @@ bun run apps/api/src/scripts/create-admin.ts
 
 - [ ] **Auditoria & Logging**
   - [x] Audit logging implementado
-  - [x] Tabela `audit_logs` criada
+  - [x] Tabela `notifica_frete_audit_logs` criada
   - [x] Login attempts registrados
   - [x] Admin actions registrados
   - [x] Error messages genéricas em produção

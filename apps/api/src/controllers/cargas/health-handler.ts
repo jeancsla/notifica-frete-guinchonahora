@@ -28,7 +28,7 @@ export async function cargasHealthHandler({
     const result = await query({
       text: `
         SELECT id_viagem, origem, destino, created_at, notificado_em
-        FROM cargas
+        FROM notifica_frete_cargas
         ORDER BY created_at DESC
         LIMIT 5
       `,
@@ -37,7 +37,7 @@ export async function cargasHealthHandler({
     const countResult = await query({
       text: `
         SELECT COUNT(*) as count
-        FROM cargas
+        FROM notifica_frete_cargas
         WHERE created_at > NOW() - INTERVAL '24 hours'
       `,
     });

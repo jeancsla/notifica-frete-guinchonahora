@@ -19,7 +19,7 @@ export interface CargasTable {
 }
 
 export interface Database {
-  cargas: CargasTable;
+  notifica_frete_cargas: CargasTable;
 }
 
 // Column names as const array for runtime validation
