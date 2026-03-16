@@ -12,13 +12,35 @@ export const PaginationSchema = z.object({
 
 export type PaginationInput = z.infer<typeof PaginationSchema>;
 
-// Login schema for auth endpoints
+// Login schema for auth endpoints (accepts any password on login)
 export const LoginSchema = z.object({
   username: z.string().min(1).max(128),
   password: z.string().min(1).max(256),
 });
 
 export type LoginInput = z.infer<typeof LoginSchema>;
+
+// Strong password schema for creating/changing passwords
+// Requirements: 12+ chars, uppercase, lowercase, number, special char
+export const StrongPasswordSchema = z
+  .string()
+  .min(12, "Senha deve ter mínimo 12 caracteres")
+  .max(256)
+  .regex(/[A-Z]/, "Deve conter pelo menos uma letra maiúscula")
+  .regex(/[a-z]/, "Deve conter pelo menos uma letra minúscula")
+  .regex(/[0-9]/, "Deve conter pelo menos um número")
+  .regex(
+    /[!@#$%^&*\-_=+]/,
+    "Deve conter pelo menos um caractere especial (!@#$%^&*-_=+)",
+  );
+
+// Create user schema
+export const CreateUserSchema = z.object({
+  username: z.string().min(1).max(128),
+  password: StrongPasswordSchema,
+});
+
+export type CreateUserInput = z.infer<typeof CreateUserSchema>;
 
 // Carga query parameters schema
 export const ListCargasQuerySchema = z.object({
