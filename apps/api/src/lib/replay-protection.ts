@@ -45,13 +45,9 @@ export async function registerWebhookEventId(
   if (isRedisEnabled()) {
     try {
       const client = await getRedisClient();
-      // Use SETNX (set if not exists) semantics via get then set
-      const existing = await client.get(getCacheKey(eventId));
-      if (existing) {
-        return false;
-      }
-      await client.set(getCacheKey(eventId), "1", ttlSeconds);
-      return true;
+      // Use atomic SETNX (set if not exists) to prevent race conditions (EC-6)
+      const wasSet = await client.setnx(getCacheKey(eventId), "1", ttlSeconds);
+      return wasSet;
     } catch (error) {
       log.warn("replay_protection.redis_failed", { eventId, error });
       // Fall through to memory

@@ -6,6 +6,7 @@ const log = logger.child({ component: "redis_client" });
 type RedisClient = {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, ttlSeconds?: number): Promise<void>;
+  setnx(key: string, value: string, ttlSeconds?: number): Promise<boolean>; // Atomic set-if-not-exists (EC-6)
   del(key: string): Promise<void>;
   expire(key: string, seconds: number): Promise<void>;
 };
@@ -69,6 +70,19 @@ async function createIoRedisClient(): Promise<RedisClient> {
         await client.set(key, value);
       }
     },
+    async setnx(
+      key: string,
+      value: string,
+      ttlSeconds?: number,
+    ): Promise<boolean> {
+      // Atomic SET NX with optional EX (expires)
+      // ioredis supports: client.set(key, value, 'NX', 'EX', ttl)
+      // Returns 'OK' if set, null if key already exists
+      const result = ttlSeconds
+        ? await client.set(key, value, "NX", "EX", ttlSeconds)
+        : await client.set(key, value, "NX");
+      return result === "OK";
+    },
     async del(key: string): Promise<void> {
       await client.del(key);
     },
@@ -119,6 +133,26 @@ function createMemoryRedisClient(): RedisClient {
     async set(key: string, value: string, ttlSeconds?: number): Promise<void> {
       const expiresAt = ttlSeconds ? Date.now() + ttlSeconds * 1000 : null;
       store.set(key, { value, expiresAt });
+    },
+    async setnx(
+      key: string,
+      value: string,
+      ttlSeconds?: number,
+    ): Promise<boolean> {
+      cleanup();
+      // Set only if key doesn't exist or is expired
+      const existing = store.get(key);
+      if (
+        existing &&
+        (!existing.expiresAt || existing.expiresAt > Date.now())
+      ) {
+        // Key exists and is not expired
+        return false;
+      }
+      // Key doesn't exist or is expired - set it
+      const expiresAt = ttlSeconds ? Date.now() + ttlSeconds * 1000 : null;
+      store.set(key, { value, expiresAt });
+      return true;
     },
     async del(key: string): Promise<void> {
       store.delete(key);

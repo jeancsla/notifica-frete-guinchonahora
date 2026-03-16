@@ -191,3 +191,110 @@ export async function clearAuthFailures(key: string) {
 export function resetAuthRateLimitState() {
   authAttempts.clear();
 }
+
+// Global rate limiting (by IP only, for spray attack prevention)
+const globalAttempts = new Map<string, RateLimitState>();
+const MAX_RATE_LIMIT_ENTRIES = 50000; // PERF-5: Prevent memory leak
+
+function getGlobalWindowMs() {
+  return Math.max(
+    60_000,
+    parseInt(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS || "900000", 10),
+  );
+}
+
+function getGlobalMaxRequests() {
+  return Math.max(
+    1,
+    parseInt(process.env.GLOBAL_RATE_LIMIT_MAX_REQUESTS || "100", 10),
+  );
+}
+
+function getGlobalBlockMs() {
+  return Math.max(
+    1_000,
+    parseInt(process.env.GLOBAL_RATE_LIMIT_BLOCK_MS || "300000", 10),
+  );
+}
+
+function cleanupExpiredGlobal(nowMs: number) {
+  for (const [key, state] of globalAttempts.entries()) {
+    const windowExpired = nowMs - state.windowStartMs > getGlobalWindowMs();
+    const blockExpired = state.blockedUntilMs <= nowMs;
+    if (windowExpired && blockExpired) {
+      globalAttempts.delete(key);
+    }
+  }
+
+  // PERF-5: Prevent unbounded memory growth under attack
+  if (globalAttempts.size > MAX_RATE_LIMIT_ENTRIES) {
+    const entriesToDelete = Math.floor(globalAttempts.size * 0.1); // Delete 10%
+    let deleted = 0;
+    for (const [key] of globalAttempts.entries()) {
+      if (deleted >= entriesToDelete) break;
+      globalAttempts.delete(key);
+      deleted++;
+    }
+    log.warn("rate_limit.evicted_entries_to_prevent_memory_leak", {
+      entries_deleted: deleted,
+      map_size: globalAttempts.size,
+    });
+  }
+}
+
+/**
+ * Get global rate limit state for an IP address (spray attack prevention)
+ * Returns whether the IP is currently blocked
+ */
+export async function getGlobalRateLimitState(ip: string, nowMs = Date.now()) {
+  cleanupExpiredGlobal(nowMs);
+
+  const state = globalAttempts.get(ip);
+  if (!state) {
+    return { blocked: false, retryAfterSeconds: 0 };
+  }
+
+  if (state.blockedUntilMs > nowMs) {
+    return {
+      blocked: true,
+      retryAfterSeconds: Math.ceil((state.blockedUntilMs - nowMs) / 1_000),
+    };
+  }
+
+  return { blocked: false, retryAfterSeconds: 0 };
+}
+
+/**
+ * Record a request for global rate limiting
+ */
+export async function recordGlobalRequest(
+  ip: string,
+  nowMs = Date.now(),
+): Promise<void> {
+  cleanupExpiredGlobal(nowMs);
+
+  const windowMs = getGlobalWindowMs();
+  const maxRequests = getGlobalMaxRequests();
+  const blockMs = getGlobalBlockMs();
+
+  const existing = globalAttempts.get(ip);
+
+  if (!existing || nowMs - existing.windowStartMs > windowMs) {
+    // New window
+    globalAttempts.set(ip, {
+      attempts: 1,
+      windowStartMs: nowMs,
+      blockedUntilMs: 0,
+    });
+    return;
+  }
+
+  const attempts = existing.attempts + 1;
+  const blockedUntilMs = attempts >= maxRequests ? nowMs + blockMs : 0;
+
+  globalAttempts.set(ip, {
+    attempts,
+    windowStartMs: existing.windowStartMs,
+    blockedUntilMs,
+  });
+}
