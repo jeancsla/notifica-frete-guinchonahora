@@ -10,6 +10,7 @@ import {
   recordAuthFailure,
 } from "../lib/rate-limit";
 import { timingSafeEqualString } from "../lib/security";
+import { LoginSchema, formatZodError } from "../lib/schemas";
 
 function getAdminCredentials() {
   const username = process.env.ADMIN_USERNAME;
@@ -73,22 +74,23 @@ export async function loginHandler({
     return { message: "Payload too large" };
   }
 
-  const body = (await request.json().catch(() => null)) as {
-    username?: string;
-    password?: string;
-  } | null;
+  // Parse and validate request body using Zod
+  const rawBody = (await request.json().catch(() => null)) as unknown;
 
-  if (
-    !body ||
-    typeof body.username !== "string" ||
-    typeof body.password !== "string"
-  ) {
+  const parseResult = LoginSchema.safeParse(rawBody);
+  if (!parseResult.success) {
     set.status = 400;
-    log.warn("auth.login.invalid_payload");
-    return { message: "Invalid credentials payload" };
+    log.warn("auth.login.invalid_payload", {
+      error: formatZodError(parseResult.error),
+    });
+    return {
+      message: "Invalid credentials",
+      details: formatZodError(parseResult.error),
+    };
   }
 
-  const clientKey = getClientIdentifier(request, body.username);
+  const { username, password } = parseResult.data;
+  const clientKey = getClientIdentifier(request, username);
   const rateLimit = await getAuthRateLimitState(clientKey);
   if (rateLimit.blocked) {
     set.status = 429;
@@ -112,12 +114,12 @@ export async function loginHandler({
   }
 
   if (
-    timingSafeEqualString(body.username, validUser) &&
-    timingSafeEqualString(body.password, validPassword)
+    timingSafeEqualString(username, validUser) &&
+    timingSafeEqualString(password, validPassword)
   ) {
     await clearAuthFailures(clientKey);
-    set.headers["set-cookie"] = buildSessionCookie(body.username);
-    log.info("auth.login.success", { username: body.username });
+    set.headers["set-cookie"] = buildSessionCookie(username);
+    log.info("auth.login.success", { username });
     return { ok: true };
   }
 
@@ -131,13 +133,13 @@ export async function loginHandler({
     }
     log.warn("auth.login.rate_limited_after_failure", {
       retry_after_seconds: updatedRateLimit.retryAfterSeconds,
-      username: body.username,
+      username,
     });
     return { message: "Too many login attempts. Try again later." };
   }
 
   set.status = 401;
-  log.warn("auth.login.invalid_credentials", { username: body.username });
+  log.warn("auth.login.invalid_credentials", { username });
   return { message: "Invalid credentials" };
 }
 

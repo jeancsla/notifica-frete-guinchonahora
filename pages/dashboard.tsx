@@ -127,12 +127,28 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
     }
   }, [dashboard, selectedId]);
 
+  // Handle body scroll locking when mobile detail panel is open
   useEffect(() => {
     if (!detailOpen || typeof window === "undefined") return;
     if (window.matchMedia("(min-width: 1025px)").matches) return;
+
+    const originalStyle = window.getComputedStyle(document.body).overflow;
+    const originalPaddingRight = window.getComputedStyle(
+      document.body,
+    ).paddingRight;
+
+    // Calculate scrollbar width to prevent layout shift
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth;
+
     document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = originalStyle;
+      document.body.style.paddingRight = originalPaddingRight;
     };
   }, [detailOpen]);
 
@@ -447,21 +463,30 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
         </Card>
 
         {/* Detail Panel */}
-        {/* Mobile backdrop */}
-        <div
-          className={`fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity ${
-            detailOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
-          onClick={() => setDetailOpen(false)}
-        />
+        {/* Mobile backdrop - improved with better accessibility */}
+        {detailOpen && (
+          <div
+            className="fixed inset-0 bg-black/60 z-40 lg:hidden animate-in fade-in duration-200"
+            onClick={() => setDetailOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setDetailOpen(false);
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label="Fechar painel de detalhes"
+          />
+        )}
 
-        <motion.div
-          className={`fixed lg:relative inset-y-0 right-0 lg:inset-auto w-[380px] lg:w-auto z-50 lg:z-auto transform transition-transform duration-200 ease-out ${
+        <motion.aside
+          className={`fixed lg:relative inset-y-0 right-0 lg:inset-auto w-full sm:w-[380px] lg:w-auto z-50 lg:z-auto transform transition-transform duration-200 ease-out ${
             detailOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
           }`}
           initial={{ y: 24, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
+          role="complementary"
+          aria-label="Detalhes do frete"
+          aria-hidden={!detailOpen}
         >
           <Card className="h-full lg:h-auto border-0 lg:border shadow-2xl lg:shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -555,7 +580,7 @@ export default function Dashboard({ allowMigrations }: DashboardProps) {
               )}
             </CardContent>
           </Card>
-        </motion.div>
+        </motion.aside>
       </motion.section>
     </Layout>
   );

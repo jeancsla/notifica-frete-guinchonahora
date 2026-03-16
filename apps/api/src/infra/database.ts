@@ -89,6 +89,58 @@ export async function getPooledClient(): Promise<PoolClient> {
 }
 
 /**
+ * Set the current role for the session/transaction.
+ * This is used for RLS policy enforcement based on authenticated user role.
+ * Should be called after getting a client and before executing queries.
+ */
+export async function setSessionRole(
+  client: PoolClient,
+  role: string,
+): Promise<void> {
+  // Validate role to prevent SQL injection - only allow alphanumeric and underscore
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(role)) {
+    throw new Error(`Invalid role name: ${role}`);
+  }
+  await client.query(`SET LOCAL ROLE ${role}`);
+  log.debug("database.set_session_role", { role });
+}
+
+/**
+ * Reset the session role to default.
+ * Should be called when done with a privileged operation.
+ */
+export async function resetSessionRole(client: PoolClient): Promise<void> {
+  await client.query("SET LOCAL ROLE NONE");
+  log.debug("database.reset_session_role");
+}
+
+/**
+ * Execute a function within a transaction with a specific role.
+ * Automatically handles role setting, BEGIN/COMMIT/ROLLBACK.
+ */
+export async function withTransactionAndRole<T>(
+  role: string,
+  fn: (client: PoolClient) => Promise<T>,
+): Promise<T> {
+  const client = await getPooledClient();
+  try {
+    await client.query("BEGIN");
+    await setSessionRole(client, role);
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {
+      // Ignore rollback errors, log for debugging
+      log.warn("database.rollback_failed", { error });
+    });
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+/**
  * Execute a function within a transaction.
  * Automatically handles BEGIN/COMMIT/ROLLBACK.
  */
@@ -177,11 +229,12 @@ function getConnectionOptions() {
     return explicit;
   }
 
+  // Note: app.current_role is NOT set at pool level anymore
+  // Role is now set per-request using setSessionRole()
   return [
     "-c search_path=public",
     "-c statement_timeout=10000",
     "-c lock_timeout=5000",
     "-c idle_in_transaction_session_timeout=10000",
-    "-c app.current_role=api",
   ].join(" ");
 }

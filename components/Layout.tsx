@@ -55,39 +55,53 @@ export default function Layout({
   );
 
   return (
-    <div className="grid min-h-screen grid-cols-[260px_1fr] max-lg:grid-cols-1 max-lg:pb-16">
+    <div className="relative grid min-h-screen grid-cols-[260px_1fr] max-lg:grid-cols-1 max-lg:pb-16">
       <Head>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
       </Head>
+      {/* Skip to main content - improved accessibility */}
       <a
-        className="absolute left-3 top-[-48px] z-[500] rounded-xl bg-[#f6f3ea] px-3.5 py-2.5 text-sm font-bold text-[#0a0d13] transition-all hover:top-3 focus:top-3"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[60] focus:rounded-xl focus:bg-[#f6f3ea] focus:px-3.5 focus:py-2.5 focus:text-sm focus:font-bold focus:text-[#0a0d13] focus:shadow-lg"
         href="#main-content"
       >
-        Pular para conteudo principal
+        Pular para conteúdo principal
       </a>
-      <aside className="flex min-w-0 flex-col gap-6 border-r border-white/[0.08] bg-[rgba(14,19,27,0.7)] p-6 backdrop-blur-[16px] max-lg:hidden">
+      <aside
+        className="flex min-w-0 flex-col gap-6 border-r border-white/[0.08] bg-[rgba(14,19,27,0.7)] p-6 backdrop-blur-[16px] max-lg:hidden z-10"
+        role="complementary"
+        aria-label="Menu lateral"
+      >
         <div className="flex flex-col gap-2">
-          <strong className="text-lg tracking-tight">Guincho Na Hora</strong>
-          <span className="text-xs text-[#a7afbe]">
+          <strong className="text-lg tracking-tight" id="site-title">
+            Guincho Na Hora
+          </strong>
+          <span
+            className="text-xs text-[#a7afbe]"
+            id="site-description"
+            aria-describedby="site-title"
+          >
             Fretes & cargas em tempo real
           </span>
         </div>
         <nav
           className="flex min-w-0 flex-col gap-2.5"
           aria-label="Navegação principal"
+          role="navigation"
         >
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               prefetch={false}
-              className={`flex items-center justify-between rounded-xl border border-transparent px-3.5 py-2.5 font-medium text-[#a7afbe] transition-all duration-200 hover:bg-[#151a23] hover:text-[#f6f3ea] hover:shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-[#2b3445] ${router.pathname === item.href ? "bg-[#151a23] text-[#f6f3ea] border-[#2b3445] shadow-[0_10px_40px_rgba(0,0,0,0.35)]" : ""}`}
+              className={`flex items-center justify-between rounded-xl border border-transparent px-3.5 py-2.5 font-medium text-[#a7afbe] transition-all duration-200 hover:bg-[#151a23] hover:text-[#f6f3ea] hover:shadow-[0_10px_40px_rgba(0,0,0,0.35)] hover:border-[#2b3445] focus:outline-none focus:ring-2 focus:ring-[#ff7a00] focus:ring-offset-2 focus:ring-offset-[#0e131b] ${router.pathname === item.href ? "bg-[#151a23] text-[#f6f3ea] border-[#2b3445] shadow-[0_10px_40px_rgba(0,0,0,0.35)]" : ""}`}
               onMouseEnter={() => prefetchRoute(item.href)}
               onFocus={() => prefetchRoute(item.href)}
+              aria-current={router.pathname === item.href ? "page" : undefined}
+              role="link"
             >
               <span>{item.label}</span>
-              <span>{"->"}</span>
+              <span aria-hidden="true">{"->"}</span>
             </Link>
           ))}
         </nav>
