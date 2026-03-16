@@ -30,7 +30,12 @@ export const ListCargasQuerySchema = z.object({
     .optional(),
   sortOrder: z
     .preprocess(
-      (val) => (val === "" ? undefined : val),
+      (val) => {
+        if (val === "" || val === undefined || val === null) return undefined;
+        const str = String(val).toLowerCase();
+        if (str === "asc" || str === "desc") return str;
+        return val; // Let enum validation fail with original value for better error
+      },
       z.enum(["asc", "desc"]).optional(),
     )
     .optional(),
