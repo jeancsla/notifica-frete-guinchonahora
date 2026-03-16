@@ -28,7 +28,12 @@ export const ListCargasQuerySchema = z.object({
   sortBy: z
     .enum(["id_viagem", "created_at", "prev_coleta", "origem", "destino"])
     .optional(),
-  sortOrder: z.enum(["asc", "desc"]).optional(),
+  sortOrder: z
+    .preprocess(
+      (val) => (val === "" ? undefined : val),
+      z.enum(["asc", "desc"]).optional(),
+    )
+    .optional(),
   includeTotal: z.coerce.boolean().default(true),
   fields: z
     .string()
