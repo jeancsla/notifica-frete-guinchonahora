@@ -3,6 +3,7 @@
 ## Completed Changes
 
 ### Database & Security
+
 - [x] Modified `apps/api/src/infra/database.ts`
   - Removed hardcoded `app.current_role=api` from connection options
   - Added `setSessionRole()` utility function to set role per transaction/session
@@ -10,6 +11,7 @@
   - Added `withTransactionAndRole()` for convenience
 
 ### API Data Validation
+
 - [x] Created new `apps/api/src/lib/schemas.ts`
   - Reusable Zod schemas for Carga, Login, and Pagination
   - Helper functions for formatting Zod errors
@@ -24,6 +26,7 @@
   - Now uses `ListCargasQuerySchema` from lib/schemas
 
 ### Frontend UI/UX
+
 - [x] Modified `pages/dashboard.tsx`
   - Fixed mobile overlay behavior with proper backdrop
   - Enhanced scroll locking to prevent layout shift using scrollbar width calculation
@@ -44,11 +47,13 @@
 ## Verification Plan
 
 ### Automated Tests (Pending - WSL path issues)
+
 - [ ] API Integration Tests: Run `bun run test:integration:api`
 - [ ] New Zod Validation Tests: Add unit tests for the new Zod schemas
 - [ ] Auth Flow Test: Run `tests/integration/api/v1/cargas/auth.test.ts`
 
 ### Manual Verification
+
 - [ ] Responsive Audit: Open the dashboard and check layout from 320px to 1440px
 - [ ] Mobile Navigation: Verify BottomNav doesn't overlap important buttons
 - [ ] Mobile Detail Panel: Verify backdrop correctly closes the detail panel
