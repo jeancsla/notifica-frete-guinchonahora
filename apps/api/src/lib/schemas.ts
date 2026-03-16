@@ -60,7 +60,10 @@ export type CargaInput = z.infer<typeof CargaSchema>;
 
 // Cron webhook schema
 export const CronEventSchema = z.object({
-  eventId: z.string().regex(/^[a-zA-Z0-9._:-]{1,128}$/).optional(),
+  eventId: z
+    .string()
+    .regex(/^[a-zA-Z0-9._:-]{1,128}$/)
+    .optional(),
   mockedResult: z
     .string()
     .transform((val) => {
