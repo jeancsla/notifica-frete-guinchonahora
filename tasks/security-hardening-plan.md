@@ -15,33 +15,43 @@
 > **Ler antes de implementar qualquer fase.**
 
 ### ERRO 1: Circuit Breaker JÁ EXISTE
+
 **O plano propõe criar `circuit-breaker.ts`, mas o arquivo já existe e está em uso.**
+
 - Arquivo: `apps/api/src/lib/circuit-breaker.ts` — implementação completa com estados CLOSED/OPEN/HALF_OPEN, registry e métricas
 - O `tegma-scraper.ts` já importa `getCircuitBreaker` e usa com `failureThreshold: 3, resetTimeoutMs: 60000`
 - **Ação:** Remover as tarefas 2.2.1 a 2.2.7. Apenas ajustar a configuração via env vars (fase 4).
 
 ### ERRO 2: Redis JÁ EXISTE para Rate Limit e Replay Protection
+
 **O plano propõe implementar rate limiter do zero, mas o código já tem Redis + in-memory fallback.**
+
 - `apps/api/src/lib/rate-limit.ts` — já usa Redis com fallback in-memory, configurável via env vars
 - `apps/api/src/lib/replay-protection.ts` — idem
 - **Ação:** Não refatorar a estrutura, apenas adicionar: (1) rate limit global por IP, (2) rate limit em migrations endpoint, e (3) correção do race condition no replay-protection.
 
 ### ERRO 3: DB Pool Vars JÁ EXISTEM
+
 **O plano lista `DB_POOL_MIN`, `DB_POOL_MAX`, etc. como "a extrair", mas já são lidos via env vars em `database.ts`.**
+
 - `database.ts` linhas 20–22: já usa `POSTGRES_POOL_MAX`, `POSTGRES_POOL_MIN`, `POSTGRES_IDLE_TIMEOUT_MS`, `POSTGRES_CONNECTION_TIMEOUT_MS`
 - **Ação:** Apenas garantir que estão no `.env.example`. Não modificar `database.ts`.
 
 ### ERRO 4: `bun add bcrypt` pode não funcionar — usar `Bun.password` nativo
+
 **Bun tem API nativa de password hashing que inclui bcrypt sem dependência externa.**
+
 ```typescript
 // Bun nativo — sem instalar bcrypt
-const hash = await Bun.password.hash(password);        // bcrypt por padrão, com salt automático
+const hash = await Bun.password.hash(password); // bcrypt por padrão, com salt automático
 const isValid = await Bun.password.verify(password, hash);
 ```
+
 - Vantagens: zero dependências, nativamente otimizado em Bun, suporta bcrypt e argon2id
 - **Ação:** Substituir `bcrypt` por `Bun.password` em toda a fase 1.
 
 ### ERRO 5: `@elysiajs/cors` pode já existir — verificar antes de instalar
+
 - **Ação:** `bun list | grep cors` antes de instalar.
 
 ---
@@ -49,9 +59,11 @@ const isValid = await Bun.password.verify(password, hash);
 ## 🚨 EDGE CASES CRÍTICOS NÃO COBERTOS PELO PLANO ORIGINAL
 
 ### EC-1: Timing Attack em Username Enumeration (CRÍTICO)
+
 **Localização:** `auth-controller.ts` linhas 80–83 (atual) e no futuro `usersRepository.verifyPassword()`
 
 **Problema:**
+
 ```typescript
 // Com bcrypt — SE usuário não existe, retorna null imediatamente
 const user = await usersRepository.findByUsername(username);
@@ -60,9 +72,11 @@ if (!user) return null; // Sem bcrypt — tempo de resposta ~1ms
 // SE usuário existe — executa bcrypt.compare (~300ms)
 const isValid = await Bun.password.verify(password, user.password_hash);
 ```
+
 Um atacante mede o tempo de resposta: `~1ms` = usuário não existe, `~300ms` = usuário existe.
 
 **Solução:**
+
 ```typescript
 async verifyPassword(username: string, plain: string) {
   const DUMMY_HASH = "$2b$12$..."; // Hash pré-computado de senha fictícia
@@ -74,45 +88,55 @@ async verifyPassword(username: string, plain: string) {
 ```
 
 ### EC-2: Rate Limit DoS — Atacante pode bloquear o Usuário Legítimo (ALTO)
+
 **Localização:** `rate-limit.ts` — chave é `${ip}:${username}`
 
 **Problema:** Um atacante que sabe o username do admin pode mandar 5 requests com senha errada de qualquer IP, bloqueando o admin legítimo por 15 minutos. Isso é um **DoS por design**.
 
 **Solução:**
+
 - Rate limit por `${ip}:${username}` → mantém para bloquear brute force por par
 - Adicionar rate limit separado por `${ip}` puro → para bloquear spray attacks
 - **NÃO** fazer rate limit só por `username` sem IP → isso permitiria o DoS descrito acima
 - Alternativa elegante: Progressive delay (1s, 2s, 4s) em vez de bloqueio total
 
 ### EC-3: IP Forjável via X-Forwarded-For (ALTO)
+
 **Localização:** `auth-controller.ts` linhas 28–30
 
 **Problema:**
+
 ```typescript
 const forwardedFor = request.headers.get("x-forwarded-for") || "";
 const forwarded = forwardedFor.split(",")[0]?.trim(); // FORJÁVEL
 ```
+
 Sem verificação de proxy confiável, atacante envia `X-Forwarded-For: 1.2.3.4` a cada request para bypassar rate limit.
 
 **Solução:**
+
 ```typescript
 // Adicionar env var TRUST_PROXY=true/false
 // Se TRUST_PROXY=false: usar sempre socket.remoteAddress
 // Se TRUST_PROXY=true: confiar no x-forwarded-for (apenas quando atrás de proxy)
 ```
+
 Adicionar `TRUST_PROXY=false` ao `.env.example` com documentação.
 
 ### EC-4: Session Sem Revocation (MÉDIO)
+
 **Localização:** `session.ts` — HMAC stateless sem revocation list
 
 **Problema:** Cookie roubado pode ser usado por até 7 dias. Logout limpa o cookie no cliente mas não invalida no servidor.
 
 **Solução (pragmática para este projeto):**
+
 - Reduzir `SESSION_MAX_AGE` para 8 horas (configurável via env var)
 - Implementar session revocation via Redis: ao fazer logout, adicionar o token a uma blocklist com TTL igual ao max_age
 - Em `decodeSession`, verificar se token está na blocklist antes de retornar user
 
 ### EC-5: Session Fixation após Login (BAIXO, mas boa prática)
+
 **Localização:** `auth-controller.ts` linha 82 — `buildSessionCookie(username)` não rotaciona token
 
 **Problema:** Token pre-login e pós-login são o mesmo. Session fixation attack.
@@ -120,30 +144,37 @@ Adicionar `TRUST_PROXY=false` ao `.env.example` com documentação.
 **Solução:** Emitir novo token após login bem-sucedido (já é feito implicitamente porque o token inclui `exp` calculado em `encodeSession`, mas seria mais seguro incluir um `jti` aleatório).
 
 ### EC-6: Replay Protection — Race Condition no Redis (ALTO)
+
 **Localização:** `replay-protection.ts` linhas 43–50
 
 **Problema confirmado:**
+
 ```typescript
 const existing = await client.get(getCacheKey(eventId)); // GET
 if (existing) return false;
 await client.set(getCacheKey(eventId), "1", ttlSeconds); // SET separado
 ```
+
 GET + SET não é atômico. Em alta concorrência, dois webhooks idênticos podem passar.
 
 **Solução:**
+
 ```typescript
 // Usar SET NX (set if not exists) — atômico no Redis
 const result = await client.set(getCacheKey(eventId), "1", ttlSeconds, "NX");
 return result === "OK"; // "OK" = criou (novo), null = já existia (replay)
 ```
+
 Verificar API do cliente Redis usado (provavelmente `ioredis` ou `@upstash/redis`).
 
 ### EC-7: `ALLOW_DEV_DEFAULT_ADMIN` pode vazar para Produção (CRÍTICO)
+
 **Localização:** `auth-controller.ts` linha 23 — `process.env.ALLOW_DEV_DEFAULT_ADMIN === "true"`
 
 **Problema:** Se alguém seta essa var em produção (acidente ou ataque), login `admin:admin` funciona.
 
 **Solução:**
+
 ```typescript
 if (!isProd && allowDevDefaults) { ... }
 // Adicionar explicitamente:
@@ -151,27 +182,34 @@ if (isProd && allowDevDefaults) {
   throw new Error("ALLOW_DEV_DEFAULT_ADMIN cannot be used in production!");
 }
 ```
+
 E adicionar ao `env-validator.ts`.
 
 ### EC-8: Credenciais Tegma em DOIS Lugares (CRÍTICO)
+
 **Localização:** `tegma-scraper.ts` — credenciais aparecem em **2 métodos**:
+
 - `login()` linha 67: `Cookie: \`${cookie};Usuario=${username};Senha=${password};\``
 - `fetchCargasPage()` linha 93: mesmo header
 
 **Solução:** Já mapeado na Fase 5. Confirmar que a refatoração remove AMBAS as ocorrências.
 
 ### EC-9: Tabelas Sem Política de Retenção (MÉDIO)
+
 **Problema:** As tabelas `webhook_events` e `audit_logs` crescem indefinidamente, degradando performance com o tempo.
 
 **Solução:** Adicionar job de cleanup na migration ou usar `pg_cron` (se disponível):
+
 ```sql
 -- Adicionar trigger ou background job:
 DELETE FROM webhook_events WHERE created_at < NOW() - INTERVAL '1 hour';
 DELETE FROM notifica_frete_audit_logs WHERE created_at < NOW() - INTERVAL '90 days';
 ```
+
 Ou: particionar tabelas por mês com `pg_partman`.
 
 ### EC-10: Migrations Endpoint Sem Rate Limiting (ALTO)
+
 **Localização:** `app.ts` linha 32 — `.all(API_ROUTES.migrations, migrationsHandler)`
 
 **Problema:** O endpoint `GET|POST /migrations` requer apenas `x-admin-key` mas não tem rate limiting. Se a key vazar, atacante pode executar migrations livremente.
@@ -179,18 +217,23 @@ Ou: particionar tabelas por mês com `pg_partman`.
 **Solução:** Aplicar rate limiting (5 requests/hora) no endpoint de migrations.
 
 ### EC-11: Sem Seed de Usuário Admin Inicial (CRÍTICO para Deploy)
+
 **Problema:** Com a migração para tabela `users` com bcrypt, como o admin faz login pela primeira vez? A tabela estará vazia.
 
 **Solução:** Criar script CLI `apps/api/src/scripts/create-admin.ts`:
+
 ```bash
 bun run create-admin --username admin --password 'SenhaForte123!'
 ```
+
 Ou: migration que lê `ADMIN_USERNAME`/`ADMIN_PASSWORD` das env vars e insere na tabela (apenas se tabela vazia).
 
 ### EC-12: `TEGMA_BASE_URL` Não é Validado como HTTPS (MÉDIO)
+
 **Problema:** Se `TEGMA_BASE_URL=http://...` (sem S), credenciais viajam em plaintext mesmo com a refatoração.
 
 **Solução:** No `env-validator.ts`:
+
 ```typescript
 const tegmaUrl = process.env.TEGMA_BASE_URL;
 if (tegmaUrl && !tegmaUrl.startsWith("https://")) {
@@ -199,6 +242,7 @@ if (tegmaUrl && !tegmaUrl.startsWith("https://")) {
 ```
 
 ### EC-13: `formatZodError` Expõe Detalhes de Schema em Produção (MÉDIO)
+
 **Localização:** `auth-controller.ts` linhas 62–63 — retorna `details: formatZodError(parseResult.error)`
 
 **Problema:** Resposta de validação retorna estrutura interna do schema Zod. Atacante aprende o formato exato para construir payloads.
@@ -206,11 +250,13 @@ if (tegmaUrl && !tegmaUrl.startsWith("https://")) {
 **Solução:** Em produção, retornar apenas `{ message: "Invalid credentials" }` sem `details`.
 
 ### EC-14: Content-Type Não Validado (BAIXO)
+
 **Problema:** API aceita requests sem `Content-Type: application/json`, podendo causar confusão em parsers.
 
 **Solução:** Middleware que rejeita `POST` sem `Content-Type: application/json`.
 
 ### EC-15: style-src também tem unsafe-inline (MÉDIO)
+
 **Localização:** `next.config.ts` linha 55 — `style-src 'self' 'unsafe-inline'`
 
 **Problema:** O plano foca em remover `unsafe-inline` do `script-src`, mas `style-src` também tem. CSS injection pode exfiltrar dados.
@@ -222,26 +268,31 @@ if (tegmaUrl && !tegmaUrl.startsWith("https://")) {
 ## 🐌 PROBLEMAS DE PERFORMANCE NÃO COBERTOS
 
 ### PERF-1: `cleanupExpired()` Roda em CADA Request de Auth (O(n))
+
 **Localização:** `rate-limit.ts` linhas 81–88 — chamado em `getAuthRateLimitState` e `recordAuthFailure`
 
 **Problema:** A cada request de login, itera sobre TODOS os entries do Map para limpar expirados. Com muitos IPs únicos, pode ser lento.
 
 **Solução:**
+
 - Mover cleanup para `setInterval` separado (a cada 5 min) — já planejado no plano
 - Adicionar `MAX_ENTRIES = 10000` no Map; se exceder, deletar os 10% mais antigos
 
 ### PERF-2: Audit Log Síncrono Adiciona Latência a Cada Login
+
 **Problema:** `await auditLog.loginAttempt(...)` bloqueia resposta até DB escrever (~5–20ms extra).
 
 **Solução:** Fire-and-forget com error logging:
+
 ```typescript
-auditLog.loginAttempt(username, false, ip).catch(err =>
-  log.error("audit_log.write_failed", { error: err })
-);
+auditLog
+  .loginAttempt(username, false, ip)
+  .catch((err) => log.error("audit_log.write_failed", { error: err }));
 // NÃO await — não bloquear resposta
 ```
 
 ### PERF-3: `Bun.password.hash()` vs `bcrypt` — Performance e Compatibilidade
+
 **Problema:** `bcrypt` usa bindings nativos em C que podem ter problemas de compatibilidade em Bun. `Bun.password.hash()` é nativo e mais eficiente.
 
 **Benchmark:** `bcrypt` rounds=12 ~300ms/hash. `Bun.password.hash()` rounds=12 ~250ms/hash com thread pool nativo.
@@ -249,16 +300,19 @@ auditLog.loginAttempt(username, false, ip).catch(err =>
 **Solução:** Usar `Bun.password.hash()` (sem dependência externa, já otimizado).
 
 ### PERF-4: Tegma Scraper — 3 RTTs por Execução (Session Não Cacheada)
+
 **Localização:** `tegma-scraper.ts` `fetchCargas()` — getCookie → login → fetchCargasPage = 3 requests
 
 **Problema:** A cada execução do cron (a cada 15 min), faz 3 requests HTTP ao Tegma. Se o login gerou um session cookie válido por mais tempo, está sendo desperdiçado.
 
 **Solução:** Já mapeado na Fase 5 (session cookie caching). Garantir que inclui:
+
 - Cache do session cookie em módulo state (já funciona entre execuções do cron)
 - TTL configurável: `TEGMA_SESSION_TTL=1800000` (30 min)
 - Invalidação automática se resposta for redirect para Login
 
 ### PERF-5: Rate Limit Map Sem Limite de Tamanho (Memory Leak Potencial)
+
 **Problema:** `authAttempts` Map nunca tem limite de tamanho. Em ataque distribuído com muitos IPs únicos, pode crescer indefinidamente.
 
 **Solução:** Adicionar `MAX_RATE_LIMIT_ENTRIES=50000` com LRU eviction quando exceder.
@@ -294,6 +348,7 @@ Este plano aborda **8 vulnerabilidades críticas**, **7 vulnerabilidades altas**
 > Usa bcrypt internamente com salt automático por padrão. Zero dependências, mais eficiente.
 
 **Tarefas:**
+
 - [ ] **1.1.1** Verificar que `Bun.password` está disponível: `bun -e "console.log(typeof Bun.password.hash)"`
 - [ ] **1.1.2** Documentar uso de `Bun.password.hash(password, { algorithm: 'bcrypt', cost: 12 })`
 
@@ -305,12 +360,14 @@ Este plano aborda **8 vulnerabilidades críticas**, **7 vulnerabilidades altas**
 
 **Status:** `pending`
 **Arquivos:**
+
 - `apps/api/src/lib/schemas.ts` (validação de força)
 - `apps/api/src/repositories/users-repository.ts` (NOVO)
 - `apps/api/src/controllers/auth-controller.ts` (integração)
 - `infra/migrations/1772000001000_create_users_table.js` (NOVO)
 
 #### 1.2.1 Atualizar Schema de Validação de Senha
+
 ```typescript
 // apps/api/src/lib/schemas.ts
 password: z.string()
@@ -319,10 +376,11 @@ password: z.string()
   .regex(/[A-Z]/, "Deve ter letra maiúscula")
   .regex(/[a-z]/, "Deve ter letra minúscula")
   .regex(/[0-9]/, "Deve ter número")
-  .regex(/[!@#$%^&*]/, "Deve ter caractere especial (!@#$%^&*)")
+  .regex(/[!@#$%^&*]/, "Deve ter caractere especial (!@#$%^&*)");
 ```
 
 **Tarefas:**
+
 - [ ] **1.2.1.1** Modificar `apps/api/src/lib/schemas.ts` com validação forte
 - [ ] **1.2.1.2** Criar teste rejeitando senhas fracas: `a`, `abc123`, `password123`
 - [ ] **1.2.1.3** Criar teste aceitando senhas fortes: `TestPass123!`
@@ -348,6 +406,7 @@ CREATE INDEX idx_nf_users_username ON notifica_frete_users(username);
 ```
 
 **Tarefas:**
+
 - [ ] **1.2.2.1** Criar arquivo de migration
 - [ ] **1.2.2.2** Rodar migration: `bun run migration:up`
 - [ ] **1.2.2.3** Verificar tabela criada no psql: `\d notifica_frete_users`
@@ -361,11 +420,13 @@ CREATE INDEX idx_nf_users_username ON notifica_frete_users(username);
 **Arquivo:** `apps/api/src/repositories/users-repository.ts` (NOVO)
 
 **Funcionalidades:**
+
 - `createUser(username, plainPassword)` - hash com `Bun.password.hash` + store
 - `findByUsername(username)` - buscar por username
 - `verifyPassword(username, plainPassword)` - timing-safe verify com hash dummy (EC-1)
 
 **Implementação anti-timing-attack (EC-1):**
+
 ```typescript
 // Hash pré-computado de uma senha fictícia — usado quando usuário não existe
 // Para evitar que o tempo de resposta revele se o username existe
@@ -381,6 +442,7 @@ async verifyPassword(username: string, plain: string) {
 ```
 
 **Tarefas:**
+
 - [ ] **1.2.3.1** Criar repositório com métodos acima
 - [ ] **1.2.3.2** Implementar `DUMMY_HASH` para anti-timing (EC-1)
 - [ ] **1.2.3.3** Teste: mesmo password gera hashes diferentes (salt automático)
@@ -397,13 +459,18 @@ async verifyPassword(username: string, plain: string) {
 **Arquivo:** `apps/api/src/controllers/auth-controller.ts`
 
 **Antes:**
+
 ```typescript
-if (username !== process.env.ADMIN_USERNAME || password !== process.env.ADMIN_PASSWORD) {
+if (
+  username !== process.env.ADMIN_USERNAME ||
+  password !== process.env.ADMIN_PASSWORD
+) {
   return ctx.set({ status: 401 });
 }
 ```
 
 **Depois:**
+
 ```typescript
 const user = await usersRepository.verifyPassword(username, password);
 if (!user) {
@@ -413,6 +480,7 @@ if (!user) {
 ```
 
 **Tarefas:**
+
 - [ ] **1.2.4.1** Integrar `usersRepository.verifyPassword()`
 - [ ] **1.2.4.2** Remover validação direta de plaintext
 - [ ] **1.2.4.3** Retornar erro genérico (não expor schema)
@@ -431,6 +499,7 @@ if (!user) {
 #### 1.3.1 Gerar Secrets Localmente (NÃO commitr)
 
 **Executar (shell local):**
+
 ```bash
 # SESSION_SECRET (32 bytes = 256 bits)
 openssl rand -base64 32
@@ -444,6 +513,7 @@ openssl rand -base64 32
 ```
 
 **Tarefas:**
+
 - [ ] **1.3.1.1** Executar 3 comandos openssl localmente (anote os valores)
 
 ---
@@ -453,8 +523,10 @@ openssl rand -base64 32
 **Arquivo:** `.env.example` (NOVO)
 
 **Tarefas:**
+
 - [ ] **1.3.2.1** Copiar `.env.development` → `.env.example`
 - [ ] **1.3.2.2** Remover valores sensíveis:
+
   ```bash
   # Antes:
   ADMIN_PASSWORD=admin
@@ -464,6 +536,7 @@ openssl rand -base64 32
   ADMIN_PASSWORD=generate_with_12+_chars,_uppercase,_lowercase,_number,_special_char
   ADMIN_API_KEY=generate_with_openssl_rand_-base64_32
   ```
+
 - [ ] **1.3.2.3** Adicionar comentários explicativos para cada var
 - [ ] **1.3.2.4** Incluir seção "Geração de Secrets":
   ```bash
@@ -478,6 +551,7 @@ openssl rand -base64 32
 #### 1.3.3 Remover Valores Sensíveis de `.env.development`
 
 **Tarefas:**
+
 - [ ] **1.3.3.1** Remover linhas com valores reais de:
   - `ADMIN_PASSWORD=...` → Não incluir valor
   - `ADMIN_API_KEY=...` → Não incluir valor
@@ -497,6 +571,7 @@ openssl rand -base64 32
 **Arquivo:** `apps/api/src/lib/env-validator.ts` (NOVO)
 
 **Funcionalidades:**
+
 - Verificar env vars obrigatórias presentes
 - Verificar tamanho de secrets (mínimo 32 bytes)
 - Verificar força de senha se definida
@@ -504,6 +579,7 @@ openssl rand -base64 32
 - Validar `TEGMA_BASE_URL` como HTTPS (EC-12)
 
 **Tarefas:**
+
 - [ ] **1.4.1** Criar arquivo `env-validator.ts`
 - [ ] **1.4.2** Implementar `validateEnv()` com checklist:
   - `DATABASE_URL` presente
@@ -538,19 +614,23 @@ openssl rand -base64 32
 
 **Status:** `pending`
 **Arquivos:**
+
 - `apps/api/src/lib/rate-limit.ts` (ADICIONAR funções, não refatorar)
 - `apps/api/src/app.ts` (adicionar middleware global)
 
 **Por que adicionar rate limit por IP puro (além do atual por IP+username):**
+
 - Atual `${ip}:${username}` — bloqueia brute force por par específico
 - Novo `${ip}` puro — bloqueia spray attacks (muitos usernames diferentes do mesmo IP)
 - Complementares, não substitutos
 
 **EC-2: Considerar Progressive Delay para evitar DoS legítimo:**
+
 > O rate limit por `${ip}:${username}` pode ser abusado: atacante que sabe o username
 > pode bloquear o admin legítimo. Preferível progressive delay em vez de bloqueio total.
 
 **Tarefas:**
+
 - [ ] **2.1.1** Adicionar função `getGlobalRateLimitState(ip)` em `rate-limit.ts`
 - [ ] **2.1.2** Adicionar função `recordGlobalRequest(ip)` em `rate-limit.ts`
 - [ ] **2.1.3** Adicionar limite de tamanho no Map in-memory (PERF-5): `MAX_ENTRIES=50000`
@@ -563,16 +643,19 @@ openssl rand -base64 32
 - [ ] **2.1.6** Adicionar env vars de rate limit ao `.env.example`
 
 **EC-3 (IP Forjável): Adicionar `TRUST_PROXY` env var:**
+
 - [ ] **2.1.7** Adicionar `TRUST_PROXY=false` ao `.env.example`
 - [ ] **2.1.8** Modificar `getClientIdentifier()` para usar socket IP se `TRUST_PROXY=false`
 
 **Tarefas de Validação:**
+
 - [ ] **2.1.9** Teste: 100 requests do mesmo IP dispara 429
 - [ ] **2.1.10** Teste: headers `X-RateLimit-Limit` e `X-RateLimit-Remaining` presentes
 - [ ] **2.1.11** Teste: `Retry-After` header presente no 429
 - [ ] **2.1.12** Teste: bloqueio por IP não afeta outros IPs
 
 **Variáveis a Adicionar em `.env.example`:**
+
 ```bash
 # Global rate limit (por IP puro)
 GLOBAL_RATE_LIMIT_MAX_REQUESTS=100
@@ -604,6 +687,7 @@ MIGRATIONS_RATE_LIMIT_WINDOW_MS=3600000
 **Problema:** `GET|POST /migrations` requer admin key mas sem rate limit. Admin key exposta = execução ilimitada.
 
 **Tarefas:**
+
 - [ ] **2.2.1** Adicionar rate limit de 5 requests/hora no handler de migrations
 - [ ] **2.2.2** Usar chave: `migrations:${ip}`
 - [ ] **2.2.3** Teste: 6ª requisição ao /migrations retorna 429
@@ -618,6 +702,7 @@ MIGRATIONS_RATE_LIMIT_WINDOW_MS=3600000
 **Arquivo:** `apps/api/src/lib/replay-protection.ts`
 
 **Problema Atual:**
+
 ```typescript
 const existing = await client.get(key); // GET
 if (existing) return false;
@@ -625,6 +710,7 @@ await client.set(key, "1", ttlSeconds); // SET separado — não atômico
 ```
 
 **Solução com Redis SETNX:**
+
 ```typescript
 // SET NX EX — atômico: define SE não existe, com TTL
 const result = await client.set(key, "1", ttlSeconds, "NX");
@@ -636,6 +722,7 @@ return result === "OK";
 **Verificar API do cliente Redis usado no projeto:**
 
 **Tarefas:**
+
 - [ ] **2.3.1** Identificar cliente Redis usado: `grep -r "redis" apps/api/src/lib/redis-client.ts`
 - [ ] **2.3.2** Substituir GET+SET por SET NX EX atômico
 - [ ] **2.3.3** Teste: dois requests simultâneos com mesmo event_id — apenas um passa
@@ -654,6 +741,7 @@ return result === "OK";
 > **Ação restante:** Apenas garantir que os parâmetros são configuráveis via env vars (fase 4).
 
 **Vars a Documentar no `.env.example`:**
+
 ```bash
 CB_TEGMA_FAILURE_THRESHOLD=3
 CB_TEGMA_RESET_TIMEOUT=60000
@@ -671,6 +759,7 @@ CB_WHATSAPP_RESET_TIMEOUT=60000
 **Arquivo:** `apps/api/src/app.ts`
 
 **Tarefas:**
+
 - [ ] **3.1.1** Instalar `@elysiajs/cors` se não existir
 - [ ] **3.1.2** Adicionar middleware CORS com `ALLOWED_ORIGINS`
 - [ ] **3.1.3** Permitir apenas origins whitelisted
@@ -691,6 +780,7 @@ CB_WHATSAPP_RESET_TIMEOUT=60000
 **Arquivo:** `apps/api/src/controllers/cargas/check-handler.ts`
 
 **Antes:**
+
 ```typescript
 if (process.env.TEST_MODE === "1") {
   const result = ctx.request.headers.get("x-test-processor-result");
@@ -701,6 +791,7 @@ if (process.env.TEST_MODE === "1") {
 **Depois:** Código removido completamente
 
 **Tarefas:**
+
 - [ ] **3.2.1** Localizar código de test mode
 - [ ] **3.2.2** Remover completamente
 - [ ] **3.2.3** Verificar que testes ainda passam (usar fetch mocking proper)
@@ -727,16 +818,19 @@ if (process.env.TEST_MODE === "1") {
 **Arquivo:** `next.config.ts`
 
 **Antes:**
+
 ```typescript
 script-src 'self' 'unsafe-inline'
 ```
 
 **Depois:**
+
 ```typescript
 script-src 'self'
 ```
 
 **Tarefas:**
+
 - [ ] **3.4.1** Modificar CSP em `next.config.ts`
 - [ ] **3.4.2** Verificar que JavaScript ainda funciona
 - [ ] **3.4.3** Verificar console de browser - nenhum CSP error
@@ -752,12 +846,14 @@ script-src 'self'
 **Arquivo:** `apps/api/src/controllers/status-controller.ts`
 
 **Mudanças:**
+
 - Requer session OR x-admin-key
 - Production retorna mínimas informações
 - Development pode retornar mais detalhes (mas restrito)
 - Nunca expõe: version do DB, max_connections, opened_connections
 
 **Tarefas:**
+
 - [ ] **3.5.1** Adicionar validação de auth em `GET /status`
 - [ ] **3.5.2** Remover exposição de DB details
 - [ ] **3.5.3** Teste: `/status` sem auth retorna 401
@@ -775,6 +871,7 @@ script-src 'self'
 
 **Status:** `pending`
 **Arquivos:**
+
 - `apps/api/src/lib/session.ts`
 - `apps/api/src/lib/schemas.ts`
 - `apps/api/src/services/tegma-scraper.ts`
@@ -844,16 +941,19 @@ CRON_WEBHOOK_TIMESTAMP_WINDOW=300
 **Arquivo:** `apps/api/src/services/tegma-scraper.ts`
 
 **Problema Atual — Em DOIS lugares:**
+
 - `login()` linha 67: `Cookie: \`${cookie};Usuario=${username};Senha=${password};\``
 - `fetchCargasPage()` linha 93: mesmo header com credenciais
 
 **Solução — Session Cookie Caching:**
+
 - Fazer login UMA VEZ, guardar session cookie em módulo-level state
 - Reutilizar session cookie com TTL configurável (`TEGMA_SESSION_TTL_MS=1800000`)
 - Se request retorna redirect para Login → invalidar cache e refazer login
 - Remove credenciais dos headers nas duas ocorrências
 
 **Tarefas:**
+
 - [ ] **5.1.1** Adicionar `let cachedSession: { cookie: string; expiresAt: number } | null = null` no módulo
 - [ ] **5.1.2** Implementar `getOrRefreshSession()` — retorna cache se válido, ou refaz login
 - [ ] **5.1.3** Adicionar `TEGMA_SESSION_TTL_MS=1800000` ao `.env.example`
@@ -867,6 +967,7 @@ CRON_WEBHOOK_TIMESTAMP_WINDOW=300
 - [ ] **5.1.11** Teste: redirect para Login → invalida cache e refaz login
 
 **Grep de Verificação:**
+
 ```bash
 grep -n "Usuario=\|Senha=" apps/api/src/services/tegma-scraper.ts
 # Resultado esperado: zero linhas
@@ -882,10 +983,12 @@ grep -n "Usuario=\|Senha=" apps/api/src/services/tegma-scraper.ts
 **Arquivo:** `apps/api/src/services/tegma-scraper.ts`
 
 **Mudanças:**
+
 - Nunca fazer log de username/password/Cookie headers completos
 - Log apenas: error message, status code, função
 
 **Tarefas:**
+
 - [ ] **5.2.1** Audit de todos os `logger.error()` no scraper
 - [ ] **5.2.2** Remover parâmetros sensíveis
 - [ ] **5.2.3** Teste: gerar erro e verificar logs não contêm credenciais
@@ -901,6 +1004,7 @@ grep -n "Usuario=\|Senha=" apps/api/src/services/tegma-scraper.ts
 
 **Status:** `pending`
 **Arquivos:**
+
 - `apps/api/src/lib/audit-logger.ts` (NOVO)
 - `infra/migrations/1772000003000_create_audit_logs_table.js` (NOVO)
 
@@ -925,6 +1029,7 @@ CREATE INDEX idx_nf_audit_logs_event ON notifica_frete_audit_logs(event);
 ```
 
 **Tarefas:**
+
 - [ ] **6.1.1.1** Criar arquivo de migration
 - [ ] **6.1.1.2** Rodar migration: `bun run migration:up`
 
@@ -935,21 +1040,25 @@ CREATE INDEX idx_nf_audit_logs_event ON notifica_frete_audit_logs(event);
 #### 6.1.2 Criar `audit-logger.ts` com Fire-and-Forget (PERF-2)
 
 **Métodos:**
+
 - `loginAttempt(username, success, ip)` — fire-and-forget, não bloqueia resposta
 - `adminActionTriggered(action, username, ip, details)`
 - `cargoCheckTriggered(method, ip)`
 
 **Implementação Fire-and-Forget (PERF-2):**
+
 ```typescript
 // NÃO usar await — não adiciona latência à resposta
 export function loginAttempt(username: string, success: boolean, ip: string) {
-  writeAuditLog({ event: "login_attempt", username, success, ip })
-    .catch(err => log.error("audit_log.write_failed", { error: err }));
+  writeAuditLog({ event: "login_attempt", username, success, ip }).catch(
+    (err) => log.error("audit_log.write_failed", { error: err }),
+  );
   // Retorna void, não Promise — intencionalmente não-awaitable
 }
 ```
 
 **Tarefas:**
+
 - [ ] **6.1.2.1** Criar módulo `audit-logger`
 - [ ] **6.1.2.2** Implementar métodos acima como fire-and-forget
 - [ ] **6.1.2.3** Garantir que `details` JSONB não contém credenciais
@@ -965,6 +1074,7 @@ export function loginAttempt(username: string, success: boolean, ip: string) {
 **Arquivo:** `apps/api/src/controllers/auth-controller.ts`
 
 **Tarefas:**
+
 - [ ] **6.1.3.1** Adicionar `await auditLog.loginAttempt(username, false, ip)` em erro
 - [ ] **6.1.3.2** Adicionar `await auditLog.loginAttempt(username, true, ip)` em sucesso
 - [ ] **6.1.3.3** Teste: tentativa de login falha registra no audit log
@@ -980,12 +1090,14 @@ export function loginAttempt(username: string, success: boolean, ip: string) {
 **Arquivo:** `apps/api/src/lib/error-handler.ts` (NOVO ou REFATORAR)
 
 **Funcionalidades:**
+
 - Production: mensagens genéricas
 - Development: stack trace completo
 - Zod errors: nunca expor schema details
 - Database errors: nunca expor detalhes
 
 **Tarefas:**
+
 - [ ] **6.2.1** Criar/refatorar `error-handler.ts`
 - [ ] **6.2.2** Implementar `formatErrorResponse(error, isDevelopment)`
 - [ ] **6.2.3** Implementar `formatZodError(error, isDevelopment)`
@@ -1071,6 +1183,7 @@ export function loginAttempt(username: string, success: boolean, ip: string) {
 **Total:** ~33 testes
 
 **Tarefas:**
+
 - [ ] **7.1.1** Criar arquivo `tests/integration/security.test.ts`
 - [ ] **7.1.2** Implementar os 14 grupos de testes acima
 - [ ] **7.1.3** Rodar testes: `bun run test:integration:api`
@@ -1090,6 +1203,7 @@ export function loginAttempt(username: string, success: boolean, ip: string) {
 **Problema:** Com migração para tabela `users` com bcrypt, tabela estará vazia após `migration:up`. Admin não consegue logar.
 
 **Solução — Script CLI:**
+
 ```bash
 bun run apps/api/src/scripts/create-admin.ts
 # Lê ADMIN_USERNAME e ADMIN_PASSWORD das env vars
@@ -1098,6 +1212,7 @@ bun run apps/api/src/scripts/create-admin.ts
 ```
 
 **Tarefas:**
+
 - [ ] **7.5.1** Criar `create-admin.ts` que lê `ADMIN_USERNAME`/`ADMIN_PASSWORD` das env vars
 - [ ] **7.5.2** Usar `Bun.password.hash()` para criar o hash
 - [ ] **7.5.3** INSERT com `ON CONFLICT (username) DO UPDATE` → seguro rodar múltiplas vezes
@@ -1118,6 +1233,7 @@ bun run apps/api/src/scripts/create-admin.ts
 **Arquivo:** `docs/SECURITY.md` (NOVO)
 
 **Seções:**
+
 - Password Storage (bcrypt com salt)
 - Environment Variables (nunca commit secrets)
 - Session Security (HMAC, httpOnly, expiration)
@@ -1128,6 +1244,7 @@ bun run apps/api/src/scripts/create-admin.ts
 - Reporting Security Issues (email, 48h response)
 
 **Tarefas:**
+
 - [ ] **8.1.1** Criar `docs/SECURITY.md`
 - [ ] **8.1.2** Adicionar todas as seções
 - [ ] **8.1.3** Incluir exemplos práticos
@@ -1143,12 +1260,14 @@ bun run apps/api/src/scripts/create-admin.ts
 **Arquivo:** `README.md`
 
 **Adições:**
+
 - Link para `docs/SECURITY.md`
 - Seção "Getting Started - Security Setup"
 - Comando de geração de secrets: `openssl rand -base64 32`
 - Checklist de deployment (env vars, migrations, testes)
 
 **Tarefas:**
+
 - [ ] **8.2.1** Adicionar seção "Security" ao README
 - [ ] **8.2.2** Incluir link para `docs/SECURITY.md`
 - [ ] **8.2.3** Documentar como gerar secrets
@@ -1214,10 +1333,12 @@ bun run apps/api/src/scripts/create-admin.ts
 ## Resumo de Mudanças por Arquivo
 
 ### Dependências Novas
+
 - `@elysiajs/cors` (verificar se já existe com `bun list | grep cors`)
 - **SEM `bcrypt`** — usar `Bun.password` nativo
 
 ### Arquivos Criados (7)
+
 1. `apps/api/src/repositories/users-repository.ts`
 2. `apps/api/src/lib/env-validator.ts`
 3. `apps/api/src/lib/audit-logger.ts`
@@ -1228,9 +1349,11 @@ bun run apps/api/src/scripts/create-admin.ts
 8. `.env.example`
 
 ### Arquivos NÃO Criados (removidos do plano por já existirem)
+
 - ~~`apps/api/src/lib/circuit-breaker.ts`~~ — JÁ EXISTE
 
 ### Arquivos Modificados (11)
+
 1. `apps/api/src/lib/schemas.ts` (validação forte de senha)
 2. `apps/api/src/lib/session.ts` (env vars para max-age, secure, samesite)
 3. `apps/api/src/lib/rate-limit.ts` (adicionar rate limit por IP puro, limite no Map)
@@ -1245,25 +1368,27 @@ bun run apps/api/src/scripts/create-admin.ts
 12. `README.md` (instruções de segurança)
 
 ### Migrations Novas (2 — não 3)
+
 1. `infra/migrations/1772000001000_create_users_table.js`
 2. `infra/migrations/1772000002000_create_audit_logs_table.js`
+
 - ~~`webhook_events`~~ — não necessário, usando Redis SETNX (EC-6)
 
 ---
 
 ## Timeline Estimado
 
-| Fase | Duração | Tarefas |
-|------|---------|---------|
-| 1 | 2-3h | Bcrypt, env vars, secrets |
-| 2 | 2-3h | Rate limiting, circuit breaker |
-| 3 | 1-2h | CORS, CSP, status endpoint |
-| 4 | 1h | Extrair constantes para env |
-| 5 | 1h | Tegma scraper refactor |
-| 6 | 1h | Audit logging |
-| 7 | 2h | Testes de segurança |
-| 8 | 1h | Docs, checklist |
-| **Total** | **12-16h** | - |
+| Fase      | Duração    | Tarefas                        |
+| --------- | ---------- | ------------------------------ |
+| 1         | 2-3h       | Bcrypt, env vars, secrets      |
+| 2         | 2-3h       | Rate limiting, circuit breaker |
+| 3         | 1-2h       | CORS, CSP, status endpoint     |
+| 4         | 1h         | Extrair constantes para env    |
+| 5         | 1h         | Tegma scraper refactor         |
+| 6         | 1h         | Audit logging                  |
+| 7         | 2h         | Testes de segurança            |
+| 8         | 1h         | Docs, checklist                |
+| **Total** | **12-16h** | -                              |
 
 ---
 

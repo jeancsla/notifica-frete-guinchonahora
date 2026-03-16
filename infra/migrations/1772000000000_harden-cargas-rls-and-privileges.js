@@ -15,7 +15,9 @@ exports.up = (pgm) => {
 };
 
 exports.down = (pgm) => {
-  pgm.sql("DROP POLICY IF EXISTS allow_api_role_access ON notifica_frete_cargas;");
+  pgm.sql(
+    "DROP POLICY IF EXISTS allow_api_role_access ON notifica_frete_cargas;",
+  );
   pgm.sql(`
     CREATE POLICY allow_app_access
     ON notifica_frete_cargas
@@ -24,5 +26,7 @@ exports.down = (pgm) => {
     WITH CHECK (true);
   `);
   pgm.sql("ALTER TABLE notifica_frete_cargas NO FORCE ROW LEVEL SECURITY;");
-  pgm.sql("GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE notifica_frete_cargas TO PUBLIC;");
+  pgm.sql(
+    "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE notifica_frete_cargas TO PUBLIC;",
+  );
 };
