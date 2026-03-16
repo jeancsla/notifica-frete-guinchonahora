@@ -12,6 +12,11 @@ import {
 import { timingSafeEqualString } from "../lib/security";
 import { LoginSchema, formatZodError } from "../lib/schemas";
 import { verifyPassword } from "../repositories/users-repository";
+import {
+  auditLog,
+  extractIpAddress,
+  extractUserAgent,
+} from "../lib/audit-logger";
 
 function getAdminCredentials() {
   const username = process.env.ADMIN_USERNAME;
@@ -101,6 +106,13 @@ export async function loginHandler({
     log.warn("auth.login.rate_limited", {
       retry_after_seconds: rateLimit.retryAfterSeconds,
     });
+    auditLog({
+      eventType: "login_rate_limited",
+      username,
+      ipAddress: extractIpAddress(request),
+      userAgent: extractUserAgent(request),
+      severity: "warn",
+    });
     return { message: "Too many login attempts. Try again later." };
   }
 
@@ -110,6 +122,13 @@ export async function loginHandler({
     await clearAuthFailures(clientKey);
     set.headers["set-cookie"] = buildSessionCookie(username);
     log.info("auth.login.success", { username });
+    auditLog({
+      eventType: "login_success",
+      userId: dbUser.id,
+      username,
+      ipAddress: extractIpAddress(request),
+      userAgent: extractUserAgent(request),
+    });
     return { ok: true };
   }
 
@@ -131,10 +150,24 @@ export async function loginHandler({
     await clearAuthFailures(clientKey);
     set.headers["set-cookie"] = buildSessionCookie(username);
     log.info("auth.login.success", { username });
+    auditLog({
+      eventType: "login_success",
+      username,
+      ipAddress: extractIpAddress(request),
+      userAgent: extractUserAgent(request),
+    });
     return { ok: true };
   }
 
   await recordAuthFailure(clientKey);
+
+  auditLog({
+    eventType: "login_failure",
+    username,
+    ipAddress: extractIpAddress(request),
+    userAgent: extractUserAgent(request),
+    severity: "warn",
+  });
 
   const updatedRateLimit = await getAuthRateLimitState(clientKey);
   if (updatedRateLimit.blocked) {
@@ -145,6 +178,17 @@ export async function loginHandler({
     log.warn("auth.login.rate_limited_after_failure", {
       retry_after_seconds: updatedRateLimit.retryAfterSeconds,
       username,
+    });
+    auditLog({
+      eventType: "login_rate_limited",
+      username,
+      ipAddress: extractIpAddress(request),
+      userAgent: extractUserAgent(request),
+      severity: "warn",
+      details: {
+        reason: "exceeded_max_attempts",
+        retry_after_seconds: updatedRateLimit.retryAfterSeconds,
+      },
     });
     return { message: "Too many login attempts. Try again later." };
   }
