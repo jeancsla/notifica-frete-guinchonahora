@@ -15,16 +15,23 @@ const log = logger.child({ component: "run_migrations" });
  * Use the session pooler (port 5432) for MIGRATION_DATABASE_URL.
  */
 export async function runMigrations(): Promise<void> {
+  console.log("[run_migrations] Starting migration process");
+
   const dbUrl = process.env.MIGRATION_DATABASE_URL || process.env.DATABASE_URL;
+  console.log("[run_migrations] MIGRATION_DATABASE_URL set:", !!process.env.MIGRATION_DATABASE_URL);
+  console.log("[run_migrations] DATABASE_URL set:", !!process.env.DATABASE_URL);
 
   if (!dbUrl) {
+    console.warn("[run_migrations] Skipped: no database URL configured");
     log.warn("run_migrations.skipped", { reason: "no_database_url" });
     return;
   }
 
   const migrationsDir = resolveMigrationsDir();
+  console.log("[run_migrations] Migrations directory:", migrationsDir);
 
   if (!existsSync(migrationsDir)) {
+    console.warn("[run_migrations] Skipped: migrations directory not found");
     log.warn("run_migrations.skipped", {
       reason: "migrations_dir_not_found",
       dir: migrationsDir,
@@ -33,6 +40,7 @@ export async function runMigrations(): Promise<void> {
   }
 
   try {
+    console.log("[run_migrations] Running migrations from:", migrationsDir);
     log.info("run_migrations.starting", { dir: migrationsDir });
 
     const result = await migrationRunner({
@@ -43,18 +51,22 @@ export async function runMigrations(): Promise<void> {
       verbose: false,
     });
 
+    console.log("[run_migrations] Success! Applied migrations:", result.length);
     log.info("run_migrations.completed", { applied: result.length });
   } catch (error) {
+    console.error("[run_migrations] Migration error:", error);
     const message =
       error instanceof Error ? error.message.toLowerCase() : String(error);
 
     if (message.includes("another migration is already running")) {
+      console.log("[run_migrations] Another migration is already running");
       log.warn("run_migrations.already_running");
       return;
     }
 
     // Log but don't throw — let the app start even if migrations fail
     // This prevents a full outage if the migration DB URL is misconfigured
+    console.error("[run_migrations] Migration failed but continuing:", error);
     log.error("run_migrations.failed", { error });
   }
 }
