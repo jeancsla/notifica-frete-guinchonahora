@@ -10,7 +10,7 @@
  * - Special character (!@#$%^&*-_=+)
  */
 
-import { getConnection } from "../infra/database";
+import { getPooledClient } from "../infra/database";
 import { createUser } from "../repositories/users-repository";
 import { StrongPasswordSchema, formatZodError } from "../lib/schemas";
 import { logger } from "../lib/logger";
@@ -51,7 +51,7 @@ async function main() {
   }
 
   try {
-    const client = await getConnection();
+    const client = await getPooledClient();
 
     try {
       // Create the user
