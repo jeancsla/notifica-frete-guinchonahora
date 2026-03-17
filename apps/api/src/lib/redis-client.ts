@@ -76,11 +76,11 @@ async function createIoRedisClient(): Promise<RedisClient> {
       ttlSeconds?: number,
     ): Promise<boolean> {
       // Atomic SET NX with optional EX (expires)
-      // ioredis supports: client.set(key, value, { NX: true, EX: ttlSeconds })
+      // ioredis uses variadic string args: client.set(key, value, "EX", ttl, "NX")
       // Returns 'OK' if set, null if key already exists
       const result = ttlSeconds
-        ? await client.set(key, value, { NX: true, EX: ttlSeconds })
-        : await client.set(key, value, { NX: true });
+        ? await client.set(key, value, "EX", ttlSeconds, "NX")
+        : await client.set(key, value, "NX");
       return result === "OK";
     },
     async del(key: string): Promise<void> {
